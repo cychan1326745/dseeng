@@ -46,9 +46,6 @@ header {
 }
 
 #speechToggle {
-    position: absolute;
-    top: 28px;
-    right: 24px;
     background-color: var(--success-color);
     color: white;
     border: none;
@@ -71,7 +68,6 @@ header {
 header h1 {
     font-size: 1.9em;
     margin-bottom: 8px;
-    padding-right: 130px;
     font-weight: 600;
 }
 

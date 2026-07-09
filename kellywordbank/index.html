@@ -34,7 +34,7 @@
             background-color: white;
             border-radius: 10px;
             color: #666;
-            display: none;
+            display: block;
         }
         #errorMsg {
             text-align: center;
@@ -44,15 +44,143 @@
             color: #e74c3c;
             display: none;
         }
+        .collapsible-section {
+            margin-top: 12px;
+        }
+        .toggle-details {
+            background-color: #f0f7fb;
+            border: 1px solid #d0e8f7;
+            color: #3498db;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        .toggle-details:hover {
+            background-color: #e8f4f8;
+        }
+        .details-content {
+            margin-top: 10px;
+        }
+        #dictationBox {
+            background-color: #fff9e6;
+            border: 2px solid #f39c12;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        #dictationBox h3 {
+            margin-top: 0;
+            color: #e67e22;
+        }
+        #dictationControls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-top: 15px;
+        }
+        #btnNewDictation {
+            background-color: #e67e22;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        #btnCheckDictation {
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        #btnStopDictation {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        #dictationResult {
+            margin-top: 15px;
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+        .dictation-correct {
+            color: #27ae60;
+        }
+        .dictation-wrong {
+            color: #e74c3c;
+        }
+        header {
+            display: flex;
+            flex-wrap: nowrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+        }
+        .header-buttons {
+            display: flex;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+        #btnDictation {
+            background-color: #f39c12;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        #btnDictation.active {
+            background-color: #e67e22;
+        }
+        #btnDictation:hover {
+            opacity: 0.9;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>📚 DSE 英文生字簿 (Dynamic Vocabulary Bank)</h1>
-            <p class="subtitle">自動加載同文件夾 kellywordbank.md，<strong>任何英文單詞點擊都可聆聽發音</strong></p>
-            <button id="speechToggle">SPEECH ON</button>
+            <div>
+                <h1>📚 DSE 英文生字簿 (Dynamic Vocabulary Bank)</h1>
+                <p class="subtitle">自動加載同文件夾 kellywordbank.md，<strong>任何英文單詞點擊都可聆聽發音</strong></p>
+            </div>
+            <div class="header-buttons">
+                <button id="btnDictation">DICTATION</button>
+                <button id="speechToggle">SPEECH ON</button>
+            </div>
         </header>
+
+        <div id="dictationBox">
+            <h3>📝 生字听写练习 (Dictation Practice)</h3>
+            <p>系統會隨機抽出一個生字，並朗讀它，請在下方輸入框拼寫出這個生字，按「檢查答案」對答案！</p>
+            <div id="dictationQuestion">
+                <strong>問題:</strong> 點擊「開始新听写」開始
+            </div>
+            <div id="dictationControls">
+                <input type="text" id="dictationInput" placeholder="在這裡輸入你聽到的生字..." style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 1em;">
+                <button id="btnNewDictation">下一個</button>
+                <button id="btnCheckDictation">檢查答案</button>
+                <button id="btnStopDictation">結束聽寫</button>
+            </div>
+            <div id="dictationResult"></div>
+            <div id="dictationAnswer" style="display: none; margin-top: 10px;">
+                <strong>正確答案:</strong> <span id="correctAnswer"></span> - <span id="correctMeaning"></span>
+            </div>
+        </div>
 
         <div id="loading">⏳ 正在加載生字檔... 請稍候...</div>
         <div id="errorMsg">
@@ -73,16 +201,23 @@
                 </div>
                 <div class="sort-controls">
                     <label>排序方式:</label>
-                    <select id="sortSelect">
+                    <select id="sortSelect" onchange="applySort()">
                         <option value="alpha-asc">按字母 A → Z</option>
                         <option value="alpha-desc">按字母 Z → A</option>
                         <option value="date-desc" selected>按日期 最新 → 最舊</option>
                         <option value="date-asc">按日期 最舊 → 最新</option>
                         <option value="category">按文章分類</option>
                     </select>
-                    <button onclick="applySort()">排序</button>
+                    <label>篩選:</label>
+                    <select id="filterSelect" onchange="applySort()">
+                        <option value="all" selected>所有生字</option>
+                        <option value="unlearned">未學會</option>
+                        <option value="learned">已學會</option>
+                    </select>
+                    <button onclick="applySort()">排序/篩選</button>
                     <button onclick="resetSearch()">重置</button>
                 </div>
+                <div class="alphabet-index" id="alphabetIndex" style="margin-top: 12px; text-align: center; width: 100%; background-color: #f0f2f5; padding: 10px; border-radius: 6px;"></div>
             </div>
 
             <div class="stats" id="stats"></div>
@@ -95,12 +230,39 @@
             <p>請點擊上方按鈕選擇你的 <code>kellywordbank.md</code> 文件，開始使用。</p>
             <p><strong>✨ 使用方法:</strong> 點擊任何英文單詞，即可聆聽美式發音，右上角可關閉此功能</p>
             <p><strong>✨ 優點:</strong> 每次更新 Markdown 生字後，只需要刷新瀏覽器重新選擇文件即可，這個 HTML 文件永遠不用重新生成！</p>
+            <p><strong>🎯 新增听写功能:</strong> 點擊右上角 <strong>DICTATION</strong> 按鈕，開始隨機生字听写練習！</p>
         </div>
     </div>
 
 <script>
 let vocabulary = [];
 let speechEnabled = true;
+let dictationActive = false;
+let currentDictationWord = null;
+let learnedWords = new Set();
+
+// Load learned words from localStorage
+function loadLearnedWords() {
+    const saved = localStorage.getItem('dse_vocab_learned');
+    if (saved) {
+        learnedWords = new Set(JSON.parse(saved));
+    }
+}
+
+// Save learned words to localStorage
+function saveLearnedWords() {
+    localStorage.setItem('dse_vocab_learned', JSON.stringify([...learnedWords]));
+}
+
+// Toggle learned status
+function toggleLearned(word) {
+    if (learnedWords.has(word)) {
+        learnedWords.delete(word);
+    } else {
+        learnedWords.add(word);
+    }
+    saveLearnedWords();
+}
 
 // Toggle speech function
 document.getElementById('speechToggle').addEventListener('click', function() {
@@ -114,6 +276,108 @@ document.getElementById('speechToggle').addEventListener('click', function() {
         window.speechSynthesis.cancel();
     }
 });
+
+// Toggle dictation mode
+document.getElementById('btnDictation').addEventListener('click', function() {
+    dictationActive = !dictationActive;
+    if (dictationActive && vocabulary.length > 0) {
+        this.classList.add('active');
+        document.getElementById('dictationBox').style.display = 'block';
+        startNewDictation();
+    } else {
+        this.classList.remove('active');
+        document.getElementById('dictationBox').style.display = 'none';
+        window.speechSynthesis.cancel();
+    }
+});
+
+// Start new dictation
+document.getElementById('btnNewDictation').addEventListener('click', function() {
+    startNewDictation();
+});
+
+// Check dictation answer
+document.getElementById('btnCheckDictation').addEventListener('click', function() {
+    checkDictationAnswer();
+});
+
+// Stop dictation
+document.getElementById('btnStopDictation').addEventListener('click', function() {
+    document.getElementById('btnDictation').click();
+});
+
+// Allow enter key to check answer
+document.getElementById('dictationInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        checkDictationAnswer();
+    }
+});
+
+function startNewDictation() {
+    if (vocabulary.length === 0) {
+        alert('請先加載生字庫才能開始听写！');
+        return;
+    }
+    // Random select a word
+    const randomIndex = Math.floor(Math.random() * vocabulary.length);
+    currentDictationWord = vocabulary[randomIndex];
+    
+    // Clear previous result
+    document.getElementById('dictationInput').value = '';
+    document.getElementById('dictationResult').innerHTML = '';
+    document.getElementById('dictationAnswer').style.display = 'none';
+    
+    // Update question display
+    document.getElementById('dictationQuestion').innerHTML = '<strong>問題:</strong> 請聆聽後拼寫出這個生字 ➡️ <button onclick="replayDictation()" style="background: #3498db; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer;">🔊 英文</button> <button onclick="speakChineseMeaning()" style="background: #e67e22; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; margin-left: 5px;">🔊 中文</button>';
+    
+    // Speak the word
+    speakWord(currentDictationWord.word);
+}
+
+function replayDictation() {
+    if (currentDictationWord) {
+        speakWord(currentDictationWord.word);
+    }
+}
+
+function speakChineseMeaning() {
+    if (currentDictationWord) {
+        const speech = new SpeechSynthesisUtterance(currentDictationWord.core_info.cn_meaning.trim());
+        speech.lang = 'zh-HK';
+        speech.rate = 0.9;
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(speech);
+    }
+}
+
+function speakWord(word) {
+    const speech = new SpeechSynthesisUtterance(word.trim());
+    speech.lang = 'en-US';
+    speech.rate = 0.9;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(speech);
+}
+
+function checkDictationAnswer() {
+    if (!currentDictationWord) return;
+    
+    const userInput = document.getElementById('dictationInput').value.trim().toLowerCase();
+    const correctWord = currentDictationWord.word.trim().toLowerCase();
+    const resultDiv = document.getElementById('dictationResult');
+    const answerDiv = document.getElementById('dictationAnswer');
+    
+    if (userInput === correctWord) {
+        resultDiv.innerHTML = '<span class="dictation-correct">✅ 正確！太棒了！</span>';
+        answerDiv.style.display = 'block';
+        document.getElementById('correctAnswer').textContent = currentDictationWord.word;
+        document.getElementById('correctMeaning').textContent = currentDictationWord.core_info.cn_meaning;
+    } else {
+        resultDiv.innerHTML = '<span class="dictation-wrong">❌ 不正確，再試一次？</span>';
+        answerDiv.style.display = 'block';
+        document.getElementById('correctAnswer').textContent = currentDictationWord.word;
+        document.getElementById('correctMeaning').textContent = currentDictationWord.core_info.cn_meaning;
+    }
+}
 
 // Escape HTML for safe rendering
 function escapeHtml(text) {
@@ -284,141 +548,174 @@ function parseMarkdown(content) {
 // Speak word when clicked
 function handleWordClick(word) {
     if (!speechEnabled) return;
-    const speech = new SpeechSynthesisUtterance(word.trim());
-    speech.lang = 'en-US';
-    speech.rate = 0.9;
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(speech);
+    speakWord(word);
 }
 
-// Render vocabulary list - synonyms, antonyms, memory, usage in a single box
+// Render vocabulary list - extra details are collapsible, default hidden
 function renderVocab(list) {
     const container = document.getElementById('vocabList');
     const stats = document.getElementById('stats');
     container.innerHTML = '';
     
-    stats.textContent = `顯示 ${list.length} / ${vocabulary.length} 個生字`;
+    stats.textContent = '顯示 ' + list.length + ' / ' + vocabulary.length + ' 個生字';
     
-    list.forEach(vocab => {
+    list.forEach(function(vocab) {
         const card = document.createElement('div');
         card.className = 'vocab-card';
         
         let categoryHtml = '';
         if (vocab.category && vocab.category.length > 0) {
-            categoryHtml = `<div class="topic-tag">${escapeHtml(vocab.category)}</div>`;
+            categoryHtml = '<div class="topic-tag">' + escapeHtml(vocab.category) + '</div>';
         }
         
         let exampleHtml = '';
         if (vocab.practical.example && vocab.practical.example.length > 0) {
             const clickableExample = makeEnglishClickable(escapeHtml(vocab.practical.example));
-            exampleHtml = `<div class="example-box">${clickableExample}</div>`;
+            exampleHtml = '<div class="example-box">' + clickableExample + '</div>';
         }
         
         let collocationsHtml = '';
         if (vocab.practical.collocations && vocab.practical.collocations.length > 0) {
-            collocationsHtml = `
-                <div class="content-block">
-                    <strong>詞組搭配:</strong>
-                    <ul class="info-list">
-                        ${vocab.practical.collocations.map(col => `<li>${makeEnglishClickable(escapeHtml(col))}</li>`).join('')}
-                    </ul>
-                </div>
-            `;
+            collocationsHtml = '\
+                <div class="content-block">\
+                    <strong>詞組搭配:</strong>\
+                    <ul class="info-list">\
+                        ' + vocab.practical.collocations.map(function(col) { return '<li>' + makeEnglishClickable(escapeHtml(col)) + '</li>'; }).join('') + '\
+                    </ul>\
+                </div>\
+            ';
         }
         
-        let hasNotes = false;
-        let notesContent = '';
+        let hasExtra = false;
+        let extraContent = '';
         
         if (vocab.semantics.synonyms && vocab.semantics.synonyms.length > 0) {
-            hasNotes = true;
-            const clickableSynonyms = vocab.semantics.synonyms.map(syn => makeEnglishClickable(escapeHtml(syn))).join(', ');
-            notesContent += `<div class="notes-row"><strong>同義詞:</strong> <span class="content-text">${clickableSynonyms}</span></div>`;
+            hasExtra = true;
+            const clickableSynonyms = vocab.semantics.synonyms.map(function(syn) { return makeEnglishClickable(escapeHtml(syn)); }).join(', ');
+            extraContent += '<div class="notes-row"><strong>同義詞:</strong> <span class="content-text">' + clickableSynonyms + '</span></div>';
         }
         
         if (vocab.semantics.antonyms && vocab.semantics.antonyms.length > 0) {
-            hasNotes = true;
-            const clickableAntonyms = vocab.semantics.antonyms.map(ant => makeEnglishClickable(escapeHtml(ant))).join(', ');
-            notesContent += `<div class="notes-row"><strong>反義詞:</strong> <span class="content-text">${clickableAntonyms}</span></div>`;
+            hasExtra = true;
+            const clickableAntonyms = vocab.semantics.antonyms.map(function(ant) { return makeEnglishClickable(escapeHtml(ant)); }).join(', ');
+            extraContent += '<div class="notes-row"><strong>反義詞:</strong> <span class="content-text">' + clickableAntonyms + '</span></div>';
         }
         
         if (vocab.depth_analysis.memory_point) {
-            hasNotes = true;
+            hasExtra = true;
             const clickableMemory = makeEnglishClickable(escapeHtml(vocab.depth_analysis.memory_point));
-            notesContent += `<div class="notes-row"><strong>重點記憶點:</strong> <span class="content-text">${clickableMemory}</span></div>`;
+            extraContent += '<div class="notes-row"><strong>重點記憶點:</strong> <span class="content-text">' + clickableMemory + '</span></div>';
         }
         
         if (vocab.depth_analysis.usage) {
-            hasNotes = true;
+            hasExtra = true;
             const clickableUsage = makeEnglishClickable(escapeHtml(vocab.depth_analysis.usage));
-            notesContent += `<div class="notes-row"><strong>建議用法:</strong> <span class="content-text">${clickableUsage}</span></div>`;
+            extraContent += '<div class="notes-row"><strong>建議用法:</strong> <span class="content-text">' + clickableUsage + '</span></div>';
         }
         
-        card.innerHTML = `
-            <div class="vocab-header">
-                <div class="word-title" onclick="handleWordClick('${escapeHtml(vocab.word).replace(/'/g, "\\'")}')">${escapeHtml(vocab.word)} <span class="word-pos">(${escapeHtml(vocab.pos)})</span></div>
-                <div class="date-tag">📅 Added: ${escapeHtml(vocab.date)}</div>
-                ${categoryHtml}
-            </div>
-            
-            <div class="content-block">
-                <strong>解釋:</strong> <span class="content-text">${makeEnglishClickable(escapeHtml(vocab.core_info.cn_meaning))}</span>
-                ${vocab.core_info.source ? `<br><strong>出處:</strong> <span class="content-text">${escapeHtml(vocab.core_info.source)}</span>` : ''}
-            </div>
-            
-            ${vocab.depth_analysis.en_definition ? `
-            <div class="content-block">
-                <strong>英文定義:</strong> <span class="content-text">${makeEnglishClickable(escapeHtml(vocab.depth_analysis.en_definition))}</span>
-            </div>
-            ` : ''}
-            
-            ${exampleHtml ? `
-            <div class="content-block">
-                <strong>例句:</strong>${exampleHtml}
-            </div>
-            ` : ''}
-            ${collocationsHtml}
-            
-            ${hasNotes ? `<div class="notes-box">${notesContent}</div>` : ''}
-        `;
+        let extraHtml = '';
+        if (hasExtra || collocationsHtml) {
+            extraHtml = '\
+                <div class="collapsible-section">\
+                    <button class="toggle-details">顯示詳情 ▶</button>\
+                    <div class="details-content" style="display: none;">\
+                        ' + collocationsHtml + '\
+                        ' + (hasExtra ? '<div class="notes-box">' + extraContent + '</div>' : '') + '\
+                    </div>\
+                </div>\
+            ';
+        }
+        
+        const isLearned = learnedWords.has(vocab.word);
+        const learnedToggle = '<button onclick="toggleLearned(\'' + escapeHtml(vocab.word).replace(/'/g, "\\\\'") + '\'); renderVocab(filteredVocabulary);" style="float: right; background: ' + (isLearned ? '#27ae60' : '#95a5a6') + '; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85em;">' + (isLearned ? '✅ 已學會' : '🔲 未學會') + '</button>';
+
+        card.innerHTML = 
+            '<div class="vocab-header">' +
+                learnedToggle +
+                '<div class="word-title" onclick="handleWordClick(\'' + escapeHtml(vocab.word).replace(/'/g, "\\\\'") + '\')">' + escapeHtml(vocab.word) + ' <span class="word-pos">(' + escapeHtml(vocab.pos) + ')</span></div>' +
+                '<div class="date-tag">📅 Added: ' + escapeHtml(vocab.date) + '</div>' +
+                categoryHtml +
+            '</div>' +
+
+            '<div class="content-block">' +
+                '<strong>解釋:</strong> <span class="content-text">' + makeEnglishClickable(escapeHtml(vocab.core_info.cn_meaning)) + '</span>' +
+                (vocab.core_info.source ? '<br><strong>出處:</strong> <span class="content-text">' + escapeHtml(vocab.core_info.source) + '</span>' : '') +
+            '</div>' +
+
+            (vocab.depth_analysis.en_definition ? 
+            '<div class="content-block">' +
+                '<strong>英文定義:</strong> <span class="content-text">' + makeEnglishClickable(escapeHtml(vocab.depth_analysis.en_definition)) + '</span>' +
+            '</div>' : '') +
+
+            (exampleHtml ? 
+            '<div class="content-block">' +
+                '<strong>例句:</strong>' + exampleHtml +
+            '</div>' : '') +
+
+            extraHtml;
+
         container.appendChild(card);
+    });
+    
+    // Add click event to toggle buttons
+    document.querySelectorAll('.toggle-details').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const content = this.nextElementSibling;
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                this.textContent = '隱藏詳情 ▼';
+            } else {
+                content.style.display = 'none';
+                this.textContent = '顯示詳情 ▶';
+            }
+        });
     });
 }
 
 // Search function
 document.getElementById('searchInput').addEventListener('input', function(e) {
     const searchTerm = e.target.value.toLowerCase();
-    const filtered = vocabulary.filter(v => 
-        v.word.toLowerCase().includes(searchTerm) || 
-        v.core_info.cn_meaning.toLowerCase().includes(searchTerm) ||
-        v.depth_analysis.en_definition.toLowerCase().includes(searchTerm) ||
-        v.category.toLowerCase().includes(searchTerm)
-    );
+    const filtered = vocabulary.filter(function(v) {
+        return v.word.toLowerCase().includes(searchTerm) || 
+               v.core_info.cn_meaning.toLowerCase().includes(searchTerm) ||
+               v.depth_analysis.en_definition.toLowerCase().includes(searchTerm) ||
+               v.category.toLowerCase().includes(searchTerm);
+    });
     renderVocab(filtered);
 });
 
-// Sort function
+// Sort and filter function
 function applySort() {
     const sortType = document.getElementById('sortSelect').value;
-    let sorted = [...vocabulary];
+    const filterType = document.getElementById('filterSelect').value;
+    let sorted = [].concat(vocabulary);
+    
+    // Filter by learned status
+    if (filterType === 'learned') {
+        sorted = sorted.filter(v => learnedWords.has(v.word));
+    } else if (filterType === 'unlearned') {
+        sorted = sorted.filter(v => !learnedWords.has(v.word));
+    }
     
     switch(sortType) {
         case 'alpha-asc':
-            sorted.sort((a, b) => a.word.localeCompare(b.word));
+            sorted.sort(function(a, b) { return a.word.localeCompare(b.word); });
             break;
         case 'alpha-desc':
-            sorted.sort((a, b) => b.word.localeCompare(a.word));
+            sorted.sort(function(a, b) { return b.word.localeCompare(a.word); });
             break;
         case 'date-desc':
-            sorted.sort((a, b) => b.date.localeCompare(a.date));
+            sorted.sort(function(a, b) { return b.date.localeCompare(a.date); });
             break;
         case 'date-asc':
-            sorted.sort((a, b) => a.date.localeCompare(b.date));
+            sorted.sort(function(a, b) { return a.date.localeCompare(b.date); });
             break;
         case 'category':
-            sorted.sort((a, b) => a.category.localeCompare(b.category) || a.word.localeCompare(b.word));
+            sorted.sort(function(a, b) { return a.category.localeCompare(b.category) || a.word.localeCompare(b.word); });
             break;
     }
     
+    window.filteredVocabulary = sorted;
     renderVocab(sorted);
 }
 
@@ -426,32 +723,98 @@ function applySort() {
 function resetSearch() {
     document.getElementById('searchInput').value = '';
     document.getElementById('sortSelect').value = 'date-desc';
+    document.getElementById('filterSelect').value = 'all';
     applySort();
+}
+
+// Generate alphabet index buttons
+function generateAlphabetIndex() {
+    const container = document.getElementById('alphabetIndex');
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    let html = '<button onclick="filterByAlphabet(\'\')" style="margin: 3px; padding: 6px 0; font-size: 0.95em; border-radius: 4px; background: #3498db; color: white; width: 40px; text-align: center;">全部</button>';
+    for (let i = 0; i < alphabet.length; i++) {
+        const letter = alphabet[i];
+        html += `<button onclick="filterByAlphabet('${letter}')" style="margin: 3px; padding: 6px 0; font-size: 0.95em; border-radius: 4px; background: #3498db; color: white; width: 30px; text-align: center;">${letter}</button>`;
+    }
+    container.innerHTML = html;
+}
+
+// Filter vocabulary by starting letter
+function filterByAlphabet(startLetter) {
+    // Highlight selected button
+    document.querySelectorAll('#alphabetIndex button').forEach(btn => {
+        btn.style.background = '';
+        btn.style.color = '';
+    });
+    event.target.style.background = '#3498db';
+    event.target.style.color = 'white';
+    
+    const sortType = document.getElementById('sortSelect').value;
+    const filterType = document.getElementById('filterSelect').value;
+    let sorted = [].concat(vocabulary);
+    
+    // Filter by learned status
+    if (filterType === 'learned') {
+        sorted = sorted.filter(v => learnedWords.has(v.word));
+    } else if (filterType === 'unlearned') {
+        sorted = sorted.filter(v => !learnedWords.has(v.word));
+    }
+    
+    // Filter by starting letter
+    if (startLetter) {
+        sorted = sorted.filter(v => v.word.toUpperCase().startsWith(startLetter));
+    }
+    
+    // Sort
+    switch(sortType) {
+        case 'alpha-asc':
+            sorted.sort(function(a, b) { return a.word.localeCompare(b.word); });
+            break;
+        case 'alpha-desc':
+            sorted.sort(function(a, b) { return b.word.localeCompare(a.word); });
+            break;
+        case 'date-desc':
+            sorted.sort(function(a, b) { return b.date.localeCompare(a.date); });
+            break;
+        case 'date-asc':
+            sorted.sort(function(a, b) { return a.date.localeCompare(b.date); });
+            break;
+        case 'category':
+            sorted.sort(function(a, b) { return a.category.localeCompare(b.category) || a.word.localeCompare(b.word); });
+            break;
+    }
+    
+    window.filteredVocabulary = sorted;
+    renderVocab(sorted);
 }
 
 // Auto load kellywordbank.md from same directory
 function autoLoadMdFile() {
     document.getElementById('loading').style.display = 'block';
+    document.getElementById('errorMsg').style.display = 'none';
+    document.getElementById('mainContent').style.display = 'none';
     
-    // Get current directory, append kellywordbank.md
+    // Try fetch - this works on localhost or web server
     const currentUrl = window.location.href.replace(/\/[^\/]*$/, '/');
     const mdUrl = currentUrl + 'kellywordbank.md?t=' + new Date().getTime(); // cache bust
     
     fetch(mdUrl)
-    .then(response => {
+    .then(function(response) {
         if (!response.ok) {
             throw new Error('Cannot load file');
         }
         return response.text();
     })
-    .then(content => {
+    .then(function(content) {
         document.getElementById('loading').style.display = 'none';
+        loadLearnedWords();
         vocabulary = parseMarkdown(content);
         document.getElementById('mainContent').style.display = 'block';
+        generateAlphabetIndex();
         // Default sort: date-desc (latest first)
         applySort();
     })
-    .catch(error => {
+    .catch(function(error) {
         document.getElementById('loading').style.display = 'none';
         document.getElementById('errorMsg').style.display = 'block';
     });
@@ -462,15 +825,18 @@ document.getElementById('mdFileInput').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (!file) return;
     
-    document.getElementById('fileInfo').textContent = `已選擇: ${file.name}`;
+    document.getElementById('fileInfo').textContent = '已選擇: ' + file.name;
     
     const reader = new FileReader();
     reader.onload = function(event) {
         const content = event.target.result;
+        loadLearnedWords();
         vocabulary = parseMarkdown(content);
         
         document.getElementById('errorMsg').style.display = 'none';
+        document.getElementById('loading').style.display = 'none';
         document.getElementById('mainContent').style.display = 'block';
+        generateAlphabetIndex();
         // Default sort: date-desc (latest first)
         applySort();
     };
