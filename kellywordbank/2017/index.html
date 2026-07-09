@@ -1,0 +1,1699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head> 
+
+<script>
+let isSpeaking = false;
+let speechEnabled = true; // 默認開啟
+
+function loadSpeechSetting() {
+  const saved = localStorage.getItem('dse-speech-enabled');
+  if (saved !== null) {
+    speechEnabled = saved === 'true';
+  }
+  updateSpeechButton();
+}
+
+function updateSpeechButton() {
+  const btn = document.getElementById('btnToggleSpeech');
+  if (btn) {
+    btn.textContent = speechEnabled ? 'Speech: ON' : 'Speech: OFF';
+    btn.style.background = speechEnabled ? 'rgba(40, 167, 69, 0.3)' : 'rgba(220, 53, 69, 0.3)';
+  }
+}
+
+function toggleSpeech() {
+  speechEnabled = !speechEnabled;
+  localStorage.setItem('dse-speech-enabled', speechEnabled);
+  updateSpeechButton();
+  if (isSpeaking) {
+    speechSynthesis.cancel();
+    isSpeaking = false;
+  }
+}
+
+function readWord(text){
+  if(!speechEnabled) return; // 關閉狀態不發音
+  if(isSpeaking) speechSynthesis.cancel();
+  let utter = new SpeechSynthesisUtterance(text);
+  utter.lang = "en-US";
+  utter.rate = 0.9;
+  isSpeaking = true;
+  utter.onend = ()=> isSpeaking = false;
+  speechSynthesis.speak(utter);
+}
+
+// ── Click-to-read: 撳邊個英文字就讀邊個 ──
+document.addEventListener('DOMContentLoaded', function(){
+  loadSpeechSetting();
+  const btn = document.getElementById('btnToggleSpeech');
+  if (btn) btn.addEventListener('click', toggleSpeech);
+
+  const passage = document.getElementById('passagePanel');
+  if (!passage) return;
+
+  // 用 caretRangeFromPoint 拎 click 位置嘅英文字
+  passage.addEventListener('click', function(e){
+    if(!speechEnabled) return; // 關閉狀態完全不處理，方便選文字
+    // 唔干擾撳落 link / button / input
+    if (e.target.closest('a, button, input, label, select, textarea')) return;
+
+    const range = document.caretRangeFromPoint(e.clientX, e.clientY);
+    if (!range) return;
+    const node = range.startContainer;
+    if (node.nodeType !== Node.TEXT_NODE) return;
+    const offset = range.startOffset;
+    const text = node.textContent;
+
+    // 搵字嘅起始同結束（連 apostrophe 同 hyphen）
+    let start = offset;
+    let end = offset;
+    while (start > 0 && /[a-zA-Z\u00C0-\u024F'ʼ-]/.test(text[start - 1])) start--;
+    while (end < text.length && /[a-zA-Z\u00C0-\u024F'ʼ-]/.test(text[end])) end++;
+    if (start === end) return;
+
+    const word = text.slice(start, end);
+    // 過濾純數字
+    if (/^\d+$/.test(word)) return;
+
+    readWord(word);
+
+    // ── 視覺回饋：短暫 highlight ──
+    // 用 range select 個字
+    const wordRange = document.createRange();
+    wordRange.setStart(node, start);
+    wordRange.setEnd(node, end);
+    const highlight = document.createElement('mark');
+    highlight.style.cssText = 'background:#ffd54f;border-radius:3px;transition:background .3s';
+    try {
+      wordRange.surroundContents(highlight);
+      setTimeout(() => {
+        const parent = highlight.parentNode;
+        if (parent) {
+          while (highlight.firstChild) parent.insertBefore(highlight.firstChild, highlight);
+          parent.removeChild(highlight);
+          parent.normalize();
+        }
+      }, 500);
+    } catch(_) {
+      // 跨 element boundary 就跳過 highlight
+    }
+  });
+});
+</script>
+ 
+<style>
+/* 游標提示：passage 入面嘅文字係㩒得嘅 */
+#passagePanel .paragraph {
+  cursor: default;
+}
+#passagePanel .paragraph * {
+  cursor: pointer;
+}
+</style>
+
+<meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Myth of Recycling - DSE 2017 Paper 1 Reading Practice A</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-brand"><span>DSE</span> 2017 Paper 1 Reading Practice A</div>
+    <nav class="header-nav">
+      <a href="index.html" class="active">Reading</a>
+      <a href="solution.html">Solution</a>
+    </nav>
+    <div class="header-tools">
+      <button type="button" id="btnToggleSpeech">Speech: ON</button>
+      <button type="button" id="btnLargerText">Larger Text</button>
+      <button type="button" onclick="window.print()">Print</button>
+    </div>
+  </header>
+
+  <div class="main-container" id="mainContainer">
+    <section class="panel passage-panel" id="passagePanel">
+      <h2 class="passage-title">The Myth of Recycling</h2>
+      <p class="passage-subtitle">Text 1 — HKDSE English Language Paper 1 (Reading) Part A</p>
+      <div class="passage-illustration">♻️ 🌎 🗑️</div>
+
+      <div style="margin-top: 12px; text-align: center;">
+        <button id="toggleVocabHighlight" style="background: #f39c12; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 1em;">kelly生字庫: OFF</button>
+      </div>
+      <script>
+      let vocabHighlightOn = false;
+      let vocabWords = [];
+      const vocabUrl = '../kellywordbank-single.md?cache-bust=' + new Date().getTime(); // 避免瀏覽器緩存，每次加載最新
+
+      // Auto-load vocabulary from kellywordbank-single.md on page load
+      async function loadVocab() {
+          try {
+              const response = await fetch(vocabUrl);
+              const text = await response.text();
+              // Extract all words from lines starting with ###
+              const lines = text.split('\\n');
+              vocabWords = lines
+                  .filter(line => line.startsWith('### '))
+                  .map(line => {
+                      // Extract the word part: "### word  (pos)..." → "word"
+                      const match = line.match(/^###\s+([^(]+)/);
+                      return match ? match[1].trim() : null;
+                  })
+                  .filter(word => word !== null)
+                  // Sort by length descending so longer phrases match first
+                  .sort((a, b) => b.length - a.length);
+              console.log('Loaded vocab:', vocabWords.length + ' words from kellywordbank-single.md');
+          } catch (err) {
+              console.error('Failed to load vocabulary:', err);
+              // Fallback to some default words
+              vocabWords = ["recycling companies","assorted plastics","shut down plants","household waste","controversial","food scraps"];
+          }
+      }
+
+      function toggleVocabHighlight() {
+          vocabHighlightOn = !vocabHighlightOn;
+          const btn = document.getElementById('toggleVocabHighlight');
+          if (vocabHighlightOn) {
+              btn.textContent = 'kelly生字庫: ON';
+              btn.style.background = '#27ae60';
+              applyVocabHighlight();
+          } else {
+              btn.textContent = 'kelly生字庫: OFF';
+              btn.style.background = '#f39c12';
+              removeVocabHighlight();
+          }
+      }
+      
+      function applyVocabHighlight() {
+          // First clear existing highlights from the whole paragraph HTML, then re-apply
+          const paragraphs = document.querySelectorAll('#passagePanel p.paragraph');
+          paragraphs.forEach(function(para) {
+              // Get current HTML and strip all existing marks
+              let html = para.innerHTML;
+              // Remove all <mark> tags but keep content
+              html = html.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g, '$1');
+              
+              // Add highlights for all vocabulary words
+              vocabWords.forEach(function(word) {
+                  const regex = new RegExp('\\b' + escapeRegExp(word) + '\\b', 'gi');
+                  html = html.replace(regex, '<mark style="background: rgba(52, 152, 219, 0.3);">$&</mark>');
+              });
+              
+              para.innerHTML = html;
+          });
+      }
+      
+      function removeVocabHighlight() {
+          const marks = document.querySelectorAll('#passagePanel mark');
+          marks.forEach(function(mark) {
+              // Unwrap: move children out
+              const parent = mark.parentNode;
+              while (mark.firstChild) {
+                  parent.insertBefore(mark.firstChild, mark);
+              }
+              parent.removeChild(mark);
+              parent.normalize();
+          });
+      }
+      
+      function escapeRegExp(string) {
+          return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      }
+      
+      // Load vocab when page starts
+      loadVocab();
+      document.getElementById('toggleVocabHighlight').addEventListener('click', toggleVocabHighlight);
+      </script>
+
+
+      <p class="paragraph" data-para="1">
+        <span class="paragraph-num">[1]</span>
+        If you live in the United States, you probably do some form of recycling. It’s likely that you separate paper from plastic and glass and metal. You rinse bottles and cans, and you might put food scraps in a container destined for a composting facility. As you sort everything into the right bins, you probably assume that recycling is helping your community and protecting the environment. But is it? Are you in fact wasting your time?
+      </p>
+      <p class="paragraph" data-para="2">
+        <span class="paragraph-num">[2]</span>
+        In 1996, I wrote an article arguing that the recycling process as we carried it out was wasteful. I presented plenty of evidence that recycling was costly and ineffectual, but its defenders said that it was unfair to rush to judgment. Noting that the modern recycling movement had really just begun a few years earlier, they predicted it would flourish as the industry matured and the public learned how to recycle properly.
+      </p>
+      <p class="paragraph" data-para="3">
+        <span class="paragraph-num">[3]</span>
+        So, what’s happened since then? While it’s true that the recycling message has reached more people than ever, when it comes to the bottom line, both economically and environmentally, not much has changed at all.
+      </p>
+      <p class="paragraph" data-para="4">
+        <span class="paragraph-num">[4]</span>
+        Despite decades of initiatives, it’s still typically more expensive for local governments to recycle household waste than to send it to a landfill. Most recycled materials are exported, and the prices for these materials have plummeted because of lower oil prices and reduced demand for them overseas. The slump has forced some recycling companies to shut plants and cancel plans for new technologies.
+      </p>
+      <p class="paragraph" data-para="5">
+        <span class="paragraph-num">[5]</span>
+        The future for recycling looks even worse. As cities move beyond recycling paper and metals, and into glass, food scraps and assorted plastics, the costs rise sharply while the environmental benefits decline and sometimes vanish. “If you believe recycling is good for the planet and that we need to do more of it, then there’s a crisis to confront,” says David Steiner, the CEO of Waste Management, the largest recycler of household trash in the United States. “Trying to turn garbage into gold costs a lot more than expected. We need to ask ourselves: What is the goal here?”
+      </p>
+      <p class="paragraph" data-para="6">
+        <span class="paragraph-num">[6]</span>
+        Recycling has been relentlessly promoted as a goal in and of itself: a public and private virtue that is indoctrinated in students from kindergarten through university. As a result, otherwise well-informed and educated people have no idea of the relative costs and benefits.
+      </p>
+      <p class="paragraph" data-para="7">
+        <span class="paragraph-num">[7]</span>
+        They probably assume, for instance, that recycling plastic must be helping the planet. They’ve been encouraged by the Environmental Protection Agency (E.P.A.), which assures the public that this results in fewer carbon emissions being released into the atmosphere. But how much difference does it make? Here’s some perspective: To offset the carbon impact of one passenger’s round-trip flight between New York and London, you’d have to recycle roughly 40,000 plastic bottles, assuming you fly economy. If you sit in business- or first-class, it could be more like 100,000.
+      </p>
+      <p class="paragraph" data-para="8">
+        <span class="paragraph-num">[8]</span>
+        Even those statistics might be misleading. Residents are instructed to rinse bottles before putting them in recycling bins, but the E.P.A.’s life-cycle calculation doesn’t take that water into account. That single omission can make a big difference, according to author Chris Goodall. He calculates that if you wash plastic in water that was heated by coal-derived electricity, then the net effect of your recycling could be more carbon in the atmosphere.
+      </p>
+      <p class="paragraph" data-para="9">
+        <span class="paragraph-num">[9]</span>
+        To many public officials, recycling is a question of morality, not cost-benefit analysis. The Mayor of New York, Bill de Blasio, declared that by 2030 the city would no longer send any garbage to landfills. “This is the way of the future if we’re going to save our earth,” he explained while announcing that New York would join other cities in moving toward a “zero waste” policy, which would require an unprecedented level of recycling.
+      </p>
+      <p class="paragraph" data-para="10">
+        <span class="paragraph-num">[10]</span>
+        But while politicians set higher goals, the national rate of recycling has stagnated in recent years. Yes, it’s popular in affluent neighborhoods, but residents of low income areas don’t have the same fervor for sorting garbage in their spare time.
+      </p>
+      <p class="paragraph" data-para="11">
+        <span class="paragraph-num">[11]</span>
+        The national rate of recycling rose during the 1990s to 25 percent, the goal set by an E.P.A. official, Winston Porter. He advised state officials that no more than 35 percent of the nation’s trash was worth recycling, but some ignored him and set goals of 50 percent and higher. Most of those goals were never met and the national rate has been stuck around 34 percent in recent years.
+      </p>
+      <p class="paragraph" data-para="12">
+        <span class="paragraph-num">[12]</span>
+        “It’s practical to recycle cardboard and some paper, as well as selected metals and plastics,” he says. “But other materials don’t make sense, including food waste and other compostables. The zero-waste goal makes no sense at all — it’s very expensive with almost no real environmental benefit.”
+      </p>
+      <p class="paragraph" data-para="13">
+        <span class="paragraph-num">[13]</span>
+        With the economic rationale gone, advocates for recycling have switched to environmental arguments. Researchers calculate that there are indeed such benefits to recycling, but not in the way that many people imagine.
+      </p>
+      <p class="paragraph" data-para="14">
+        <span class="paragraph-num">[14]</span>
+        Most of these benefits do not come from reducing the need for landfills and incinerators. Unlike earlier ones, a modern well-lined landfill in a rural area can have relatively little environmental impact. Decomposing garbage releases methane, a potent greenhouse gas, but landfill operators have started capturing it and using it to generate electricity. Modern incinerators, while politically unpopular in the United States, release so few pollutants that they’ve been widely accepted in the eco-conscious countries of Northern Europe and Japan for generating clean energy.
+      </p>
+      <p class="paragraph" data-para="15">
+        <span class="paragraph-num">[15]</span>
+        Moreover, recycling operations have their own environmental costs, like extra trucks on the road and pollution from recycling operations. Composting facilities around the country have inspired complaints about nauseating odors, swarming rats and defecating seagulls.
+      </p>
+      <p class="paragraph" data-para="16">
+        <span class="paragraph-num">[16]</span>
+        The environmental benefits of recycling come chiefly from reducing the need to manufacture new products – less mining, drilling and logging. But that’s not so appealing to the workers in those industries that have accepted the environmental trade-offs that come with those jobs. Nearly everyone, though, approves of one potential gain from recycling: reduced emissions of greenhouse gases.
+      </p>
+      <p class="paragraph" data-para="17">
+        <span class="paragraph-num">[17]</span>
+        However, according to the E.P.A.’s estimates, virtually all the greenhouse benefits — more than 90 percent — come from just a few materials: paper, cardboard and aluminum in soda cans. Once you exclude these materials, the total annual savings in the United States from recycling everything else — plastics, glass, food, yard trimmings, textiles, rubber, leather — is only two-tenths of 1 percent of America’s carbon footprint.
+      </p>
+    </section>
+
+    <div class="divider" id="divider" title="Drag to resize"></div>
+
+    <section class="panel questions-panel" id="questionsPanel">
+      <p class="instruction">Read Text 1 and answer questions 1–21. (About 42 marks)</p>
+
+      <!-- Q1 -->
+      <div class="question-block" id="q1" data-q="1">
+        <div class="question-label">1. Which of the following recyclables is NOT mentioned in paragraph 1? Put a tick (✓) in the box.</div>
+        <div class="options">
+          <label><input type="checkbox" name="q1" value="GLASS"> GLASS</label>
+          <label><input type="checkbox" name="q1" value="METAL"> METAL</label>
+          <label><input type="checkbox" name="q1" value="E-WASTE"> E-WASTE</label>
+          <label><input type="checkbox" name="q1" value="ORGANIC"> ORGANIC (food scraps)</label>
+          <label><input type="checkbox" name="q1" value="PAPER"> PAPER</label>
+          <label><input type="checkbox" name="q1" value="PLASTIC"> PLASTIC</label>
+        </div>
+
+<div class="inline-solution" id="solution-q1" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">1</span> Identifying information <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Answer: E-WASTE is NOT mentioned</div>
+      <p class="explanation">Paragraph 1 lists: paper, plastic, glass, metal, and food scraps (organic). Electronic waste (e-waste) is not mentioned in the paragraph.</p>
+      <p class="explanation-zh">第一段列出了：紙張、塑料、玻璃、金屬和食物殘渣（有機物），並無提及電子廢物 (E-WASTE)。</p>
+      <div class="passage-ref">[1] ...you separate paper from plastic and glass and metal... you might put food scraps in a container...</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q2 -->
+      <div class="question-block" id="q2" data-q="2">
+        <div class="question-label">2. According to paragraph 1, what benefits are supposedly gained from recycling?</div>
+        <input type="text" class="text-input wide" name="q2" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q2" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">2</span> Short Answer <span class="marks-badge">2 marks</span></h3>
+      <div class="answer-text">Suggested answer: Helping the community and protecting the environment.</div>
+      <p class="explanation">The writer says that when people sort recycling, they "probably assume that recycling is helping your community and protecting the environment." These are the supposed benefits people believe in.</p>
+      <p class="explanation-zh">作者指出，人們分類回收時，通常假定回收「有助社區和保護環境」，這就是人們相信回收帶來的好處。</p>
+      <div class="passage-ref">[1] ...you probably assume that recycling is helping your community and protecting the environment.</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q3 -->
+      <div class="question-block" id="q3" data-q="3">
+        <div class="question-label">3.<br>
+        i) What was the writer’s view on recycling in 1996? (1 mark)<br>
+        ii) Why did his opponents disagree with him? (1 mark)</div>
+        <p>(i) <input type="text" class="text-input wide" name="q3i" placeholder="Your answer"></p>
+        <p>(ii) <input type="text" class="text-input wide" name="q3ii" placeholder="Your answer"></p>
+
+<div class="inline-solution" id="solution-q3" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">3</span> Two-part Short Answer <span class="marks-badge">2 marks</span></h3>
+      <div class="answer-text">(i) He argued that the recycling process as carried out was wasteful, costly and ineffectual.<br>
+      (ii) They said the modern recycling movement had just begun; it would improve as the industry matured and the public learned to recycle properly.</div>
+      <p class="explanation">(i) In 1996 the writer published an article saying recycling was wasteful, costly and not effective.<br>
+      (ii) Critics argued it was too early to judge — recycling was still new and would get better over time.</p>
+      <p class="explanation-zh">(i) 作者在1996年認為當時的回收過程是浪費、昂貴且無效的。<br>(ii) 反對者認為現代回收運動才剛開始，隨著行業成熟和公眾學會正確回收，它會蓬勃發展。</p>
+      <div class="passage-ref">[2] In 1996, I wrote an article arguing that the recycling process as we carried it out was wasteful. I presented plenty of evidence that recycling was costly and ineffectual... they predicted it would flourish as the industry matured and the public learned how to recycle properly.</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q4 -->
+      <div class="question-block" id="q4" data-q="4">
+        <div class="question-label">4. According to paragraphs 2-4, are the following statements True (T), False (F) or Not Given (NG)? (4 marks)</div>
+        <table class="tf-table">
+          <thead>
+            <tr><th>Statement</th><th>T</th><th>F</th><th>NG</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>(i) The writer is more optimistic about the recycling industry than he was in 1996.</td>
+              <td><input type="radio" name="q4i" value="T"></td>
+              <td><input type="radio" name="q4i" value="F"></td>
+              <td><input type="radio" name="q4i" value="NG"></td>
+            </tr>
+            <tr>
+              <td>(ii) Supporters of recycling are disappointed that the industry hasn’t matured.</td>
+              <td><input type="radio" name="q4ii" value="T"></td>
+              <td><input type="radio" name="q4ii" value="F"></td>
+              <td><input type="radio" name="q4ii" value="NG"></td>
+            </tr>
+            <tr>
+              <td>(iii) Sending household waste to landfills is typically more costly than recycling it.</td>
+              <td><input type="radio" name="q4iii" value="T"></td>
+              <td><input type="radio" name="q4iii" value="F"></td>
+              <td><input type="radio" name="q4iii" value="NG"></td>
+            </tr>
+            <tr>
+              <td>(iv) The business of some recycling companies has suffered.</td>
+              <td><input type="radio" name="q4iv" value="T"></td>
+              <td><input type="radio" name="q4iv" value="F"></td>
+              <td><input type="radio" name="q4iv" value="NG"></td>
+            </tr>
+          </tbody>
+        </table>
+
+<div class="inline-solution" id="solution-q4" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">4</span> True / False / Not Given <span class="marks-badge">4 marks</span></h3>
+      <div class="answer-text">(i) F &nbsp; (ii) NG &nbsp; (iii) F &nbsp; (iv) T</div>
+      <p class="explanation">(i) <strong>False</strong> — The writer says "not much has changed at all" and "the future for recycling looks even worse", so he is less optimistic, not more.<br>
+      (ii) <strong>Not Given</strong> — The text does not say whether supporters are disappointed about the lack of maturity; they originally predicted improvement, but the text does not state their current disappointment.<br>
+      (iii) <strong>False</strong> — Paragraph 4 says recycling is "still typically more expensive" than landfills, not the other way around.<br>
+      (iv) <strong>True</strong> — "The slump has forced some recycling companies to shut plants", so business has suffered.</p>
+      <p class="explanation-zh">(i) 錯——作者說「幾乎沒有改變」且「未來更差」，並沒有更樂觀。<br>(ii) 未提及——文中沒有說支持者對行業未成熟感到失望。<br>(iii) 錯——文中說回收比堆填更昂貴，並非堆填比回收貴。<br>(iv) 對——不景氣迫使一些回收公司關閉工廠，業務受損。</p>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q5 -->
+      <div class="question-block" id="q5" data-q="5">
+        <div class="question-label">5. According to paragraph 4, what is in less demand overseas?</div>
+        <input type="text" class="text-input wide" name="q5" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q5" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">5</span> Short Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Suggested answer: Recycled materials</div>
+      <p class="explanation">Paragraph 4 says "Most recycled materials are exported, and the prices for these materials have plummeted because of lower oil prices and reduced demand for them overseas." "Them" refers to recycled materials.</p>
+      <p class="explanation-zh">第四段指出，大多數回收材料出口到海外，但海外對回收材料的需求減少，導致價格暴跌。</p>
+      <div class="passage-ref">[4] Most recycled materials are exported... reduced demand for them overseas.</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q6 -->
+      <div class="question-block" id="q6" data-q="6">
+        <div class="question-label">6. Which definition of 'crisis' is closest to the meaning used in line 22?</div>
+        <div class="options">
+          <label><input type="radio" name="q6" value="A"> A. a time when a difficult or important decision must be made</label>
+          <label><input type="radio" name="q6" value="B"> B. a sudden change in the course of a serious illness, for better or worse</label>
+          <label><input type="radio" name="q6" value="C"> C. an emotionally stressful event or personal tragedy</label>
+          <label><input type="radio" name="q6" value="D"> D. the point, as in a play, at which conflict reaches its highest tension</label>
+        </div>
+
+<div class="inline-solution" id="solution-q6" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">6</span> Vocabulary in Context <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Answer: A</div>
+      <p class="explanation">David Steiner says "If you believe recycling is good for the planet... then there's a crisis to confront... We need to ask ourselves: What is the goal here?" The context implies we face a situation requiring a difficult decision about our goals. This matches option A.</p>
+      <p class="explanation-zh">文中David Steiner說：「如果你相信回收對星球有益...那麼有一場危機需要面對...我們需要問自己：目標是什麼？」這裡指需要做出困難決定的時刻，與選項A含義最接近。</p>
+      <div class="passage-ref">[5] ...then there's a crisis to confront... We need to ask ourselves: What is the goal here?</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q7 -->
+      <div class="question-block" id="q7" data-q="7">
+        <div class="question-label">7. According to paragraph 6, why are people ill-informed about recycling?</div>
+        <input type="text" class="text-input wide" name="q7" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q7" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">7</span> Short Answer <span class="marks-badge">2 marks</span></h3>
+      <div class="answer-text">Suggested answer: Because recycling has been promoted as a virtue starting from kindergarten through university, so people are indoctrinated and don't learn about the actual costs and benefits.</div>
+      <p class="explanation">Paragraph 6 explains that recycling is relentlessly taught as a moral goal/virtue from early schooling onwards. As a result, even well-educated people don't know the real costs and benefits.</p>
+      <p class="explanation-zh">第六段指出，回收從幼稚園到大學都被不遺餘力地宣傳為一種美德，人們從小被灌輸這種觀念，因此即使受過良好教育也不了解實際的成本和收益。</p>
+      <div class="passage-ref">[6] Recycling has been relentlessly promoted as a goal in and of itself: a public and private virtue that is indoctrinated in students from kindergarten through university. As a result... people have no idea of the relative costs and benefits.</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q8 -->
+      <div class="question-block" id="q8" data-q="8">
+        <div class="question-label">8. Complete the following summary using ideas given in paragraphs 7 and 8. Write ONE word for each blank. Answers must be grammatically correct. (5 marks)</div>
+        <p>Recycling does not always lead to a reduction in (i) <input type="text" class="text-input short" name="q8i">.</p>
+        <p>Although the E.P.A. encourages people to (ii) <input type="text" class="text-input short" name="q8ii">,</p>
+        <p>it does not necessarily make much of a (iii) <input type="text" class="text-input short" name="q8iii">.</p>
+        <p>The matter becomes worse if people rinse their recyclables using (iv) <input type="text" class="text-input short" name="q8iv">,</p>
+        <p>and the electricity used to produce that heat comes from a (v) <input type="text" class="text-input short" name="q8v">-burning power station.</p>
+
+<div class="inline-solution" id="solution-q8" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">8</span> Summary Fill-in (ONE word each) <span class="marks-badge">5 marks</span></h3>
+      <div class="answer-text">(i) carbon / emissions / carbon-emissions<br>
+      (ii) recycle / recycle plastic<br>
+      (iii) difference<br>
+      (iv) hot water / heated water<br>
+      (v) coal</div>
+      <p class="explanation">(i) The EPA says recycling reduces "fewer carbon emissions", so the reduction is in carbon/emissions.<br>
+      (ii) EPA encourages recycling/recycling plastic.<br>
+      (iii) The writer asks "But how much difference does it make?" → "make much of a difference".<br>
+      (iv) People rinse bottles in heated/hot water.<br>
+      (v) Water heated by coal-derived electricity → coal-burning power station.</p>
+      <p class="explanation-zh">(i) 環保署說回收減少碳排放，所以這裡填 carbon / emissions。<br>(ii) EPA鼓勵人們回收/回收塑料。<br>(iii) 作者問「這會帶來多大改變」，固定搭配make a difference。<br>(iv) 人們用熱水沖洗瓶子。<br>(v) 熱水由燃煤電廠發電加熱。</p>
+      <div class="passage-ref">[7] ...results in fewer carbon emissions being released... But how much difference does it make? [8] ...if you wash plastic in water that was heated by coal-derived electricity...</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q9 -->
+      <div class="question-block" id="q9" data-q="9">
+        <div class="question-label">9. The writer uses the example of flying to show that recycling…</div>
+        <div class="options">
+          <label><input type="radio" name="q9" value="A"> A. has some benefits.</label>
+          <label><input type="radio" name="q9" value="B"> B. is not very effective.</label>
+          <label><input type="radio" name="q9" value="C"> C. is as bad for the environment as flying.</label>
+          <label><input type="radio" name="q9" value="D"> D. can be effective, depending on which class of airfare.</label>
+        </div>
+
+<div class="inline-solution" id="solution-q9" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">9</span> Multiple Choice <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Answer: B — is not very effective</div>
+      <p class="explanation">The writer says that to offset one round-trip flight from NY to London, you need to recycle 40,000-100,000 plastic bottles. This huge number is used to illustrate that recycling has almost negligible carbon benefit — meaning it's not very effective.</p>
+      <p class="explanation-zh">作者舉例子：要抵消一趟紐約來倫敦飛行的碳排放，需要回收4-10萬個塑料瓶。這個巨大的數字說明回收對減碳的效果微不足道，因此回收並不是很有效。</p>
+      <div class="passage-ref">[7] To offset the carbon impact of one passenger's round-trip flight between New York and London, you'd have to recycle roughly 40,000 plastic bottles, assuming you fly economy.</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q10 -->
+      <div class="question-block" id="q10" data-q="10">
+        <div class="question-label">10. According to paragraph 8, the statistics mentioned in paragraph 7 can be misleading because…</div>
+        <div class="options">
+          <label><input type="radio" name="q10" value="A"> A. some statistics have been overestimated.</label>
+          <label><input type="radio" name="q10" value="B"> B. people are not actually doing what is reported.</label>
+          <label><input type="radio" name="q10" value="C"> C. the statistics haven’t taken into account other facts.</label>
+          <label><input type="radio" name="q10" value="D"> D. there is not enough evidence to draw any conclusions.</label>
+        </div>
+
+<div class="inline-solution" id="solution-q10" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">10</span> Multiple Choice <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Answer: C — the statistics haven’t taken into account other facts</div>
+      <p class="explanation">Paragraph 8 says the E.P.A.'s calculation "doesn't take that water into account" (the water used to rinse the bottles). This means other relevant factors (the extra water and energy used for rinsing) are omitted from the statistics, making them misleading.</p>
+      <p class="explanation-zh">第八段指出，EPA的計算沒有把沖洗瓶子所用的水（以及加熱水所需的能源）考慮在內，統計忽略了其他相關事實，因此可能誤導。</p>
+      <div class="passage-ref">[8] ...the E.P.A.'s life-cycle calculation doesn't take that water into account. That single omission can make a big difference...</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q11 -->
+      <div class="question-block" id="q11" data-q="11">
+        <div class="question-label">11.<br>
+        i) What does the writer think is the reason politicians support a "zero waste" policy (line 44)?<br>
+        ii) To achieve a "zero waste" policy, the levels of recycling would need to be…</div>
+        <p>(i) <input type="text" class="text-input wide" name="q11i" placeholder="Your answer"></p>
+        <p>(ii) 
+          <label><input type="radio" name="q11ii" value="A"> A. reduced to zero.</label>
+          <label><input type="radio" name="q11ii" value="B"> B. modestly reduced.</label>
+          <label><input type="radio" name="q11ii" value="C"> C. slightly increased.</label>
+          <label><input type="radio" name="q11ii" value="D"> D. increased significantly.</label>
+        </p>
+
+<div class="inline-solution" id="solution-q11" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">11</span> Two-part <span class="marks-badge">3 marks</span></h3>
+      <div class="answer-text">(i) Because for politicians, recycling is a moral issue / question of morality, not cost-benefit analysis. They want to appear environmentally friendly to voters.<br>
+      (ii) Answer: D — increased significantly</div>
+      <p class="explanation">(i) Paragraph 9 says "To many public officials, recycling is a question of morality, not cost-benefit analysis." Politicians support it for moral/image reasons, not because it makes economic or environmental sense.<br>
+      (ii) "Zero waste" policy "would require an unprecedented level of recycling" — unprecedented means far higher than current levels, so increased significantly.</p>
+      <p class="explanation-zh">(i) 作者指出，對許多官員來說，回收是道德問題而非成本收益分析，政治家支持它是出於道德形象考慮，討好環保選民。<br>(ii)「零廢物」政策需要「前所未有的回收水平」，前所未有的意思就是比現有水平大幅提高。</p>
+      <div class="passage-ref">[9] To many public officials, recycling is a question of morality, not cost-benefit analysis... which would require an unprecedented level of recycling.</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q12 -->
+      <div class="question-block" id="q12" data-q="12">
+        <div class="question-label">12. According to paragraph 10, who recycles more?</div>
+        <div class="options">
+          <label><input type="radio" name="q12" value="A"> A. the rich</label>
+          <label><input type="radio" name="q12" value="B"> B. the poor</label>
+          <label><input type="radio" name="q12" value="C"> C. people who live in cities</label>
+          <label><input type="radio" name="q12" value="D"> D. people who have more free time</label>
+        </div>
+
+<div class="inline-solution" id="solution-q12" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">12</span> Multiple Choice <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Answer: A — the rich</div>
+      <p class="explanation">Paragraph 10 says: "it's popular in affluent neighborhoods, but residents of low income areas don't have the same fervor..." Affluent means rich/wealthy. So rich people recycle more.</p>
+      <p class="explanation-zh">第10段說：回收在「富裕社區 (affluent neighborhoods)」很流行，但低收入地區居民沒有同樣的熱情。affluent即富裕，所以富人回收更多。</p>
+      <div class="passage-ref">[10] Yes, it's popular in affluent neighborhoods, but residents of low income areas don't have the same fervor for sorting garbage in their spare time.</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q13 -->
+      <div class="question-block" id="q13" data-q="13">
+        <div class="question-label">13. Using the information given in paragraph 11, complete the table with the missing percentages. (4 marks)</div>
+        <table class="tf-table">
+          <tbody>
+            <tr>
+              <td>Current rate of recycling in the U.S.</td>
+              <td>(i) <input type="text" class="text-input short" name="q13i">%</td>
+            </tr>
+            <tr>
+              <td>Recycling target set by the E.P.A.</td>
+              <td>(ii) <input type="text" class="text-input short" name="q13ii">%</td>
+            </tr>
+            <tr>
+              <td>Recycling target set by some state officials</td>
+              <td>(iii) <input type="text" class="text-input short" name="q13iii">% or higher</td>
+            </tr>
+            <tr>
+              <td>Maximum percentage of trash useful to recycle</td>
+              <td>(iv) <input type="text" class="text-input short" name="q13iv">%</td>
+            </tr>
+          </tbody>
+        </table>
+
+<div class="inline-solution" id="solution-q13" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">13</span> Table Fill-in <span class="marks-badge">4 marks</span></h3>
+      <div class="answer-text">(i) 34 &nbsp; (ii) 25 &nbsp; (iii) 50 &nbsp; (iv) 35</div>
+      <p class="explanation">From paragraph 11:<br>
+      - Current rate: "stuck around 34 percent in recent years"<br>
+      - EPA goal: "rose during the 1990s to 25 percent, the goal set by an E.P.A. official"<br>
+      - Some state officials: "some ignored him and set goals of 50 percent and higher"<br>
+      - Maximum useful: "no more than 35 percent of the nation's trash was worth recycling"</p>
+      <p class="explanation-zh">根據第11段：<br>(i) 當前美國全國回收率大約34%<br>(ii) EPA設定的目標是25%<br>(iii) 一些州官員設定50%或更高的目標<br>(iv) 值得回收的垃圾最大比例是35%</p>
+      <div class="passage-ref">[11] ...rose during the 1990s to 25 percent, the goal set by an E.P.A. official... no more than 35 percent... some ignored him and set goals of 50 percent and higher... the national rate has been stuck around 34 percent...</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q14 -->
+      <div class="question-block" id="q14" data-q="14">
+        <div class="question-label">14. According to paragraph 12, what materials are practical to recycle? For each type of material, tick (✓) ‘All’, ‘Some’ or ‘None’. (3 marks)</div>
+        <table class="tf-table">
+          <thead>
+            <tr><th>Material</th><th>All</th><th>Some</th><th>None</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>(i) metal</td>
+              <td><input type="radio" name="q14i" value="All"></td>
+              <td><input type="radio" name="q14i" value="Some"></td>
+              <td><input type="radio" name="q14i" value="None"></td>
+            </tr>
+            <tr>
+              <td>(ii) food waste</td>
+              <td><input type="radio" name="q14ii" value="All"></td>
+              <td><input type="radio" name="q14ii" value="Some"></td>
+              <td><input type="radio" name="q14ii" value="None"></td>
+            </tr>
+            <tr>
+              <td>(iii) cardboard</td>
+              <td><input type="radio" name="q14iii" value="All"></td>
+              <td><input type="radio" name="q14iii" value="Some"></td>
+              <td><input type="radio" name="q14iii" value="None"></td>
+            </tr>
+          </tbody>
+        </table>
+
+<div class="inline-solution" id="solution-q14" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">14</span> Matching <span class="marks-badge">3 marks</span></h3>
+      <div class="answer-text">(i) Some &nbsp; (ii) None &nbsp; (iii) All</div>
+      <p class="explanation">Paragraph 12 says: "It's practical to recycle cardboard and some paper, as well as selected metals and plastics. But other materials don't make sense, including food waste and other compostables." So:<br>
+      - metal: selected (some)<br>
+      - food waste: doesn't make sense (none)<br>
+      - cardboard: practical to recycle all (implied)</p>
+      <p class="explanation-zh">第12段：「回收硬紙板和一些紙，以及精選的金屬和塑料是實際可行的。但其他材料，包括食物廢渣和其他可堆肥材料，則沒有意義。」因此：<br>(i) 金屬：只回收選定的 → Some<br>(ii) 食物廢渣：不適合 → None<br>(iii) 硬紙板：可行 → All</p>
+      <div class="passage-ref">[12] "It's practical to recycle cardboard and some paper, as well as selected metals and plastics," he says. "But other materials don't make sense, including food waste and other compostables.</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q15 -->
+      <div class="question-block" id="q15" data-q="15">
+        <div class="question-label">15. What are the two alternatives to recycling mentioned in paragraph 14? Give one advantage of using each. (4 marks)</div>
+        <p>Alternative 1 (i) <input type="text" class="text-input wide" name="q15i"></p>
+        <p>Advantage (ii) <input type="text" class="text-input wide" name="q15ii"></p>
+        <p>Alternative 2 (iii) <input type="text" class="text-input wide" name="q15iii"></p>
+        <p>Advantage (iv) <input type="text" class="text-input wide" name="q15iv"></p>
+
+<div class="inline-solution" id="solution-q15" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">15</span> Alternatives to Recycling <span class="marks-badge">4 marks</span></h3>
+      <div class="answer-text">(i) Landfills (modern well-lined landfills)<br>
+      (ii) Relatively little environmental impact; captured methane can be used to generate electricity<br>
+      (iii) Incinerators (modern incinerators)<br>
+      (iv) Release very few pollutants; can generate clean energy</div>
+      <p class="explanation">Paragraph 14 discusses the two alternatives to recycling that are actually better environmentally than many people think: modern landfills and modern incinerators. Both have advantages over commonly believed: modern lined landfills have little environmental impact and can capture methane for electricity; modern incinerators emit few pollutants and are accepted for clean energy production in Northern Europe and Japan.</p>
+      <p class="explanation-zh">第14段討論了兩種比大眾認為更好的回收替代方案：現代垃圾填埋場和現代焚燒廠。<br>(i) 現代襯層垃圾填埋場 → 環境影響相對很小，而且可以收集甲烷發電。<br>(iii) 現代焚燒廠 → 排放的污染物很少，可以用來生產清潔能源。</p>
+      <div class="passage-ref">[14] Unlike earlier ones, a modern well-lined landfill in a rural area can have relatively little environmental impact. Decomposing garbage releases methane... landfill operators have started capturing it and using it to generate electricity. Modern incinerators, while politically unpopular in the United States, release so few pollutants that they've been widely accepted in the eco-conscious countries of Northern Europe and Japan for generating clean energy.</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q16 -->
+      <div class="question-block" id="q16" data-q="16">
+        <div class="question-label">16. What is ironic about the outcome described in paragraph 15? Use your own words to explain.</div>
+        <input type="text" class="text-input wide" name="q16" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q16" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">16</span> Open Ended <span class="marks-badge">2 marks</span></h3>
+      <div class="answer-text">Suggested answer: Recycling is supposed to be better for the environment, but recycling itself actually creates new environmental problems: extra trucks on road, pollution from processing, bad smells from compost facilities, and pest problems (rats, seagulls). The supposed environmental solution creates new environmental problems.</div>
+      <p class="explanation">The irony is that recycling, which is promoted as environmentally friendly, causes its own environmental complaints and pollution: extra collection trucks, pollution from processing plants, bad odors from compost facilities, and pest problems (rats, seagulls). The supposed environmental solution creates new environmental problems.</p>
+      <p class="explanation-zh">諷刺之處在於：回收本應對環境更好，但實際上回收本身也會帶來環境代價和問題：更多收集車輛、加工污染、堆肥設施惡臭、老鼠和海鷗等蟲害問題。原本號稱環保的方案反而製造了新的環境問題。</p>
+      <div class="passage-ref">[15] Moreover, recycling operations have their own environmental costs, like extra trucks on the road and pollution from recycling operations. Composting facilities around the country have inspired complaints about nauseating odors, swarming rats and defecating seagulls.</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q17 -->
+      <div class="question-block" id="q17" data-q="17">
+        <div class="question-label">17. According to paragraph 16, why might some people be opposed to an increase in recycling?</div>
+        <input type="text" class="text-input wide" name="q17" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q17" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">17</span> Short Answer <span class="marks-badge">2 marks</span></h3>
+      <div class="answer-text">Suggested answer: Because increasing recycling reduces the demand for manufacturing new products, which would hurt mining, drilling and logging industries. Workers in these industries accept the environmental trade-offs that come with those jobs, but more recycling would reduce demand for their products, so they would be worse off economically.</div>
+      <p class="explanation">The main benefit of recycling is that it reduces the need to manufacture new products, which requires extracting raw materials via mining, drilling, and logging. Workers in those industries have accepted the environmental trade-offs of their jobs, but more recycling would reduce demand for their products, so they would lose business/jobs. Therefore they may oppose more recycling.</p>
+      <p class="explanation-zh">增加回收主要好處是減少製造新產品的需求，而製造新產品需要採礦、鑽探和伐木。這些行業的工人已經接受了環境權衡，但增加回收會減少對他們產品的需求，經濟上會受損，因此他們可能反對增加回收。</p>
+      <div class="passage-ref">[16] The environmental benefits of recycling come chiefly from reducing the need to manufacture new products – less mining, drilling and logging. But that's not so appealing to the workers in those industries that have accepted the environmental trade-offs that come with those jobs.</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q18 -->
+      <div class="question-block" id="q18" data-q="18">
+        <div class="question-label">18. According to paragraph 17, what is worth recycling?</div>
+        <input type="text" class="text-input wide" name="q18" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q18" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">18</span> Short Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Suggested answer: Only paper, cardboard and aluminum (in soda cans) — these few materials provide more than 90% of the total greenhouse gas benefits.</div>
+      <p class="explanation">According to EPA estimates, over 90% of the greenhouse gas benefits from recycling come from just three materials: paper, cardboard and aluminum. Everything else combined gives less than 0.2% of America's carbon footprint savings, so it's not worth recycling.</p>
+      <p class="explanation-zh">根據EPA估計，超過90%的溫室氣體減排效益來自三種材料：紙張、硬紙板和鋁。其他所有材料加起來對碳足跡的節省只有0.2%，因此只有這幾種值得回收。</p>
+      <div class="passage-ref">[17] ...virtually all the greenhouse benefits — more than 90 percent — come from just a few materials: paper, cardboard and aluminum in soda cans.</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q19 -->
+      <div class="question-block" id="q19" data-q="19">
+        <div class="question-label">19. Using information from paragraphs 5-12, match each person with one of the quotes below. Choose from A-F and write the letter in the box next to each person. Two of the quotes will NOT be used. (4 marks)<br>
+        <strong>QUOTES</strong><br>
+        A “There is a limit to effective recycling.”<br>
+        B “Cities need to recycle all waste to safeguard the planet’s future.”<br>
+        C “Recycling has a negative impact on the economy.”<br>
+        D “Recycling can cause more pollution.”<br>
+        E “The recycling movement needs more subsidies.”<br>
+        F “It’s more difficult to make money from recycling than people might think.”</div>
+        <div class="options">
+          <p>David Steiner <input type="text" class="text-input short" name="q19a"></p>
+          <p>Chris Goodall <input type="text" class="text-input short" name="q19b"></p>
+          <p>Bill de Blasio <input type="text" class="text-input short" name="q19c"></p>
+          <p>Winston Porter <input type="text" class="text-input short" name="q19d"></p>
+        </div>
+
+<div class="inline-solution" id="solution-q19" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">19</span> Matching <span class="marks-badge">4 marks</span></h3>
+      <div class="answer-text">David Steiner → F<br>
+      Chris Goodall → D<br>
+      Bill de Blasio → B<br>
+      Winston Porter → A</div>
+      <p class="explanation">- David Steiner (Waste Management CEO): "Trying to turn garbage into gold costs a lot more than expected" → this matches F: "It's more difficult to make money from recycling than people might think."<br>
+      - Chris Goodall: if you heat water with coal, recycling can add more carbon to the atmosphere → this matches D: "Recycling can cause more pollution."<br>
+      - Bill de Blasio: "This is the way of the future if we're going to save our earth" and promised zero waste by 2030 → this matches B: "Cities need to recycle all waste to safeguard the planet's future."<br>
+      - Winston Porter: said no more than 35% was worth recycling → so he agreed that "There is a limit to effective recycling" → matches A.<br>
+      E ("needs more subsidies") is not used by any person quoted.</p>
+      <p class="explanation-zh">- David Steiner：「試圖把垃圾變黃金花費比預期大得多」→ 比人們想像更難賺錢 (F)<br>
+      - Chris Goodall：計入加熱水的能源後，回收可能增加大氣碳含量 → 回收可能導致更多污染 (D)<br>
+      - Bill de Blasio：要拯救地球，這是未來之路，承諾2030年零廢物 → 城市需要回收所有廢物保護地球未來 (B)<br>
+      - Winston Porter：說只有35%值得回收，所以有效回收是有限度的 → A</p>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q20 -->
+      <div class="question-block" id="q20" data-q="20">
+        <div class="question-label">20. Do you think recycling is a waste of time? Provide evidence from the text to support your answer.</div>
+        <input type="text" class="text-input wide" name="q20" placeholder="Your answer (open-ended question)"></input>
+
+<div class="inline-solution" id="solution-q20" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">20</span> Open-ended <span class="marks-badge">3 marks</span></h3>
+      <div class="answer-text"><em>(Example answer based closely on the text)</em><br>
+      According to the article, for most materials recycling <strong>is a waste of time</strong>, because: it is more expensive than landfills, and only a tiny handful of materials (paper, cardboard, aluminum) give any significant greenhouse benefit. When you count the extra water and energy used for rinsing bottles, recycling plastic can even increase net carbon emissions. Overall, the article argues that the "myth of recycling" is that it is much more beneficial than it actually is.</div>
+      <p class="explanation">This is an open-ended question. Any answer that correctly uses evidence from the text is acceptable. The article's overall argument is that recycling is much less beneficial than commonly believed, especially when recycling materials beyond the few that give real environmental benefits.</p>
+      <p class="explanation-zh">開放式問題，只要正確引用文中證據即可。文章整體觀點：除了少數幾種材料外，回收大多數材料是浪費時間和金錢，因為它比填埋更昂貴，而且帶來的環境效益極小，甚至可能因為額外用水用電而增加污染。</p>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q21 -->
+      <div class="question-block" id="q21" data-q="21">
+        <div class="question-label">21. Choose the best alternative title for this article.</div>
+        <div class="options">
+          <label><input type="radio" name="q21" value="A"> A. In defence of recycling</label>
+          <label><input type="radio" name="q21" value="B"> B. The pros and cons of recycling</label>
+          <label><input type="radio" name="q21" value="C"> C. Recycling is more rubbish than you think</label>
+          <label><input type="radio" name="q21" value="D"> D. Why cities are recycling less of their rubbish</label>
+        </div>
+
+<div class="inline-solution" id="solution-q21" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">21</span> Main Idea <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Answer: C — Recycling is more rubbish than you think</div>
+      <p class="explanation">The article is called "The Myth of Recycling" and argues that recycling is much less effective, more costly, and more harmful than most people believe. Most recycling is not worth the effort, which matches title C. Option B is wrong because the article is not balanced — it mainly presents the case against widespread recycling, not equal pros and cons.</p>
+      <p class="explanation-zh">文章標題是「回收的神話」，論點是回收比人們想像的效率更低、成本更高、危害更大，大多數回收不值得做。選項C最能體現這種懷疑批評的觀點。B不對因為文章不是平衡地談利弊，主要是批評大規模回收。</p>
+  </div>
+</article>
+</div>
+      </div>
+
+      <h4 class="end-marker">— End of the Test —</h4>
+      <p class="submit-hint">Please Submit to view your score, solution and explanations.</p>
+    </section>
+  </div>
+
+  <footer class="bottom-bar">
+    <div class="palette-section">
+      <span class="palette-label">Question Palette</span>
+      <div class="question-palette" id="questionPalette"></div>
+      <div class="palette-legend">
+        <span class="legend-dot"></span> answered
+      </div>
+    </div>
+    <div class="timer-section" id="timer">00:00</div>
+    <div class="action-buttons">
+      <button class="btn btn-submit" id="btnSubmit">✓ Submit</button>
+      <button class="btn btn-review" id="btnReview">⊞ Review</button>
+      <a class="btn btn-solution" href="solution.html">🔑 Solution</a>
+      <button class="btn btn-reset" id="btnReset">↺ Reset</button>
+    </div>
+  </footer>
+
+  <!-- Submit modal -->
+  <div class="modal-overlay" id="submitModal">
+    <div class="modal">
+      <h3>Are you sure you want to submit?</h3>
+      <p id="submitModalText">You have answered <strong id="answeredCount">0</strong> of 21 questions.</p>
+      <div class="modal-actions">
+        <button class="btn btn-reset" id="btnCancelSubmit">Cancel</button>
+        <button class="btn btn-submit" id="btnConfirmSubmit">Submit and view Answers</button>
+      </div>
+    </div>
+  </div>
+  <!-- Score modal -->
+  <div class="modal-overlay" id="scoreModal">
+    <div class="modal">
+      <h3>Your Results</h3>
+      <div class="score-display">
+        <div class="score-number" id="scoreNumber">0/21</div>
+        <div class="score-label" id="scorePercent">0% correct</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-review" id="btnCloseScore">Review Answers</button>
+        <a class="btn btn-solution" href="solution.html">View Full Solution</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html><script>
+      let vocabHighlightOn = false;
+      const vocabWords = ["recycling companies","assorted plastics","shut down plants","household waste","controversial","food scraps","companies","household","recycling","separate","assorted","confront","probably","plastics","plants","scraps","waste","shut","sort","food","down"];
+
+      function toggleVocabHighlight() {
+          vocabHighlightOn = !vocabHighlightOn;
+          const btn = document.getElementById('toggleVocabHighlight');
+          if (vocabHighlightOn) {
+              btn.textContent = 'kelly生字庫: ON';
+              btn.style.background = '#27ae60';
+              applyVocabHighlight();
+          } else {
+              btn.textContent = 'kelly生字庫: OFF';
+              btn.style.background = '#f39c12';
+              removeVocabHighlight();
+          }
+      }
+      
+            function applyVocabHighlight() {
+          // First clear existing highlights from the whole paragraph HTML, then re-apply
+          const paragraphs = document.querySelectorAll('#passagePanel p.paragraph');
+          paragraphs.forEach(function(para) {
+              // Get current HTML and strip all existing marks
+              let html = para.innerHTML;
+              // Remove all <mark> tags but keep content
+              html = html.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g, '$1');
+              
+              // Add highlights for all vocabulary words
+              vocabWords.forEach(function(word) {
+                  const regex = new RegExp('\b' + escapeRegExp(word) + '\b', 'gi');
+                  html = html.replace(regex, '<mark style="background: rgba(52, 152, 219, 0.3);">$&</mark>');
+              });
+              
+              para.innerHTML = html;
+          });
+      }
+if (node.textContent.trim().length > 0) {
+                      textNodes.push(node);
+                  }
+              }
+              
+              // Process each text node with all vocabulary words
+              textNodes.forEach(function(textNode) {
+                  let html = textNode.textContent;
+                  // Replace longer words first
+                  vocabWords.forEach(function(word) {
+                      const regex = new RegExp('\\b' + escapeRegExp(word) + '\\b', 'gi');
+                      html = html.replace(regex, '<mark style="background: rgba(52, 152, 219, 0.3);">$&</mark>');
+                  });
+                  if (html !== textNode.textContent) {
+                      const span = document.createElement('span');
+                      span.innerHTML = html;
+                      textNode.parentNode.replaceChild(span, textNode);
+                  }
+              });
+          });
+      }
+      
+      function removeVocabHighlight() {
+          const marks = document.querySelectorAll('#passagePanel mark');
+          marks.forEach(function(mark) {
+              // Unwrap: move children out
+              const parent = mark.parentNode;
+              while (mark.firstChild) {
+                  parent.insertBefore(mark.firstChild, mark);
+              }
+              parent.removeChild(mark);
+              parent.normalize();
+          });
+      }
+      
+      function escapeRegExp(string) {
+          return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      }
+      
+      document.getElementById('toggleVocabHighlight').addEventListener('click', toggleVocabHighlight);
+      </script>
+
+
+      <p class="paragraph" data-para="1">
+        <span class="paragraph-num">[1]</span>
+        If you live in the United States, you probably do some form of recycling. It’s likely that you separate paper from plastic and glass and metal. You rinse bottles and cans, and you might put food scraps in a container destined for a composting facility. As you sort everything into the right bins, you probably assume that recycling is helping your community and protecting the environment. But is it? Are you in fact wasting your time?
+      </p>
+      <p class="paragraph" data-para="2">
+        <span class="paragraph-num">[2]</span>
+        In 1996, I wrote an article arguing that the recycling process as we carried it out was wasteful. I presented plenty of evidence that recycling was costly and ineffectual, but its defenders said that it was unfair to rush to judgment. Noting that the modern recycling movement had really just begun a few years earlier, they predicted it would flourish as the industry matured and the public learned how to recycle properly.
+      </p>
+      <p class="paragraph" data-para="3">
+        <span class="paragraph-num">[3]</span>
+        So, what’s happened since then? While it’s true that the recycling message has reached more people than ever, when it comes to the bottom line, both economically and environmentally, not much has changed at all.
+      </p>
+      <p class="paragraph" data-para="4">
+        <span class="paragraph-num">[4]</span>
+        Despite decades of initiatives, it’s still typically more expensive for local governments to recycle household waste than to send it to a landfill. Most recycled materials are exported, and the prices for these materials have plummeted because of lower oil prices and reduced demand for them overseas. The slump has forced some recycling companies to shut plants and cancel plans for new technologies.
+      </p>
+      <p class="paragraph" data-para="5">
+        <span class="paragraph-num">[5]</span>
+        The future for recycling looks even worse. As cities move beyond recycling paper and metals, and into glass, food scraps and assorted plastics, the costs rise sharply while the environmental benefits decline and sometimes vanish. “If you believe recycling is good for the planet and that we need to do more of it, then there’s a crisis to confront,” says David Steiner, the CEO of Waste Management, the largest recycler of household trash in the United States. “Trying to turn garbage into gold costs a lot more than expected. We need to ask ourselves: What is the goal here?”
+      </p>
+      <p class="paragraph" data-para="6">
+        <span class="paragraph-num">[6]</span>
+        Recycling has been relentlessly promoted as a goal in and of itself: a public and private virtue that is indoctrinated in students from kindergarten through university. As a result, otherwise well-informed and educated people have no idea of the relative costs and benefits.
+      </p>
+      <p class="paragraph" data-para="7">
+        <span class="paragraph-num">[7]</span>
+        They probably assume, for instance, that recycling plastic must be helping the planet. They’ve been encouraged by the Environmental Protection Agency (E.P.A.), which assures the public that this results in fewer carbon emissions being released into the atmosphere. But how much difference does it make? Here’s some perspective: To offset the carbon impact of one passenger’s round-trip flight between New York and London, you’d have to recycle roughly 40,000 plastic bottles, assuming you fly economy. If you sit in business- or first-class, it could be more like 100,000.
+      </p>
+      <p class="paragraph" data-para="8">
+        <span class="paragraph-num">[8]</span>
+        Even those statistics might be misleading. Residents are instructed to rinse bottles before putting them in recycling bins, but the E.P.A.’s life-cycle calculation doesn’t take that water into account. That single omission can make a big difference, according to author Chris Goodall. He calculates that if you wash plastic in water that was heated by coal-derived electricity, then the net effect of your recycling could be more carbon in the atmosphere.
+      </p>
+      <p class="paragraph" data-para="9">
+        <span class="paragraph-num">[9]</span>
+        To many public officials, recycling is a question of morality, not cost-benefit analysis. The Mayor of New York, Bill de Blasio, declared that by 2030 the city would no longer send any garbage to landfills. “This is the way of the future if we’re going to save our earth,” he explained while announcing that New York would join other cities in moving toward a “zero waste” policy, which would require an unprecedented level of recycling.
+      </p>
+      <p class="paragraph" data-para="10">
+        <span class="paragraph-num">[10]</span>
+        But while politicians set higher goals, the national rate of recycling has stagnated in recent years. Yes, it’s popular in affluent neighborhoods, but residents of low income areas don’t have the same fervor for sorting garbage in their spare time.
+      </p>
+      <p class="paragraph" data-para="11">
+        <span class="paragraph-num">[11]</span>
+        The national rate of recycling rose during the 1990s to 25 percent, the goal set by an E.P.A. official, Winston Porter. He advised state officials that no more than 35 percent of the nation’s trash was worth recycling, but some ignored him and set goals of 50 percent and higher. Most of those goals were never met and the national rate has been stuck around 34 percent in recent years.
+      </p>
+      <p class="paragraph" data-para="12">
+        <span class="paragraph-num">[12]</span>
+        “It’s practical to recycle cardboard and some paper, as well as selected metals and plastics,” he says. “But other materials don’t make sense, including food waste and other compostables. The zero-waste goal makes no sense at all — it’s very expensive with almost no real environmental benefit.”
+      </p>
+      <p class="paragraph" data-para="13">
+        <span class="paragraph-num">[13]</span>
+        With the economic rationale gone, advocates for recycling have switched to environmental arguments. Researchers calculate that there are indeed such benefits to recycling, but not in the way that many people imagine.
+      </p>
+      <p class="paragraph" data-para="14">
+        <span class="paragraph-num">[14]</span>
+        Most of these benefits do not come from reducing the need for landfills and incinerators. Unlike earlier ones, a modern well-lined landfill in a rural area can have relatively little environmental impact. Decomposing garbage releases methane, a potent greenhouse gas, but landfill operators have started capturing it and using it to generate electricity. Modern incinerators, while politically unpopular in the United States, release so few pollutants that they’ve been widely accepted in the eco-conscious countries of Northern Europe and Japan for generating clean energy.
+      </p>
+      <p class="paragraph" data-para="15">
+        <span class="paragraph-num">[15]</span>
+        Moreover, recycling operations have their own environmental costs, like extra trucks on the road and pollution from recycling operations. Composting facilities around the country have inspired complaints about nauseating odors, swarming rats and defecating seagulls.
+      </p>
+      <p class="paragraph" data-para="16">
+        <span class="paragraph-num">[16]</span>
+        The environmental benefits of recycling come chiefly from reducing the need to manufacture new products – less mining, drilling and logging. But that’s not so appealing to the workers in those industries that have accepted the environmental trade-offs that come with those jobs. Nearly everyone, though, approves of one potential gain from recycling: reduced emissions of greenhouse gases.
+      </p>
+      <p class="paragraph" data-para="17">
+        <span class="paragraph-num">[17]</span>
+        However, according to the E.P.A.’s estimates, virtually all the greenhouse benefits — more than 90 percent — come from just a few materials: paper, cardboard and aluminum in soda cans. Once you exclude these materials, the total annual savings in the United States from recycling everything else — plastics, glass, food, yard trimmings, textiles, rubber, leather — is only two-tenths of 1 percent of America’s carbon footprint.
+      </p>
+    </section>
+
+    <div class="divider" id="divider" title="Drag to resize"></div>
+
+    <section class="panel questions-panel" id="questionsPanel">
+      <p class="instruction">Read Text 1 and answer questions 1–21. (About 42 marks)</p>
+
+      <!-- Q1 -->
+      <div class="question-block" id="q1" data-q="1">
+        <div class="question-label">1. Which of the following recyclables is NOT mentioned in paragraph 1? Put a tick (✓) in the box.</div>
+        <div class="options">
+          <label><input type="checkbox" name="q1" value="GLASS"> GLASS</label>
+          <label><input type="checkbox" name="q1" value="METAL"> METAL</label>
+          <label><input type="checkbox" name="q1" value="E-WASTE"> E-WASTE</label>
+          <label><input type="checkbox" name="q1" value="ORGANIC"> ORGANIC (food scraps)</label>
+          <label><input type="checkbox" name="q1" value="PAPER"> PAPER</label>
+          <label><input type="checkbox" name="q1" value="PLASTIC"> PLASTIC</label>
+        </div>
+
+<div class="inline-solution" id="solution-q1" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">1</span> Identifying information <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Answer: E-WASTE is NOT mentioned</div>
+      <p class="explanation">Paragraph 1 lists: paper, plastic, glass, metal, and food scraps (organic). Electronic waste (e-waste) is not mentioned in the paragraph.</p>
+      <p class="explanation-zh">第一段列出了：紙張、塑料、玻璃、金屬和食物殘渣（有機物），並無提及電子廢物 (E-WASTE)。</p>
+      <div class="passage-ref">[1] ...you separate paper from plastic and glass and metal... you might put food scraps in a container...</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q2 -->
+      <div class="question-block" id="q2" data-q="2">
+        <div class="question-label">2. According to paragraph 1, what benefits are supposedly gained from recycling?</div>
+        <input type="text" class="text-input wide" name="q2" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q2" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">2</span> Short Answer <span class="marks-badge">2 marks</span></h3>
+      <div class="answer-text">Suggested answer: Helping the community and protecting the environment.</div>
+      <p class="explanation">The writer says that when people sort recycling, they "probably assume that recycling is helping your community and protecting the environment." These are the supposed benefits people believe in.</p>
+      <p class="explanation-zh">作者指出，人們分類回收時，通常假定回收「有助社區和保護環境」，這就是人們相信回收帶來的好處。</p>
+      <div class="passage-ref">[1] ...you probably assume that recycling is helping your community and protecting the environment.</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q3 -->
+      <div class="question-block" id="q3" data-q="3">
+        <div class="question-label">3.<br>
+        i) What was the writer’s view on recycling in 1996? (1 mark)<br>
+        ii) Why did his opponents disagree with him? (1 mark)</div>
+        <p>(i) <input type="text" class="text-input wide" name="q3i" placeholder="Your answer"></p>
+        <p>(ii) <input type="text" class="text-input wide" name="q3ii" placeholder="Your answer"></p>
+
+<div class="inline-solution" id="solution-q3" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">3</span> Two-part Short Answer <span class="marks-badge">2 marks</span></h3>
+      <div class="answer-text">(i) He argued that the recycling process as carried out was wasteful, costly and ineffectual.<br>
+      (ii) They said the modern recycling movement had just begun; it would improve as the industry matured and the public learned to recycle properly.</div>
+      <p class="explanation">(i) In 1996 the writer published an article saying recycling was wasteful, costly and not effective.<br>
+      (ii) Critics argued it was too early to judge — recycling was still new and would get better over time.</p>
+      <p class="explanation-zh">(i) 作者在1996年認為當時的回收過程是浪費、昂貴且無效的。<br>(ii) 反對者認為現代回收運動才剛開始，隨著行業成熟和公眾學會正確回收，它會蓬勃發展。</p>
+      <div class="passage-ref">[2] In 1996, I wrote an article arguing that the recycling process as we carried it out was wasteful. I presented plenty of evidence that recycling was costly and ineffectual... they predicted it would flourish as the industry matured and the public learned how to recycle properly.</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q4 -->
+      <div class="question-block" id="q4" data-q="4">
+        <div class="question-label">4. According to paragraphs 2-4, are the following statements True (T), False (F) or Not Given (NG)? (4 marks)</div>
+        <table class="tf-table">
+          <thead>
+            <tr><th>Statement</th><th>T</th><th>F</th><th>NG</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>(i) The writer is more optimistic about the recycling industry than he was in 1996.</td>
+              <td><input type="radio" name="q4i" value="T"></td>
+              <td><input type="radio" name="q4i" value="F"></td>
+              <td><input type="radio" name="q4i" value="NG"></td>
+            </tr>
+            <tr>
+              <td>(ii) Supporters of recycling are disappointed that the industry hasn’t matured.</td>
+              <td><input type="radio" name="q4ii" value="T"></td>
+              <td><input type="radio" name="q4ii" value="F"></td>
+              <td><input type="radio" name="q4ii" value="NG"></td>
+            </tr>
+            <tr>
+              <td>(iii) Sending household waste to landfills is typically more costly than recycling it.</td>
+              <td><input type="radio" name="q4iii" value="T"></td>
+              <td><input type="radio" name="q4iii" value="F"></td>
+              <td><input type="radio" name="q4iii" value="NG"></td>
+            </tr>
+            <tr>
+              <td>(iv) The business of some recycling companies has suffered.</td>
+              <td><input type="radio" name="q4iv" value="T"></td>
+              <td><input type="radio" name="q4iv" value="F"></td>
+              <td><input type="radio" name="q4iv" value="NG"></td>
+            </tr>
+          </tbody>
+        </table>
+
+<div class="inline-solution" id="solution-q4" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">4</span> True / False / Not Given <span class="marks-badge">4 marks</span></h3>
+      <div class="answer-text">(i) F &nbsp; (ii) NG &nbsp; (iii) F &nbsp; (iv) T</div>
+      <p class="explanation">(i) <strong>False</strong> — The writer says "not much has changed at all" and "the future for recycling looks even worse", so he is less optimistic, not more.<br>
+      (ii) <strong>Not Given</strong> — The text does not say whether supporters are disappointed about the lack of maturity; they originally predicted improvement, but the text does not state their current disappointment.<br>
+      (iii) <strong>False</strong> — Paragraph 4 says recycling is "still typically more expensive" than landfills, not the other way around.<br>
+      (iv) <strong>True</strong> — "The slump has forced some recycling companies to shut plants", so business has suffered.</p>
+      <p class="explanation-zh">(i) 錯——作者說「幾乎沒有改變」且「未來更差」，並沒有更樂觀。<br>(ii) 未提及——文中沒有說支持者對行業未成熟感到失望。<br>(iii) 錯——文中說回收比堆填更昂貴，並非堆填比回收貴。<br>(iv) 對——不景氣迫使一些回收公司關閉工廠，業務受損。</p>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q5 -->
+      <div class="question-block" id="q5" data-q="5">
+        <div class="question-label">5. According to paragraph 4, what is in less demand overseas?</div>
+        <input type="text" class="text-input wide" name="q5" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q5" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">5</span> Short Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Suggested answer: Recycled materials</div>
+      <p class="explanation">Paragraph 4 says "Most recycled materials are exported, and the prices for these materials have plummeted because of lower oil prices and reduced demand for them overseas." "Them" refers to recycled materials.</p>
+      <p class="explanation-zh">第四段指出，大多數回收材料出口到海外，但海外對回收材料的需求減少，導致價格暴跌。</p>
+      <div class="passage-ref">[4] Most recycled materials are exported... reduced demand for them overseas.</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q6 -->
+      <div class="question-block" id="q6" data-q="6">
+        <div class="question-label">6. Which definition of 'crisis' is closest to the meaning used in line 22?</div>
+        <div class="options">
+          <label><input type="radio" name="q6" value="A"> A. a time when a difficult or important decision must be made</label>
+          <label><input type="radio" name="q6" value="B"> B. a sudden change in the course of a serious illness, for better or worse</label>
+          <label><input type="radio" name="q6" value="C"> C. an emotionally stressful event or personal tragedy</label>
+          <label><input type="radio" name="q6" value="D"> D. the point, as in a play, at which conflict reaches its highest tension</label>
+        </div>
+
+<div class="inline-solution" id="solution-q6" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">6</span> Vocabulary in Context <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Answer: A</div>
+      <p class="explanation">David Steiner says "If you believe recycling is good for the planet... then there's a crisis to confront... We need to ask ourselves: What is the goal here?" The context implies we face a situation requiring a difficult decision about our goals. This matches option A.</p>
+      <p class="explanation-zh">文中David Steiner說：「如果你相信回收對星球有益...那麼有一場危機需要面對...我們需要問自己：目標是什麼？」這裡指需要做出困難決定的時刻，與選項A含義最接近。</p>
+      <div class="passage-ref">[5] ...then there's a crisis to confront... We need to ask ourselves: What is the goal here?</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q7 -->
+      <div class="question-block" id="q7" data-q="7">
+        <div class="question-label">7. According to paragraph 6, why are people ill-informed about recycling?</div>
+        <input type="text" class="text-input wide" name="q7" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q7" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">7</span> Short Answer <span class="marks-badge">2 marks</span></h3>
+      <div class="answer-text">Suggested answer: Because recycling has been promoted as a virtue starting from kindergarten through university, so people are indoctrinated and don't learn about the actual costs and benefits.</div>
+      <p class="explanation">Paragraph 6 explains that recycling is relentlessly taught as a moral goal/virtue from early schooling onwards. As a result, even well-educated people don't know the real costs and benefits.</p>
+      <p class="explanation-zh">第六段指出，回收從幼稚園到大學都被不遺餘力地宣傳為一種美德，人們從小被灌輸這種觀念，因此即使受過良好教育也不了解實際的成本和收益。</p>
+      <div class="passage-ref">[6] Recycling has been relentlessly promoted as a goal in and of itself: a public and private virtue that is indoctrinated in students from kindergarten through university. As a result... people have no idea of the relative costs and benefits.</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q8 -->
+      <div class="question-block" id="q8" data-q="8">
+        <div class="question-label">8. Complete the following summary using ideas given in paragraphs 7 and 8. Write ONE word for each blank. Answers must be grammatically correct. (5 marks)</div>
+        <p>Recycling does not always lead to a reduction in (i) <input type="text" class="text-input short" name="q8i">.</p>
+        <p>Although the E.P.A. encourages people to (ii) <input type="text" class="text-input short" name="q8ii">,</p>
+        <p>it does not necessarily make much of a (iii) <input type="text" class="text-input short" name="q8iii">.</p>
+        <p>The matter becomes worse if people rinse their recyclables using (iv) <input type="text" class="text-input short" name="q8iv">,</p>
+        <p>and the electricity used to produce that heat comes from a (v) <input type="text" class="text-input short" name="q8v">-burning power station.</p>
+
+<div class="inline-solution" id="solution-q8" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">8</span> Summary Fill-in (ONE word each) <span class="marks-badge">5 marks</span></h3>
+      <div class="answer-text">(i) carbon / emissions / carbon-emissions<br>
+      (ii) recycle / recycle plastic<br>
+      (iii) difference<br>
+      (iv) hot water / heated water<br>
+      (v) coal</div>
+      <p class="explanation">(i) The EPA says recycling reduces "fewer carbon emissions", so the reduction is in carbon/emissions.<br>
+      (ii) EPA encourages recycling/recycling plastic.<br>
+      (iii) The writer asks "But how much difference does it make?" → "make much of a difference".<br>
+      (iv) People rinse bottles in heated/hot water.<br>
+      (v) Water heated by coal-derived electricity → coal-burning power station.</p>
+      <p class="explanation-zh">(i) 環保署說回收減少碳排放，所以這裡填 carbon / emissions。<br>(ii) EPA鼓勵人們回收/回收塑料。<br>(iii) 作者問「這會帶來多大改變」，固定搭配make a difference。<br>(iv) 人們用熱水沖洗瓶子。<br>(v) 熱水由燃煤電廠發電加熱。</p>
+      <div class="passage-ref">[7] ...results in fewer carbon emissions being released... But how much difference does it make? [8] ...if you wash plastic in water that was heated by coal-derived electricity...</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q9 -->
+      <div class="question-block" id="q9" data-q="9">
+        <div class="question-label">9. The writer uses the example of flying to show that recycling…</div>
+        <div class="options">
+          <label><input type="radio" name="q9" value="A"> A. has some benefits.</label>
+          <label><input type="radio" name="q9" value="B"> B. is not very effective.</label>
+          <label><input type="radio" name="q9" value="C"> C. is as bad for the environment as flying.</label>
+          <label><input type="radio" name="q9" value="D"> D. can be effective, depending on which class of airfare.</label>
+        </div>
+
+<div class="inline-solution" id="solution-q9" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">9</span> Multiple Choice <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Answer: B — is not very effective</div>
+      <p class="explanation">The writer says that to offset one round-trip flight from NY to London, you need to recycle 40,000-100,000 plastic bottles. This huge number is used to illustrate that recycling has almost negligible carbon benefit — meaning it's not very effective.</p>
+      <p class="explanation-zh">作者舉例子：要抵消一趟紐約來倫敦飛行的碳排放，需要回收4-10萬個塑料瓶。這個巨大的數字說明回收對減碳的效果微不足道，因此回收並不是很有效。</p>
+      <div class="passage-ref">[7] To offset the carbon impact of one passenger's round-trip flight between New York and London, you'd have to recycle roughly 40,000 plastic bottles, assuming you fly economy.</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q10 -->
+      <div class="question-block" id="q10" data-q="10">
+        <div class="question-label">10. According to paragraph 8, the statistics mentioned in paragraph 7 can be misleading because…</div>
+        <div class="options">
+          <label><input type="radio" name="q10" value="A"> A. some statistics have been overestimated.</label>
+          <label><input type="radio" name="q10" value="B"> B. people are not actually doing what is reported.</label>
+          <label><input type="radio" name="q10" value="C"> C. the statistics haven’t taken into account other facts.</label>
+          <label><input type="radio" name="q10" value="D"> D. there is not enough evidence to draw any conclusions.</label>
+        </div>
+
+<div class="inline-solution" id="solution-q10" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">10</span> Multiple Choice <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Answer: C — the statistics haven’t taken into account other facts</div>
+      <p class="explanation">Paragraph 8 says the E.P.A.'s calculation "doesn't take that water into account" (the water used to rinse the bottles). This means other relevant factors (the extra water and energy used for rinsing) are omitted from the statistics, making them misleading.</p>
+      <p class="explanation-zh">第八段指出，EPA的計算沒有把沖洗瓶子所用的水（以及加熱水所需的能源）考慮在內，統計忽略了其他相關事實，因此可能誤導。</p>
+      <div class="passage-ref">[8] ...the E.P.A.'s life-cycle calculation doesn't take that water into account. That single omission can make a big difference...</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q11 -->
+      <div class="question-block" id="q11" data-q="11">
+        <div class="question-label">11.<br>
+        i) What does the writer think is the reason politicians support a "zero waste" policy (line 44)?<br>
+        ii) To achieve a "zero waste" policy, the levels of recycling would need to be…</div>
+        <p>(i) <input type="text" class="text-input wide" name="q11i" placeholder="Your answer"></p>
+        <p>(ii) 
+          <label><input type="radio" name="q11ii" value="A"> A. reduced to zero.</label>
+          <label><input type="radio" name="q11ii" value="B"> B. modestly reduced.</label>
+          <label><input type="radio" name="q11ii" value="C"> C. slightly increased.</label>
+          <label><input type="radio" name="q11ii" value="D"> D. increased significantly.</label>
+        </p>
+
+<div class="inline-solution" id="solution-q11" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">11</span> Two-part <span class="marks-badge">3 marks</span></h3>
+      <div class="answer-text">(i) Because for politicians, recycling is a moral issue / question of morality, not cost-benefit analysis. They want to appear environmentally friendly to voters.<br>
+      (ii) Answer: D — increased significantly</div>
+      <p class="explanation">(i) Paragraph 9 says "To many public officials, recycling is a question of morality, not cost-benefit analysis." Politicians support it for moral/image reasons, not because it makes economic or environmental sense.<br>
+      (ii) "Zero waste" policy "would require an unprecedented level of recycling" — unprecedented means far higher than current levels, so increased significantly.</p>
+      <p class="explanation-zh">(i) 作者指出，對許多官員來說，回收是道德問題而非成本收益分析，政治家支持它是出於道德形象考慮，討好環保選民。<br>(ii)「零廢物」政策需要「前所未有的回收水平」，前所未有的意思就是比現有水平大幅提高。</p>
+      <div class="passage-ref">[9] To many public officials, recycling is a question of morality, not cost-benefit analysis... which would require an unprecedented level of recycling.</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q12 -->
+      <div class="question-block" id="q12" data-q="12">
+        <div class="question-label">12. According to paragraph 10, who recycles more?</div>
+        <div class="options">
+          <label><input type="radio" name="q12" value="A"> A. the rich</label>
+          <label><input type="radio" name="q12" value="B"> B. the poor</label>
+          <label><input type="radio" name="q12" value="C"> C. people who live in cities</label>
+          <label><input type="radio" name="q12" value="D"> D. people who have more free time</label>
+        </div>
+
+<div class="inline-solution" id="solution-q12" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">12</span> Multiple Choice <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Answer: A — the rich</div>
+      <p class="explanation">Paragraph 10 says: "it's popular in affluent neighborhoods, but residents of low income areas don't have the same fervor..." Affluent means rich/wealthy. So rich people recycle more.</p>
+      <p class="explanation-zh">第10段說：回收在「富裕社區 (affluent neighborhoods)」很流行，但低收入地區居民沒有同樣的熱情。affluent即富裕，所以富人回收更多。</p>
+      <div class="passage-ref">[10] Yes, it's popular in affluent neighborhoods, but residents of low income areas don't have the same fervor for sorting garbage in their spare time.</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q13 -->
+      <div class="question-block" id="q13" data-q="13">
+        <div class="question-label">13. Using the information given in paragraph 11, complete the table with the missing percentages. (4 marks)</div>
+        <table class="tf-table">
+          <tbody>
+            <tr>
+              <td>Current rate of recycling in the U.S.</td>
+              <td>(i) <input type="text" class="text-input short" name="q13i">%</td>
+            </tr>
+            <tr>
+              <td>Recycling target set by the E.P.A.</td>
+              <td>(ii) <input type="text" class="text-input short" name="q13ii">%</td>
+            </tr>
+            <tr>
+              <td>Recycling target set by some state officials</td>
+              <td>(iii) <input type="text" class="text-input short" name="q13iii">% or higher</td>
+            </tr>
+            <tr>
+              <td>Maximum percentage of trash useful to recycle</td>
+              <td>(iv) <input type="text" class="text-input short" name="q13iv">%</td>
+            </tr>
+          </tbody>
+        </table>
+
+<div class="inline-solution" id="solution-q13" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">13</span> Table Fill-in <span class="marks-badge">4 marks</span></h3>
+      <div class="answer-text">(i) 34 &nbsp; (ii) 25 &nbsp; (iii) 50 &nbsp; (iv) 35</div>
+      <p class="explanation">From paragraph 11:<br>
+      - Current rate: "stuck around 34 percent in recent years"<br>
+      - EPA goal: "rose during the 1990s to 25 percent, the goal set by an E.P.A. official"<br>
+      - Some state officials: "some ignored him and set goals of 50 percent and higher"<br>
+      - Maximum useful: "no more than 35 percent of the nation's trash was worth recycling"</p>
+      <p class="explanation-zh">根據第11段：<br>(i) 當前美國全國回收率大約34%<br>(ii) EPA設定的目標是25%<br>(iii) 一些州官員設定50%或更高的目標<br>(iv) 值得回收的垃圾最大比例是35%</p>
+      <div class="passage-ref">[11] ...rose during the 1990s to 25 percent, the goal set by an E.P.A. official... no more than 35 percent... some ignored him and set goals of 50 percent and higher... the national rate has been stuck around 34 percent...</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q14 -->
+      <div class="question-block" id="q14" data-q="14">
+        <div class="question-label">14. According to paragraph 12, what materials are practical to recycle? For each type of material, tick (✓) ‘All’, ‘Some’ or ‘None’. (3 marks)</div>
+        <table class="tf-table">
+          <thead>
+            <tr><th>Material</th><th>All</th><th>Some</th><th>None</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>(i) metal</td>
+              <td><input type="radio" name="q14i" value="All"></td>
+              <td><input type="radio" name="q14i" value="Some"></td>
+              <td><input type="radio" name="q14i" value="None"></td>
+            </tr>
+            <tr>
+              <td>(ii) food waste</td>
+              <td><input type="radio" name="q14ii" value="All"></td>
+              <td><input type="radio" name="q14ii" value="Some"></td>
+              <td><input type="radio" name="q14ii" value="None"></td>
+            </tr>
+            <tr>
+              <td>(iii) cardboard</td>
+              <td><input type="radio" name="q14iii" value="All"></td>
+              <td><input type="radio" name="q14iii" value="Some"></td>
+              <td><input type="radio" name="q14iii" value="None"></td>
+            </tr>
+          </tbody>
+        </table>
+
+<div class="inline-solution" id="solution-q14" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">14</span> Matching <span class="marks-badge">3 marks</span></h3>
+      <div class="answer-text">(i) Some &nbsp; (ii) None &nbsp; (iii) All</div>
+      <p class="explanation">Paragraph 12 says: "It's practical to recycle cardboard and some paper, as well as selected metals and plastics. But other materials don't make sense, including food waste and other compostables." So:<br>
+      - metal: selected (some)<br>
+      - food waste: doesn't make sense (none)<br>
+      - cardboard: practical to recycle all (implied)</p>
+      <p class="explanation-zh">第12段：「回收硬紙板和一些紙，以及精選的金屬和塑料是實際可行的。但其他材料，包括食物廢渣和其他可堆肥材料，則沒有意義。」因此：<br>(i) 金屬：只回收選定的 → Some<br>(ii) 食物廢渣：不適合 → None<br>(iii) 硬紙板：可行 → All</p>
+      <div class="passage-ref">[12] "It's practical to recycle cardboard and some paper, as well as selected metals and plastics," he says. "But other materials don't make sense, including food waste and other compostables.</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q15 -->
+      <div class="question-block" id="q15" data-q="15">
+        <div class="question-label">15. What are the two alternatives to recycling mentioned in paragraph 14? Give one advantage of using each. (4 marks)</div>
+        <p>Alternative 1 (i) <input type="text" class="text-input wide" name="q15i"></p>
+        <p>Advantage (ii) <input type="text" class="text-input wide" name="q15ii"></p>
+        <p>Alternative 2 (iii) <input type="text" class="text-input wide" name="q15iii"></p>
+        <p>Advantage (iv) <input type="text" class="text-input wide" name="q15iv"></p>
+
+<div class="inline-solution" id="solution-q15" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">15</span> Alternatives to Recycling <span class="marks-badge">4 marks</span></h3>
+      <div class="answer-text">(i) Landfills (modern well-lined landfills)<br>
+      (ii) Relatively little environmental impact; captured methane can be used to generate electricity<br>
+      (iii) Incinerators (modern incinerators)<br>
+      (iv) Release very few pollutants; can generate clean energy</div>
+      <p class="explanation">Paragraph 14 discusses the two alternatives to recycling that are actually better environmentally than many people think: modern landfills and modern incinerators. Both have advantages over commonly believed: modern lined landfills have little environmental impact and can capture methane for electricity; modern incinerators emit few pollutants and are accepted for clean energy production in Northern Europe and Japan.</p>
+      <p class="explanation-zh">第14段討論了兩種比大眾認為更好的回收替代方案：現代垃圾填埋場和現代焚燒廠。<br>(i) 現代襯層垃圾填埋場 → 環境影響相對很小，而且可以收集甲烷發電。<br>(iii) 現代焚燒廠 → 排放的污染物很少，可以用來生產清潔能源。</p>
+      <div class="passage-ref">[14] Unlike earlier ones, a modern well-lined landfill in a rural area can have relatively little environmental impact. Decomposing garbage releases methane... landfill operators have started capturing it and using it to generate electricity. Modern incinerators, while politically unpopular in the United States, release so few pollutants that they've been widely accepted in the eco-conscious countries of Northern Europe and Japan for generating clean energy.</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q16 -->
+      <div class="question-block" id="q16" data-q="16">
+        <div class="question-label">16. What is ironic about the outcome described in paragraph 15? Use your own words to explain.</div>
+        <input type="text" class="text-input wide" name="q16" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q16" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">16</span> Open Ended <span class="marks-badge">2 marks</span></h3>
+      <div class="answer-text">Suggested answer: Recycling is supposed to be better for the environment, but recycling itself actually creates new environmental problems: extra trucks on road, pollution from processing, bad smells from compost facilities, and pest problems (rats, seagulls). The supposed environmental solution creates new environmental problems.</div>
+      <p class="explanation">The irony is that recycling, which is promoted as environmentally friendly, causes its own environmental complaints and pollution: extra collection trucks, pollution from processing plants, bad odors from compost facilities, and pest problems (rats, seagulls). The supposed environmental solution creates new environmental problems.</p>
+      <p class="explanation-zh">諷刺之處在於：回收本應對環境更好，但實際上回收本身也會帶來環境代價和問題：更多收集車輛、加工污染、堆肥設施惡臭、老鼠和海鷗等蟲害問題。原本號稱環保的方案反而製造了新的環境問題。</p>
+      <div class="passage-ref">[15] Moreover, recycling operations have their own environmental costs, like extra trucks on the road and pollution from recycling operations. Composting facilities around the country have inspired complaints about nauseating odors, swarming rats and defecating seagulls.</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q17 -->
+      <div class="question-block" id="q17" data-q="17">
+        <div class="question-label">17. According to paragraph 16, why might some people be opposed to an increase in recycling?</div>
+        <input type="text" class="text-input wide" name="q17" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q17" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">17</span> Short Answer <span class="marks-badge">2 marks</span></h3>
+      <div class="answer-text">Suggested answer: Because increasing recycling reduces the demand for manufacturing new products, which would hurt mining, drilling and logging industries. Workers in these industries accept the environmental trade-offs that come with those jobs, but more recycling would reduce demand for their products, so they would be worse off economically.</div>
+      <p class="explanation">The main benefit of recycling is that it reduces the need to manufacture new products, which requires extracting raw materials via mining, drilling, and logging. Workers in those industries have accepted the environmental trade-offs of their jobs, but more recycling would reduce demand for their products, so they would lose business/jobs. Therefore they may oppose more recycling.</p>
+      <p class="explanation-zh">增加回收主要好處是減少製造新產品的需求，而製造新產品需要採礦、鑽探和伐木。這些行業的工人已經接受了環境權衡，但增加回收會減少對他們產品的需求，經濟上會受損，因此他們可能反對增加回收。</p>
+      <div class="passage-ref">[16] The environmental benefits of recycling come chiefly from reducing the need to manufacture new products – less mining, drilling and logging. But that's not so appealing to the workers in those industries that have accepted the environmental trade-offs that come with those jobs.</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q18 -->
+      <div class="question-block" id="q18" data-q="18">
+        <div class="question-label">18. According to paragraph 17, what is worth recycling?</div>
+        <input type="text" class="text-input wide" name="q18" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q18" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">18</span> Short Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Suggested answer: Only paper, cardboard and aluminum (in soda cans) — these few materials provide more than 90% of the total greenhouse gas benefits.</div>
+      <p class="explanation">According to EPA estimates, over 90% of the greenhouse gas benefits from recycling come from just three materials: paper, cardboard and aluminum. Everything else combined gives less than 0.2% of America's carbon footprint savings, so it's not worth recycling.</p>
+      <p class="explanation-zh">根據EPA估計，超過90%的溫室氣體減排效益來自三種材料：紙張、硬紙板和鋁。其他所有材料加起來對碳足跡的節省只有0.2%，因此只有這幾種值得回收。</p>
+      <div class="passage-ref">[17] ...virtually all the greenhouse benefits — more than 90 percent — come from just a few materials: paper, cardboard and aluminum in soda cans.</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q19 -->
+      <div class="question-block" id="q19" data-q="19">
+        <div class="question-label">19. Using information from paragraphs 5-12, match each person with one of the quotes below. Choose from A-F and write the letter in the box next to each person. Two of the quotes will NOT be used. (4 marks)<br>
+        <strong>QUOTES</strong><br>
+        A “There is a limit to effective recycling.”<br>
+        B “Cities need to recycle all waste to safeguard the planet’s future.”<br>
+        C “Recycling has a negative impact on the economy.”<br>
+        D “Recycling can cause more pollution.”<br>
+        E “The recycling movement needs more subsidies.”<br>
+        F “It’s more difficult to make money from recycling than people might think.”</div>
+        <div class="options">
+          <p>David Steiner <input type="text" class="text-input short" name="q19a"></p>
+          <p>Chris Goodall <input type="text" class="text-input short" name="q19b"></p>
+          <p>Bill de Blasio <input type="text" class="text-input short" name="q19c"></p>
+          <p>Winston Porter <input type="text" class="text-input short" name="q19d"></p>
+        </div>
+
+<div class="inline-solution" id="solution-q19" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">19</span> Matching <span class="marks-badge">4 marks</span></h3>
+      <div class="answer-text">David Steiner → F<br>
+      Chris Goodall → D<br>
+      Bill de Blasio → B<br>
+      Winston Porter → A</div>
+      <p class="explanation">- David Steiner (Waste Management CEO): "Trying to turn garbage into gold costs a lot more than expected" → this matches F: "It's more difficult to make money from recycling than people might think."<br>
+      - Chris Goodall: if you heat water with coal, recycling can add more carbon to the atmosphere → this matches D: "Recycling can cause more pollution."<br>
+      - Bill de Blasio: "This is the way of the future if we're going to save our earth" and promised zero waste by 2030 → this matches B: "Cities need to recycle all waste to safeguard the planet's future."<br>
+      - Winston Porter: said no more than 35% was worth recycling → so he agreed that "There is a limit to effective recycling" → matches A.<br>
+      E ("needs more subsidies") is not used by any person quoted.</p>
+      <p class="explanation-zh">- David Steiner：「試圖把垃圾變黃金花費比預期大得多」→ 比人們想像更難賺錢 (F)<br>
+      - Chris Goodall：計入加熱水的能源後，回收可能增加大氣碳含量 → 回收可能導致更多污染 (D)<br>
+      - Bill de Blasio：要拯救地球，這是未來之路，承諾2030年零廢物 → 城市需要回收所有廢物保護地球未來 (B)<br>
+      - Winston Porter：說只有35%值得回收，所以有效回收是有限度的 → A</p>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q20 -->
+      <div class="question-block" id="q20" data-q="20">
+        <div class="question-label">20. Do you think recycling is a waste of time? Provide evidence from the text to support your answer.</div>
+        <input type="text" class="text-input wide" name="q20" placeholder="Your answer (open-ended question)"></input>
+
+<div class="inline-solution" id="solution-q20" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">20</span> Open-ended <span class="marks-badge">3 marks</span></h3>
+      <div class="answer-text"><em>(Example answer based closely on the text)</em><br>
+      According to the article, for most materials recycling <strong>is a waste of time</strong>, because: it is more expensive than landfills, and only a tiny handful of materials (paper, cardboard, aluminum) give any significant greenhouse benefit. When you count the extra water and energy used for rinsing bottles, recycling plastic can even increase net carbon emissions. Overall, the article argues that the "myth of recycling" is that it is much more beneficial than it actually is.</div>
+      <p class="explanation">This is an open-ended question. Any answer that correctly uses evidence from the text is acceptable. The article's overall argument is that recycling is much less beneficial than commonly believed, especially when recycling materials beyond the few that give real environmental benefits.</p>
+      <p class="explanation-zh">開放式問題，只要正確引用文中證據即可。文章整體觀點：除了少數幾種材料外，回收大多數材料是浪費時間和金錢，因為它比填埋更昂貴，而且帶來的環境效益極小，甚至可能因為額外用水用電而增加污染。</p>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q21 -->
+      <div class="question-block" id="q21" data-q="21">
+        <div class="question-label">21. Choose the best alternative title for this article.</div>
+        <div class="options">
+          <label><input type="radio" name="q21" value="A"> A. In defence of recycling</label>
+          <label><input type="radio" name="q21" value="B"> B. The pros and cons of recycling</label>
+          <label><input type="radio" name="q21" value="C"> C. Recycling is more rubbish than you think</label>
+          <label><input type="radio" name="q21" value="D"> D. Why cities are recycling less of their rubbish</label>
+        </div>
+
+<div class="inline-solution" id="solution-q21" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">21</span> Main Idea <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Answer: C — Recycling is more rubbish than you think</div>
+      <p class="explanation">The article is called "The Myth of Recycling" and argues that recycling is much less effective, more costly, and more harmful than most people believe. Most recycling is not worth the effort, which matches title C. Option B is wrong because the article is not balanced — it mainly presents the case against widespread recycling, not equal pros and cons.</p>
+      <p class="explanation-zh">文章標題是「回收的神話」，論點是回收比人們想像的效率更低、成本更高、危害更大，大多數回收不值得做。選項C最能體現這種懷疑批評的觀點。B不對因為文章不是平衡地談利弊，主要是批評大規模回收。</p>
+  </div>
+</article>
+</div>
+      </div>
+
+      <h4 class="end-marker">— End of the Test —</h4>
+      <p class="submit-hint">Please Submit to view your score, solution and explanations.</p>
+    </section>
+  </div>
+
+  <footer class="bottom-bar">
+    <div class="palette-section">
+      <span class="palette-label">Question Palette</span>
+      <div class="question-palette" id="questionPalette"></div>
+      <div class="palette-legend">
+        <span class="legend-dot"></span> answered
+      </div>
+    </div>
+    <div class="timer-section" id="timer">00:00</div>
+    <div class="action-buttons">
+      <button class="btn btn-submit" id="btnSubmit">✓ Submit</button>
+      <button class="btn btn-review" id="btnReview">⊞ Review</button>
+      <a class="btn btn-solution" href="solution.html">🔑 Solution</a>
+      <button class="btn btn-reset" id="btnReset">↺ Reset</button>
+    </div>
+  </footer>
+
+  <!-- Submit modal -->
+  <div class="modal-overlay" id="submitModal">
+    <div class="modal">
+      <h3>Are you sure you want to submit?</h3>
+      <p id="submitModalText">You have answered <strong id="answeredCount">0</strong> of 21 questions.</p>
+      <div class="modal-actions">
+        <button class="btn btn-reset" id="btnCancelSubmit">Cancel</button>
+        <button class="btn btn-submit" id="btnConfirmSubmit">Submit and view Answers</button>
+      </div>
+    </div>
+  </div>
+  <!-- Score modal -->
+  <div class="modal-overlay" id="scoreModal">
+    <div class="modal">
+      <h3>Your Results</h3>
+      <div class="score-display">
+        <div class="score-number" id="scoreNumber">0/21</div>
+        <div class="score-label" id="scorePercent">0% correct</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-review" id="btnCloseScore">Review Answers</button>
+        <a class="btn btn-solution" href="solution.html">View Full Solution</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html><script>
+let vocabHighlightOn = false;
+const vocabWords = ["recycling companies","assorted plastics","shut down plants","household waste","controversial","food scraps","companies","household","recycling","separate","assorted","confront","probably","plastics","plants","scraps","waste","shut","sort","food","down"];
+
+function toggleVocabHighlight() {
+    vocabHighlightOn = !vocabHighlightOn;
+    const btn = document.getElementById('toggleVocabHighlight');
+    if (vocabHighlightOn) {
+        btn.textContent = 'kelly生字庫: ON';
+        btn.style.background = '#27ae60';
+        applyVocabHighlight();
+    } else {
+        btn.textContent = 'kelly生字庫: OFF';
+        btn.style.background = '#f39c12';
+        removeVocabHighlight();
+    }
+}
+
+function applyVocabHighlight() {
+    // Clear all existing highlights first, then re-apply
+    const paragraphs = document.querySelectorAll('#passagePanel p.paragraph');
+    paragraphs.forEach(function(para) {
+        let html = para.innerHTML;
+        // Remove all existing marks
+        html = html.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g, '$1');
+        // Add fresh highlights
+        vocabWords.forEach(function(word) {
+            const regex = new RegExp('\\b' + escapeRegExp(word) + '\\b', 'gi');
+            html = html.replace(regex, '<mark style="background: rgba(52, 152, 219, 0.3);">$&</mark>');
+        });
+        para.innerHTML = html;
+    });
+}
+
+function removeVocabHighlight() {
+    // Remove ALL highlights from all paragraphs
+    const paragraphs = document.querySelectorAll('#passagePanel p.paragraph');
+    paragraphs.forEach(function(para) {
+        let html = para.innerHTML;
+        // Remove all mark tags, keep content
+        html = html.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g, '$1');
+        para.innerHTML = html;
+    });
+}
+
+function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+document.getElementById('toggleVocabHighlight').addEventListener('click', toggleVocabHighlight);
+</script>
+
