@@ -137,6 +137,9 @@ function makeEnglishClickable(text) {
 
 // Parse markdown content - updated format: word (pos) in header
 function parseMarkdown(content) {
+    // Convert HTML entities back to normal characters first (fixes &quot; issue)
+    content = content.replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+    
     const lines = content.split('\n');
     const vocab = [];
     let currentVocab = null;
