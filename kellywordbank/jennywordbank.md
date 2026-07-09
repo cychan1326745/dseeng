@@ -3,26 +3,6 @@
 
 ---
 
-### mass-produced  (adj) <-- Added on 2026-07-09
-文章分類：general
-解釋: 批量生產的；大量生產的
-
-**[深度解析 & 語境應用]**
-英文定義: Produced in large quantities by using machinery in a factory.
-重點記憶點: DSE閱讀中工業、製造業話題常考，表示「大量機器批量生產」，對應手工生產 hand-made。快時尚行業就是mass-produced clothes。
-建議用法: 通常放在名詞前面：mass-produced clothes, mass-produced goods.
-
-B1 / B2 (例句):Fast fashion describes cheap, mass-produced clothes that copy the latest runway trends and flood high-street shops every week. (快時尚就是廉價批量生產的衣服，複製最新伸展台潮流，每周湧入高街商店。)
-詞組搭配 (Collocations): mass-produced clothing, mass-produced goods, mass-produced products
-
-同義詞 (Synonyms): mass-market, quantity-produced
-反義詞 (Antonyms): hand-made, custom-made
-
----
-
-
----
-
 ### boost  (v/n) <-- Added on 2026-07-09
 文章分類：general-vocab
 解釋: 促進；提高；推動；增強
