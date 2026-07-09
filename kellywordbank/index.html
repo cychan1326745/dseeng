@@ -208,11 +208,17 @@
                         <option value="date-asc">按日期 最舊 → 最新</option>
                         <option value="category">按文章分類</option>
                     </select>
-                    <label>篩選:</label>
+                    <label>學習:</label>
                     <select id="filterSelect" onchange="applySort()">
                         <option value="all" selected>所有生字</option>
                         <option value="unlearned">未學會</option>
                         <option value="learned">已學會</option>
+                    </select>
+                    <label>拼寫:</label>
+                    <select id="spellingFilter" onchange="applySort()">
+                        <option value="all" selected>所有生字</option>
+                        <option value="unknown">未識串</option>
+                        <option value="known">識串</option>
                     </select>
                     <button onclick="applySort()">排序/篩選</button>
                     <button onclick="resetSearch()">重置</button>
@@ -745,6 +751,14 @@ function applySort() {
         sorted = sorted.filter(v => !learnedWords.has(v.word));
     }
     
+    // Filter by spelling status
+    const spellingFilterType = document.getElementById('spellingFilter').value;
+    if (spellingFilterType === 'known') {
+        sorted = sorted.filter(v => spellingKnown.has(v.word));
+    } else if (spellingFilterType === 'unknown') {
+        sorted = sorted.filter(v => !spellingKnown.has(v.word));
+    }
+    
     switch(sortType) {
         case 'alpha-asc':
             sorted.sort(function(a, b) { return a.word.localeCompare(b.word); });
@@ -772,6 +786,7 @@ function resetSearch() {
     document.getElementById('searchInput').value = '';
     document.getElementById('sortSelect').value = 'date-desc';
     document.getElementById('filterSelect').value = 'all';
+    document.getElementById('spellingFilter').value = 'all';
     applySort();
 }
 
