@@ -39,3 +39,9 @@
 ---
 ### destined  (adj) <-- Added on 2026-07-09
 ---
+### predicted  (v-ed / adj) <-- Added on 2026-07-09
+---
+### movement  (n) <-- Added on 2026-07-09
+---
+### evidence  (n) <-- Added on 2026-07-09
+---

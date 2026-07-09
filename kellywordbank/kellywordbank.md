@@ -325,3 +325,56 @@ B1 / B2 (例句):Many young people believe they are destined to achieve great su
 反義詞 (Antonyms):accidental, random, unintended.
 
 ---
+---
+
+### predicted  (v-ed / adj) <-- Added on 2026-07-09
+文章分類：general
+解釋: 預測的；預言的
+
+**[深度解析 & 語境應用]**
+英文定義: Something that was predicted was said in advance that it would happen in the future.
+重點記憶點: DSE閱讀中常出現在研究預測、趨勢預測，是predict的過去分詞，也常當形容詞使用。表示「已經被預測的」結果。
+建議用法: 通常放在名詞前面：predicted result, predicted outcome, predicted temperature. 也可以用在被動語態：It was predicted that...
+
+B1 / B2 (例句):It was predicted that global temperatures would rise by 1.5°C by 2050. (據預測，到2050年全球氣溫將上升1.5°C。)
+詞組搭配 (Collocations): predicted result, predicted outcome, predicted value, as predicted
+
+同義詞 (Synonyms): forecast, projected, expected
+反義詞 (Antonyms): unpredicted, unexpected, surprising
+
+
+---
+
+### movement  (n) <-- Added on 2026-07-09
+文章分類：general
+解釋: 運動；移動；活動
+
+**[深度解析 & 語境應用]**
+英文定義: An act of moving the body or a part of the body; a group of people working together to achieve a particular social or political goal.
+重點記憶點: DSE雙重含義：1) 物理移動；2) 社會/政治運動，兩種意思都常考。例如environmental movement 就是「環境保護運動」，是DSE環境議題常見搭配。
+建議用法: 可數名詞指具體運動，不可數泛指移動活動：the environmental movement, a political movement.
+
+B1 / B2 (例句):The environmental movement has successfully pushed for more recycling policies in many countries. (環境保護運動已經成功推動許多國家實行更多回收政策。)
+詞組搭配 (Collocations): social movement, political movement, environmental movement, movement of people
+
+同義詞 (Synonyms): campaign, drive, motion
+反義詞 (Antonyms): stationary, stillness
+
+
+---
+
+### evidence  (n) <-- Added on 2026-07-09
+文章分類：general
+解釋: 證據；證明；憑據
+
+**[深度解析 & 語境應用]**
+英文定義: Facts or information that show that something exists or is true.
+重點記憶點: DSE閱讀必考核心詞，無論是科學研究、論證觀點都會用到，是不可數名詞，不要加a或s。
+建議用法: 不可數：there is evidence that..., provide evidence for..., empirical evidence.
+
+B1 / B2 (例句):There is strong evidence that human activities are causing climate change. (有強力證據顯示人類活動正在導致氣候變化。)
+詞組搭配 (Collocations): strong evidence, empirical evidence, scientific evidence, evidence suggests that
+
+同義詞 (Synonyms): proof, data, confirmation
+反義詞 (Antonyms): disproof, counterevidence
+
