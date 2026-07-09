@@ -8,3 +8,11 @@
 ---
 ### invisible  (adj) <-- Added on 2026-07-09
 ---
+### business  (n) <-- Added on 2026-07-09
+---
+### avoid  (v) <-- Added on 2026-07-09
+---
+### decades  (n (plural)) <-- Added on 2026-07-09
+---
+### competitors  (n (plural)) <-- Added on 2026-07-09
+---
