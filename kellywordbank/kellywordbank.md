@@ -240,3 +240,20 @@ B1 / B2 (例句):In the age of social media, many people only get snippets of in
 反義詞 (Antonyms):full information, complete data.
 
 ---
+
+### metal  (n / adj) <-- Added on 2026-07-09
+文章分類：environmental-issues
+解釋: 金屬；金屬製品 (n)；金屬製的 (adj)
+
+**[深度解析 & 語境應用]**
+英文定義: A type of solid chemical substance that is usually hard, shiny, and can conduct heat and electricity. (一種固態化學物質，通常堅硬、有光澤，能導熱導電。)
+重點記憶點: DSE環境議題中談回收、電子垃圾、水污染時常考，常見搭配 heavy metals 就是「重金屬」，是工業污染的重要考點。
+建議用法: 不可數指金屬材料，可數指一種金屬；形容詞修飾名詞如 metal products。
+
+B1 / B2 (例句):Recycling metal reduces the need to mine new raw materials and saves large amounts of energy. (回收金屬減少開採新材料的需求，並節省大量能源。)
+詞組搭配 (Collocations): *heavy metals*, *recycle metal*, *metal waste*, *metal products*.
+
+同義詞 (Synonyms):-
+反義詞 (Antonyms):-
+
+---
