@@ -794,10 +794,10 @@ function resetSearch() {
 function generateAlphabetIndex() {
     const container = document.getElementById('alphabetIndex');
     const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    let html = '<button onclick="filterByAlphabet(\'\')" style="margin: 3px; padding: 6px 0; font-size: 0.95em; border-radius: 4px; background: #3498db; color: white; width: 40px; text-align: center;">全部</button>';
+    let html = '<button onclick="filterByAlphabet(\'\')" style="margin: 3px; padding: 6px 0; font-size: 0.95em; border-radius: 4px; background: #3498db; color: white; width: 40px; height: 32px; text-align: center; line-height: 1;">全部</button>';
     for (let i = 0; i < alphabet.length; i++) {
         const letter = alphabet[i];
-        html += `<button onclick="filterByAlphabet('${letter}')" style="margin: 3px; padding: 6px 0; font-size: 0.95em; border-radius: 4px; background: #3498db; color: white; width: 30px; text-align: center;">${letter}</button>`;
+        html += `<button onclick="filterByAlphabet('${letter}')" style="margin: 3px; padding: 6px 0; font-size: 0.95em; border-radius: 4px; background: #3498db; color: white; width: 30px; height: 32px; text-align: center; line-height: 1;">${letter}</button>`;
     }
     container.innerHTML = html;
 }
