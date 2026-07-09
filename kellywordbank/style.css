@@ -332,26 +332,15 @@ button:hover {
     }
 }
 
-@media (max-width: 576px) {
-    #speechToggle {
-        position: static;
+@media (max-width: 768px) {
+    header {
+        display: block;
+    }
+    .header-buttons {
         margin-top: 16px;
-        display: inline-block;
+        justify-content: center;
     }
     header h1 {
-        padding-right: 0;
         font-size: 1.6em;
-    }
-    .container {
-        padding: 16px 12px;
-    }
-    .vocab-card {
-        padding: 18px 16px;
-    }
-    .word-title {
-        font-size: 1.8em;
-    }
-    .controls {
-        padding: 16px;
     }
 }
