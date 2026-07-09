@@ -142,9 +142,31 @@ document.addEventListener('DOMContentLoaded', function(){
       </div>
       <script>
       let vocabHighlightOn = false;
-      let vocabWords = [];
+      // Static fallback: embed all words directly so it always works
+      let vocabWords = [
+        "controversial",
+        "probably",
+        "food scraps",
+        "sort",
+        "separate",
+        "household waste",
+        "shut down plants",
+        "confront",
+        "recycling companies",
+        "assorted plastics",
+        "struggle",
+        "unfortunately",
+        "appeal",
+        "snippets of information",
+        "metal",
+        "achieve",
+        "abandon",
+        "protecting",
+        "destined"
+      ];
+      vocabWords.sort((a, b) => b.length - a.length); // Sort by length descending
 
-      // Auto-load vocabulary from kellywordbank-single.md on page load
+      // Auto-load vocabulary from kellywordbank-single.md on page load (update to latest)
       async function loadVocab() {
           try {
               // Add cache-bust every time to get latest version
@@ -153,21 +175,22 @@ document.addEventListener('DOMContentLoaded', function(){
               const text = await response.text();
               // Extract all words from lines starting with ###
               const lines = text.split('\n');
-              vocabWords = lines
+              const loadedWords = lines
                   .filter(line => line.startsWith('### '))
                   .map(line => {
                       // Extract the word part: "### word  (pos)... → "word"
                       const match = line.match(/^###\s+([^(]+)/);
                       return match ? match[1].trim() : null;
                   })
-                  .filter(word => word !== null)
-                  // Sort by length descending so longer phrases match first
-                  .sort((a, b) => b.length - a.length);
-              console.log('Loaded vocab:', vocabWords.length + ' words from kellywordbank-single.md', vocabWords);
+                  .filter(word => word !== null);
+              if (loadedWords.length > 0) {
+                  vocabWords = loadedWords;
+                  vocabWords.sort((a, b) => b.length - a.length);
+                  console.log('Loaded updated vocab:', vocabWords.length + ' words from kellywordbank-single.md', vocabWords);
+              }
           } catch (err) {
-              console.error('Failed to load vocabulary:', err);
-              // Fallback to some default words
-              vocabWords = ["recycling companies","assorted plastics","shut down plants","household waste","controversial","food scraps","protecting","destined"];
+              console.error('Failed to load updated vocabulary, using embedded list:', err);
+              console.log('Using embedded vocab:', vocabWords.length + ' words', vocabWords);
           }
       }
 
