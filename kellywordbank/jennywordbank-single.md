@@ -1,11 +1,6 @@
 # 📚 DSE 英文生字簿 (Vocabulary Bank)
 > 按標籤分類搜索 · 日期跟蹤積累 · 出處便於還原語境
 
-
-### probably  (adj) <-- Added on 2026-07-09
----
-
-
 ### boost  (v/n) <-- Added on 2026-07-09
 ---
 ### crisis  (n) <-- Added on 2026-07-09
