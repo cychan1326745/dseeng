@@ -20,361 +20,120 @@ B1 / B2 (例句):The government's controversial decision to cut down century-old
 
 ---
 
-### probably  (adv) <-- Added on 2026-07-08
-文章分類：environmental-issues
-解釋: 很可能；大概
+---
+
+### contract  (n/v) <-- Added on 2026-07-09 ✅
+文章分類：general-vocab
+解釋: 合同；契約；收縮；訂立合同
 
 **[深度解析 & 語境應用]**
-英文定義: Used to say that something is likely to be true or likely to happen. (用於表示某事很可能真實或發生。)
-重點記憶點: 在閱讀中常出現表示推測，在寫作中可以用來表達不太確定的結論，比maybe更正式。
-建議用法: 放在句子中間修飾動詞，或句首表示推測。
+英文定義: A written agreement between parties; or to become smaller.
+重點記憶點: 作名詞=法律合同，作動詞=收縮、縮小。
 
-B1 / B2 (例句):Food scraps will probably account for 30% of household waste in this city. (食物殘渣很可能佔了這個城市生活垃圾的30%。)
-詞組搭配 (Collocations): probably true, probably happen, probably correct.
-
-同義詞 (Synonyms):Perhaps, possibly, likely.
-反義詞 (Antonyms):Definitely, certainly, improbably.
+B1 / B2 (例句):The company signed a new contract with the supplier.
+詞組搭配 (Collocations): *sign a contract*, *breach of contract*, *contract out*
 
 ---
 
-### food scraps  (n) <-- Added on 2026-07-08
-文章分類：environmental-issues
-解釋: 食物殘渣；廚餘
+### create  (v) <-- Added on 2026-07-09 ✅
+文章分類：general-vocab
+解釋: 創造；創建；產生
 
 **[深度解析 & 語境應用]**
-英文定義: Small pieces of food that are left after cooking or eating. 烹調或進食後剩下的食物小塊。
-重點記憶點: 這是環境議題中常見詞彙，對應中文「廚餘」，DSE閱讀近年常考垃圾分類話題。
-建議用法: 永遠用複數形式 food scraps。
+英文定義: To make something new exist or happen.
+重點記憶點: 基礎核心詞，DSE經常出現。
 
-B1 / B2 (例句):The city council encourages people to recycle food scraps into compost. (市議會鼓勵市民將食物殘渣回收做成堆肥。)
-詞組搭配 (Collocations): recycle food scraps, food scraps recycling, collect food scraps.
-
-同義詞 (Synonyms):Food waste, kitchen waste.
-反義詞 (Antonyms):-
+B1 / B2 (例句):The artist created a beautiful painting for the exhibition.
+詞組搭配 (Collocations): *create opportunities*, *create a new product*, *create jobs*
 
 ---
 
-### sort  (v / n) <-- Added on 2026-07-08
-文章分類：environmental-issues
-解釋: 分類；整理 (v)；種類 (n)
+### cultivate  (v) <-- Added on 2026-07-09 ✅
+文章分類：general-vocab
+解釋: 耕種；培養(興趣/能力)；發展
 
 **[深度解析 & 語境應用]**
-英文定義: (v) To separate things into different groups according to type. 按類型把東西分開到不同組別。
-重點記憶點: 在垃圾分類話題中，sort 就是「分類」的意思，動詞名詞同形，DSE常考熟字新義。
-建議用法: sort waste 就是「分垃圾」，sort out 是短詞表示「整理清楚」。
+英文定義: To prepare land and grow crops; to develop a skill or relationship.
+重點記憶點: 除了農業含義，常考"培養能力、友誼"。
 
-B1 / B2 (例句):We need to sort our rubbish into different bins before collection. (我們需要在收集前把垃圾分到不同箱子。)
-詞組搭配 (Collocations): sort waste, sort into groups, sort out, a sort of.
-
-同義詞 (Synonyms):classify, arrange, separate.
-反義詞 (Antonyms):mix, combine.
+B1 / B2 (例句):She cultivates a love of reading in her students.
+詞組搭配 (Collocations): *cultivate a habit*, *cultivate land*, *cultivate relationships*
 
 ---
 
-### separate  (v / adj) <-- Added on 2026-07-08
-文章分類：environmental-issues
-解釋: 分開；分離 (v)；分開的 (adj)
+### demonstrate  (v) <-- Added on 2026-07-09 ✅
+文章分類：academic-vocab
+解釋: 示範；證明；示威
 
 **[深度解析 & 語境應用]**
-英文定義: (v) To divide something into parts or groups; to keep things apart from each other. 把東西分割成部分或組別；讓東西互相分開。
-重點記憶點: 和 sort 近義，但 separate 更強調「 physically 分開」的動作，在垃圾分類文章中非常高频。
-建議用法: 動詞讀 /ˈsepəreɪt/，形容詞讀 /ˈsepərət/，發音不同。
+英文定義: To show clearly by giving proof or example; to protest publicly.
+重點記憶點: DSE閱讀常見三種含義：證明、示範、遊行示威。
 
-B1 / B2 (例句):The local government asks residents to separate recyclable waste from general waste. (地方政府要求居民將可回收垃圾與一般垃圾分開。)
-詞組搭配 (Collocations): separate A from B, separate into, separate waste.
-
-同義詞 (Synonyms):divide, split, sort.
-反義詞 (Antonyms):combine, join, mix.
+B1 / B2 (例句):The teacher demonstrated the experiment to the class.
+詞組搭配 (Collocations): *demonstrate against*, *demonstrate how*, *demonstrate ability*
 
 ---
 
-### household waste  (n) <-- Added on 2026-07-09
-文章分類：environmental-issues
-解釋: 生活垃圾；家居廢物
+### devote  (v) <-- Added on 2026-07-09 ✅
+文章分類：general-vocab
+解釋: 奉獻；致力於；專心
 
 **[深度解析 & 語境應用]**
-英文定義: Waste material produced by people living in houses and homes. 家庭住宅產生的廢棄物。
-重點記憶點: DSE環境議題核心詞彙，近年幾乎每次考垃圾處理、回收議題都會出現，必須熟記。
-建議用法: 固定搭配，不可數名詞，永遠用單數形式 household waste。
+英文定義: To give all your time, effort or love to something or someone.
+重點記憶點: 固定搭配 *devote ... to* (to 是介詞，後接動名詞 doing)。
 
-B1 / B2 (例句):The city government is planning to introduce a tax on household waste to reduce landfill usage. (市政府計劃對生活垃圾徵稅以減少堆填區使用。)
-詞組搭配 (Collocations): reduce household waste, sort household waste, household waste recycling, disposal of household waste.
-
-同義詞 (Synonyms):domestic waste, residential waste.
-反義詞 (Antonyms):industrial waste, commercial waste.
+B1 / B2 (例句):He devotes most of his free time to reading books.
+詞組搭配 (Collocations): *devote to*, *devote oneself to*, *devote time to*
 
 ---
 
-### shut down plants  (phrasal) <-- Added on 2026-07-09
-文章分類：environmental-issues
-解釋: 關閉工廠；停運發電廠
+### display  (v/n) <-- Added on 2026-07-09 ✅
+文章分類：general-vocab
+解釋: 展示；顯示；陳列
 
 **[深度解析 & 語境應用]**
-英文定義: To close a factory or power station permanently or for a long period. 永久或長期關閉工廠/發電廠。
-重點記憶點: 在能源、環境議題中，plants 常指「發電廠」或「工廠」，不是「植物」，DSE常考這種熟字新義。
-建議用法: 動詞短語，shut 是過去式/過去分詞，主動用法: The government decided to shut down old coal plants.
+英文定義: To clearly show a feeling, quality or ability; to put something where people can see it.
+重點記憶點: 可動可名，替換show的正式用詞。
 
-B1 / B2 (例句):To cut carbon emissions, the country has agreed to shut down all its coal-fired power plants by 2035. (為了減少碳排放，該國同意在2035年前關閉所有燃煤發電廠。)
-詞組搭配 (Collocations): shut down coal plants, shut down old plants, permanently shut down plants.
-
-同義詞 (Synonyms):close factories, decommission power plants.
-反義詞 (Antonyms):open plants, commission new plants.
+B1 / B2 (例句):The gallery displayed the artist's latest works.
+詞組搭配 (Collocations): *on display*, *display a sign*, *display emotion*
 
 ---
 
-### confront  (v) <-- Added on 2026-07-09
-文章分類：social-issues
-解釋: 面對；應對；對質
+### distort  (v) <-- Added on 2026-07-09 ✅
+文章分類：academic-vocab
+解釋: 歪曲；扭曲；使變形
 
 **[深度解析 & 語境應用]**
-英文定義: To deal with a difficult problem or situation directly and bravely. 直接勇敢地處理困難問題或處境。
-重點記憶點: DSE寫作高頻詞，比 deal with 更正式，在討論社會問題時使用可以提升寫作層次，常見搭配 confront a problem/challenge.
-建議用法: 後面直接接賓語: confront the issue, confront climate change.
+英文定義: To pull or twist something out of its original shape; to give a false meaning.
+重點記憶點: 媒體議題常考：distort the truth 歪曲事實。
 
-B1 / B2 (例句):We must confront the problem of air pollution now before it becomes irreversible. (我們必須現在就面對空氣污染問題，以免它變得不可逆轉。)
-詞組搭配 (Collocations): confront a problem, confront a challenge, confront climate change, confront the truth.
-
-同義詞 (Synonyms):face, tackle, address.
-反義詞 (Antonyms):avoid, evade, ignore.
+B1 / B2 (例句):The newspaper report distorted the facts.
+詞組搭配 (Collocations): *distort the truth*, *distort image*, *distort facts*
 
 ---
 
-### recycling companies  (n) <-- Added on 2026-07-09
-文章分類：environmental-issues
-解釋: 回收公司；資源回收企業
+### drafy  (adj) <-- Added on 2026-07-09 ✅
+文章分類：general-vocab
+解釋: 有穿堂風的；通風的 (drafty 美式拼寫)
 
 **[深度解析 & 語境應用]**
-英文定義: Businesses that collect and process waste materials so that they can be used again. 收集處理廢棄物以便重新利用的企業。
-重點記憶點: DSE垃圾回收、循環經濟話題高頻詞，recycling 這裡是名詞作形容詞修飾 companies，永遠用複數。
-建議用法: 做主語或賓語，談及私營機構參與垃圾回收時使用。
+英文定義: A room that is drafty has cold wind coming in through cracks.
+重點記憶點: 生活場景詞，形容房間漏風。
 
-B1 / B2 (例句):Many recycling companies struggle to make a profit because of the low price of recycled plastic. (因為再生塑料價格低廉，許多回收公司難以盈利。)
-詞組搭配 (Collocations): private recycling companies, local recycling companies, licensed recycling companies.
-
-同義詞 (Synonyms):waste recycling firms, recycling businesses.
-反義詞 (Antonyms):waste disposal companies, landfill operators.
+B1 / B2 (例句):The old house was very drafy in winter.
 
 ---
 
-### assorted plastics  (n) <-- Added on 2026-07-09
-文章分類：environmental-issues
-解釋: 各式各樣的塑料；混合塑料
+### eliminate  (v) <-- Added on 2026-07-09 ✅
+文章分類：academic-vocab
+解釋: 消除；排除；消滅
 
 **[深度解析 & 語境應用]**
-英文定義: Different types of plastic mixed together. 不同種類的塑料混合在一起。
-重點記憶點: DSE塑料回收話題常考，assorted 表示「各種各樣混合在一起」，混合塑料是回收業的一大難題，閱讀中常出現。
-建議用法: 永遠用複數，在討論垃圾分類難度時使用。
+英文定義: To completely remove or get rid of something.
+重點記憶點: DSE常見：eliminate poverty/poverty eliminated 消除貧困。
 
-B1 / B2 (例句):Sorting assorted plastics into different types is one of the biggest challenges for the recycling industry. (把混合塑料分揀成不同種類是回收業最大挑戰之一。)
-詞組搭配 (Collocations): sorted assorted plastics, processing assorted plastics, mixed assorted plastics.
-
-同義詞 (Synonyms):mixed plastics, various plastics.
-反義詞 (Antonyms):sorted plastics, separated plastics.
+B1 / B2 (例句):The policy aims to eliminate poverty in the city.
+詞組搭配 (Collocations): *eliminate poverty*, *eliminate risk*, *eliminate error*
 
 ---
-
-### struggle  (v / n) <-- Added on 2026-07-09
-文章分類：social-issues
-解釋: 掙扎；奮鬥；難以進行 (v)；鬥爭；掙扎 (n)
-
-**[深度解析 & 語境應用]**
-英文定義: (v) To try very hard to do something difficult, especially when this involves fighting against problems. (非常努力去做困難的事，尤其涉及對抗問題。)
-重點記憶點: DSE閱讀和寫作高頻詞，常用於形容機構、個人在困境中難以維持運作或生活，在社會議題文章中非常常見。
-建議用法: 不及物動詞，後接介系詞 to/for/with，*struggle to do something* 就是「難以做某事」。
-
-B1 / B2 (例句):Many low-income families struggle to afford rising housing prices in Hong Kong. (許多低收入家庭難以負擔香港不斷上漲的房價。)
-詞組搭配 (Collocations): *struggle to survive*, *struggle with poverty*, *struggle for change*, economic struggle.
-
-同義詞 (Synonyms):fight, strive, contend.
-反義詞 (Antonyms):succeed, thrive, flourish.
-
----
-
-### unfortunately  (adv) <-- Added on 2026-07-09
-文章分類：general
-解釋: 不幸地；遺憾地；可惜
-
-**[深度解析 & 語境應用]**
-英文定義: Used to say that something is sad, disappointing, or unfortunate. (用來表示某事令人傷心、失望或不幸。)
-重點記憶點: DSE寫作中用來轉折，表達負面結果，比 but 更正式，能增加文章邏輯性，通常放在句首。
-建議用法: 句首修飾整個句子，引出不幸或令人失望的結果。
-
-B1 / B2 (例句):Unfortunately, the government's new policy has not solved the housing problem for young people. (不幸的是，政府的新政策並未解決年輕人的房屋問題。)
-詞組搭配 (Collocations): unfortunately for..., unfortunately, however,...
-
-同義詞 (Synonyms):regrettably, sadly, unluckily.
-反義詞 (Antonyms):fortunately, luckily, thankfully.
-
----
-
-### appeal  (v / n) <-- Added on 2026-07-09
-文章分類：social-issues
-解釋: 吸引；呼籲；訴求；上訴
-
-**[深度解析 & 語境應用]**
-英文定義: (v) To attract or interest someone; to make a serious request for help or action. (吸引某人興趣；作出嚴肅的求助或行動請求。)
-重點記憶點: DSE常考熟字新義，除了法律上「上訴」的意思，更多考「吸引；引起興趣」或「呼籲」的用法，*appeal to somebody* 是固定搭配，意思是「對某人有吸引力」。
-建議用法: DSE閱讀中常見 *the idea appeals to...*，寫作中可用來表示呼籲公眾採取行動。
-
-B1 / B2 (例句):The idea of living a simple life away from the city appeals to many young people these days. (遠離城市過簡單生活的想法近年吸引了很多年輕人。)
-詞組搭配 (Collocations): *appeal to the public*, *appeal for help*, *appeal to emotions*, popular appeal.
-
-同義詞 (Synonyms):attract, draw, call on.
-反義詞 (Antonyms):repel, deter, discourage.
-
----
-
-### snippets of information  (n phrase) <-- Added on 2026-07-09
-文章分類：media
-解釋: 零星信息；片段信息
-
-**[深度解析 & 語境應用]**
-英文定義: Small pieces of information that are not complete or full. 不完整的小片信息。
-重點記憶點: DSE閱讀中談及資訊爆炸、假新聞話題常見詞，snippet本義是「小片」，表示人們在社交媒體只得到碎片化的資訊，近年越來越常考。
-建議用法: 固定搭配，總是用複數 *snippets of information*。
-
-B1 / B2 (例句):In the age of social media, many people only get snippets of information instead of reading full news reports. (在社交媒體時代，許多人只獲得零星信息，而不閱讀完整新聞報導。)
-詞組搭配 (Collocations): *snippets of information*, random snippets, short snippets.
-
-同義詞 (Synonyms):bits of information, fragments of information.
-反義詞 (Antonyms):full information, complete data.
-
----
-
-### metal  (n / adj) <-- Added on 2026-07-09
-文章分類：environmental-issues
-解釋: 金屬；金屬製品 (n)；金屬製的 (adj)
-
-**[深度解析 & 語境應用]**
-英文定義: A type of solid chemical substance that is usually hard, shiny, and can conduct heat and electricity. (一種固態化學物質，通常堅硬、有光澤，能導熱導電。)
-重點記憶點: DSE環境議題中談回收、電子垃圾、水污染時常考，常見搭配 heavy metals 就是「重金屬」，是工業污染的重要考點。
-建議用法: 不可數指金屬材料，可數指一種金屬；形容詞修飾名詞如 metal products。
-
-B1 / B2 (例句):Recycling metal reduces the need to mine new raw materials and saves large amounts of energy. (回收金屬減少開採新材料的需求，並節省大量能源。)
-詞組搭配 (Collocations): *heavy metals*, *recycle metal*, *metal waste*, *metal products*.
-
-同義詞 (Synonyms):-
-反義詞 (Antonyms):-
-
----
-
-### achieve  (v) <-- Added on 2026-07-09
-文章分類：general
-解釋: 實現；達成；獲得
-
-**[深度解析 & 語境應用]**
-英文定義: To successfully complete something or get a good result that you have been working towards. (成功完成你一直努力追求的事並獲得好結果。)
-重點記憶點: DSE寫作高頻核心動詞，無論是討論個人目標、社會發展還是政策成效都能用，固定搭配 achieve a goal/aim/objective。
-建議用法: 後面直接接名詞作賓語，名詞形式是 achievement，DSE寫作常一起考。
-
-B1 / B2 (例句):Many young people work hard in order to achieve their dream of owning a home in Hong Kong. (許多年輕人努力奮鬥，為了實現在香港置業的夢想。)
-詞組搭配 (Collocations): *achieve a goal*, *achieve success*, *achieve an objective*, *achieve results*.
-
-同義詞 (Synonyms):attain, accomplish, reach.
-反義詞 (Antonyms):fail, miss, lose.
-
----
-
-### abandon  (v) <-- Added on 2026-07-09
-文章分類：general
-解釋: 放棄；遺棄；離開
-
-**[深度解析 & 語境應用]**
-英文定義: To stop doing something before you have finished it, usually because it is too difficult. (因為太困難而在完成前停止做某事。)
-重點記憶點: DSE閱讀和寫作都常考，比 give up 更正式，表示完全放棄計劃、嘗試，也可以指遺棄人或地方。
-建議用法: 後面直接接賓語：abandon the plan, abandon the attempt，名詞形式是 abandonment。
-
-B1 / B2 (例句):The government had to abandon the controversial construction project because of strong public opposition. (由於公眾強烈反對，政府不得不放棄這個具爭議的建設計劃。)
-詞組搭配 (Collocations): *abandon a project*, *abandon a plan*, *abandon an attempt*, *abandon ship*.
-
-同義詞 (Synonyms):give up, desert, quit.
-反義詞 (Antonyms):continue, keep, maintain.
-
----
-
-### protecting  (v-ing / gerund) <-- Added on 2026-07-09
-文章分類：environmental-issues
-解釋: 保護；防護（動詞protect的現在分詞/動名詞）
-
-**[深度解析 & 語境應用]**
-英文定義: Keeping someone or something safe from harm, damage, or illness. (使人或物免於傷害、損壞或疾病。)
-重點記憶點: DSE環境議題最核心詞彙之一，幾乎每次考環境保護都一定出現，當名詞用（動名詞），搭配 very important for protecting the environment。
-建議用法: 放在介系詞後面當動名詞，如: focus on protecting, aim at protecting。
-
-B1 / B2 (例句):The government has introduced new laws aimed at protecting endangered species from extinction. (政府出台了新法律，旨在保護瀕危物種免於滅絕。)
-詞組搭配 (Collocations): *protecting the environment*, *protecting endangered species*, *protecting natural habitats*, worth protecting.
-
-同義詞 (Synonyms):safeguarding, preserving, conserving.
-反義詞 (Antonyms):destroying, harming, endangering.
-
----
-
-### destined  (adj) <-- Added on 2026-07-09
-文章分類：general
-解釋: 命中註定的；註定會發生的；前往
-
-**[深度解析 & 語境應用]**
-英文定義: Something that is certain to happen and cannot be changed or controlled. (某事一定會發生，無法改變或控制。)
-重點記憶點: DSE閱讀中常考，形容人或事「註定」會有某個結果，固定搭配 be destined for / be destined to do。
-建議用法: 形容命運安排，也可以指交通工具「前往」某個目的地，如: the ship is destined for Hong Kong。
-
-B1 / B2 (例句):Many young people believe they are destined to achieve great success in their careers. (許多年輕人相信他們註定會在事業上取得巨大成功。)
-詞組搭配 (Collocations): *be destined to*, *be destined for*, destined to succeed.
-
-同義詞 (Synonyms):fated, predetermined, meant to be.
-反義詞 (Antonyms):accidental, random, unintended.
-
----
----
-
-### predicted  (v-ed / adj) <-- Added on 2026-07-09
-文章分類：general
-解釋: 預測的；預言的
-
-**[深度解析 & 語境應用]**
-英文定義: Something that was predicted was said in advance that it would happen in the future.
-重點記憶點: DSE閱讀中常出現在研究預測、趨勢預測，是predict的過去分詞，也常當形容詞使用。表示「已經被預測的」結果。
-建議用法: 通常放在名詞前面：predicted result, predicted outcome, predicted temperature. 也可以用在被動語態：It was predicted that...
-
-B1 / B2 (例句):It was predicted that global temperatures would rise by 1.5°C by 2050. (據預測，到2050年全球氣溫將上升1.5°C。)
-詞組搭配 (Collocations): predicted result, predicted outcome, predicted value, as predicted
-
-同義詞 (Synonyms): forecast, projected, expected
-反義詞 (Antonyms): unpredicted, unexpected, surprising
-
-
----
-
-### movement  (n) <-- Added on 2026-07-09
-文章分類：general
-解釋: 運動；移動；活動
-
-**[深度解析 & 語境應用]**
-英文定義: An act of moving the body or a part of the body; a group of people working together to achieve a particular social or political goal.
-重點記憶點: DSE雙重含義：1) 物理移動；2) 社會/政治運動，兩種意思都常考。例如environmental movement 就是「環境保護運動」，是DSE環境議題常見搭配。
-建議用法: 可數名詞指具體運動，不可數泛指移動活動：the environmental movement, a political movement.
-
-B1 / B2 (例句):The environmental movement has successfully pushed for more recycling policies in many countries. (環境保護運動已經成功推動許多國家實行更多回收政策。)
-詞組搭配 (Collocations): social movement, political movement, environmental movement, movement of people
-
-同義詞 (Synonyms): campaign, drive, motion
-反義詞 (Antonyms): stationary, stillness
-
-
----
-
-### evidence  (n) <-- Added on 2026-07-09
-文章分類：general
-解釋: 證據；證明；憑據
-
-**[深度解析 & 語境應用]**
-英文定義: Facts or information that show that something exists or is true.
-重點記憶點: DSE閱讀必考核心詞，無論是科學研究、論證觀點都會用到，是不可數名詞，不要加a或s。
-建議用法: 不可數：there is evidence that..., provide evidence for..., empirical evidence.
-
-B1 / B2 (例句):There is strong evidence that human activities are causing climate change. (有強力證據顯示人類活動正在導致氣候變化。)
-詞組搭配 (Collocations): strong evidence, empirical evidence, scientific evidence, evidence suggests that
-
-同義詞 (Synonyms): proof, data, confirmation
-反義詞 (Antonyms): disproof, counterevidence
-
