@@ -170,10 +170,15 @@ document.addEventListener('DOMContentLoaded', function(){
           }
       }
 
-      function toggleVocabHighlight() {
+      async function toggleVocabHighlight() {
           vocabHighlightOn = !vocabHighlightOn;
           const btn = document.getElementById('toggleVocabHighlight');
           if (vocabHighlightOn) {
+              // Wait for vocab to finish loading if not loaded yet
+              if (vocabWords.length === 0) {
+                  btn.textContent = 'Loading vocab...';
+                  await loadVocab();
+              }
               btn.textContent = 'kelly生字庫: ON';
               btn.style.background = '#27ae60';
               applyVocabHighlight();
@@ -900,10 +905,15 @@ document.addEventListener('DOMContentLoaded', function(){
       let vocabHighlightOn = false;
       const vocabWords = ["recycling companies","assorted plastics","shut down plants","household waste","controversial","food scraps","companies","household","recycling","separate","assorted","confront","probably","plastics","plants","scraps","waste","shut","sort","food","down"];
 
-      function toggleVocabHighlight() {
+      async function toggleVocabHighlight() {
           vocabHighlightOn = !vocabHighlightOn;
           const btn = document.getElementById('toggleVocabHighlight');
           if (vocabHighlightOn) {
+              // Wait for vocab to finish loading if not loaded yet
+              if (vocabWords.length === 0) {
+                  btn.textContent = 'Loading vocab...';
+                  await loadVocab();
+              }
               btn.textContent = 'kelly生字庫: ON';
               btn.style.background = '#27ae60';
               applyVocabHighlight();
