@@ -26,7 +26,7 @@ B1 / B2 (例句):The government's controversial decision to cut down century-old
 
 **[深度解析 & 語境應用]**
 英文定義: Used to say that something is likely to be true or likely to happen. (用於表示某事很可能真實或發生。)
-重點記憶點: 在閱讀中常出現表示推測，在寫作中可以用來表達不太確定的結論，比"maybe"更正式。
+重點記憶點: 在閱讀中常出現表示推測，在寫作中可以用來表達不太確定的結論，比maybe更正式。
 建議用法: 放在句子中間修飾動詞，或句首表示推測。
 
 B1 / B2 (例句):Food scraps will probably account for 30% of household waste in this city. (食物殘渣很可能佔了這個城市生活垃圾的30%。)
@@ -44,7 +44,7 @@ B1 / B2 (例句):Food scraps will probably account for 30% of household waste in
 **[深度解析 & 語境應用]**
 英文定義: Small pieces of food that are left after cooking or eating. 烹調或進食後剩下的食物小塊。
 重點記憶點: 這是環境議題中常見詞彙，對應中文「廚餘」，DSE閱讀近年常考垃圾分類話題。
-建議用法: 永遠用複數形式 "food scraps"。
+建議用法: 永遠用複數形式 food scraps。
 
 B1 / B2 (例句):The city council encourages people to recycle food scraps into compost. (市議會鼓勵市民將食物殘渣回收做成堆肥。)
 詞組搭配 (Collocations): recycle food scraps, food scraps recycling, collect food scraps.
@@ -60,8 +60,8 @@ B1 / B2 (例句):The city council encourages people to recycle food scraps into 
 
 **[深度解析 & 語境應用]**
 英文定義: (v) To separate things into different groups according to type. 按類型把東西分開到不同組別。
-重點記憶點: 在垃圾分類話題中，"sort" 就是「分類」的意思，動詞名詞同形，DSE常考熟字新義。
-建議用法: "sort waste" 就是「分垃圾」，"sort out" 是短詞表示「整理清楚」。
+重點記憶點: 在垃圾分類話題中，sort 就是「分類」的意思，動詞名詞同形，DSE常考熟字新義。
+建議用法: sort waste 就是「分垃圾」，sort out 是短詞表示「整理清楚」。
 
 B1 / B2 (例句):We need to sort our rubbish into different bins before collection. (我們需要在收集前把垃圾分到不同箱子。)
 詞組搭配 (Collocations): sort waste, sort into groups, sort out, a sort of.
@@ -77,7 +77,7 @@ B1 / B2 (例句):We need to sort our rubbish into different bins before collecti
 
 **[深度解析 & 語境應用]**
 英文定義: (v) To divide something into parts or groups; to keep things apart from each other. 把東西分割成部分或組別；讓東西互相分開。
-重點記憶點: 和 "sort" 近義，但 "separate" 更強調「 physically 分開」的動作，在垃圾分類文章中非常高频。
+重點記憶點: 和 sort 近義，但 separate 更強調「 physically 分開」的動作，在垃圾分類文章中非常高频。
 建議用法: 動詞讀 /ˈsepəreɪt/，形容詞讀 /ˈsepərət/，發音不同。
 
 B1 / B2 (例句):The local government asks residents to separate recyclable waste from general waste. (地方政府要求居民將可回收垃圾與一般垃圾分開。)
@@ -95,7 +95,7 @@ B1 / B2 (例句):The local government asks residents to separate recyclable wast
 **[深度解析 & 語境應用]**
 英文定義: Waste material produced by people living in houses and homes. 家庭住宅產生的廢棄物。
 重點記憶點: DSE環境議題核心詞彙，近年幾乎每次考垃圾處理、回收議題都會出現，必須熟記。
-建議用法: 固定搭配，不可數名詞，永遠用單數形式 "household waste"。
+建議用法: 固定搭配，不可數名詞，永遠用單數形式 household waste。
 
 B1 / B2 (例句):The city government is planning to introduce a tax on household waste to reduce landfill usage. (市政府計劃對生活垃圾徵稅以減少堆填區使用。)
 詞組搭配 (Collocations): reduce household waste, sort household waste, household waste recycling, disposal of household waste.
@@ -111,8 +111,8 @@ B1 / B2 (例句):The city government is planning to introduce a tax on household
 
 **[深度解析 & 語境應用]**
 英文定義: To close a factory or power station permanently or for a long period. 永久或長期關閉工廠/發電廠。
-重點記憶點: 在能源、環境議題中，"plants" 常指「發電廠」或「工廠」，不是「植物」，DSE常考這種熟字新義。
-建議用法: 動詞短語，"shut" 是過去式/過去分詞，主動用法: "The government decided to shut down old coal plants."
+重點記憶點: 在能源、環境議題中，plants 常指「發電廠」或「工廠」，不是「植物」，DSE常考這種熟字新義。
+建議用法: 動詞短語，shut 是過去式/過去分詞，主動用法: The government decided to shut down old coal plants.
 
 B1 / B2 (例句):To cut carbon emissions, the country has agreed to shut down all its coal-fired power plants by 2035. (為了減少碳排放，該國同意在2035年前關閉所有燃煤發電廠。)
 詞組搭配 (Collocations): shut down coal plants, shut down old plants, permanently shut down plants.
@@ -128,8 +128,8 @@ B1 / B2 (例句):To cut carbon emissions, the country has agreed to shut down al
 
 **[深度解析 & 語境應用]**
 英文定義: To deal with a difficult problem or situation directly and bravely. 直接勇敢地處理困難問題或處境。
-重點記憶點: DSE寫作高頻詞，比 "deal with" 更正式，在討論社會問題時使用可以提升寫作層次，常見搭配 "confront a problem/challenge".
-建議用法: 後面直接接賓語: "confront the issue", "confront climate change".
+重點記憶點: DSE寫作高頻詞，比 deal with 更正式，在討論社會問題時使用可以提升寫作層次，常見搭配 confront a problem/challenge.
+建議用法: 後面直接接賓語: confront the issue, confront climate change.
 
 B1 / B2 (例句):We must confront the problem of air pollution now before it becomes irreversible. (我們必須現在就面對空氣污染問題，以免它變得不可逆轉。)
 詞組搭配 (Collocations): confront a problem, confront a challenge, confront climate change, confront the truth.
@@ -145,7 +145,7 @@ B1 / B2 (例句):We must confront the problem of air pollution now before it bec
 
 **[深度解析 & 語境應用]**
 英文定義: Businesses that collect and process waste materials so that they can be used again. 收集處理廢棄物以便重新利用的企業。
-重點記憶點: DSE垃圾回收、循環經濟話題高頻詞，"recycling" 這裡是名詞作形容詞修飾 "companies"，永遠用複數。
+重點記憶點: DSE垃圾回收、循環經濟話題高頻詞，recycling 這裡是名詞作形容詞修飾 companies，永遠用複數。
 建議用法: 做主語或賓語，談及私營機構參與垃圾回收時使用。
 
 B1 / B2 (例句):Many recycling companies struggle to make a profit because of the low price of recycled plastic. (因為再生塑料價格低廉，許多回收公司難以盈利。)
@@ -162,7 +162,7 @@ B1 / B2 (例句):Many recycling companies struggle to make a profit because of t
 
 **[深度解析 & 語境應用]**
 英文定義: Different types of plastic mixed together. 不同種類的塑料混合在一起。
-重點記憶點: DSE塑料回收話題常考，"assorted" 表示「各種各樣混合在一起」，混合塑料是回收業的一大難題，閱讀中常出現。
+重點記憶點: DSE塑料回收話題常考，assorted 表示「各種各樣混合在一起」，混合塑料是回收業的一大難題，閱讀中常出現。
 建議用法: 永遠用複數，在討論垃圾分類難度時使用。
 
 B1 / B2 (例句):Sorting assorted plastics into different types is one of the biggest challenges for the recycling industry. (把混合塑料分揀成不同種類是回收業最大挑戰之一。)
