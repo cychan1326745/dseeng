@@ -240,6 +240,7 @@ let speechEnabled = true;
 let dictationActive = false;
 let currentDictationWord = null;
 let learnedWords = new Set();
+let spellingKnown = new Set(); // 識串 = 能正确拼写
 
 // Load learned words from localStorage
 function loadLearnedWords() {
@@ -247,11 +248,20 @@ function loadLearnedWords() {
     if (saved) {
         learnedWords = new Set(JSON.parse(saved));
     }
+    const savedSpelling = localStorage.getItem('dse_vocab_spelling');
+    if (savedSpelling) {
+        spellingKnown = new Set(JSON.parse(savedSpelling));
+    }
 }
 
 // Save learned words to localStorage
 function saveLearnedWords() {
     localStorage.setItem('dse_vocab_learned', JSON.stringify([...learnedWords]));
+}
+
+// Save spelling status to localStorage
+function saveSpellingKnown() {
+    localStorage.setItem('dse_vocab_spelling', JSON.stringify([...spellingKnown]));
 }
 
 // Toggle learned status
@@ -262,6 +272,16 @@ function toggleLearned(word) {
         learnedWords.add(word);
     }
     saveLearnedWords();
+}
+
+// Toggle spelling known status
+function toggleSpellingKnown(word) {
+    if (spellingKnown.has(word)) {
+        spellingKnown.delete(word);
+    } else {
+        spellingKnown.add(word);
+    }
+    saveSpellingKnown();
 }
 
 // Toggle speech function
@@ -318,9 +338,26 @@ function startNewDictation() {
         alert('請先加載生字庫才能開始听写！');
         return;
     }
-    // Random select a word
-    const randomIndex = Math.floor(Math.random() * vocabulary.length);
-    currentDictationWord = vocabulary[randomIndex];
+    
+    // Weighted random selection: 70% from unknown (not spellingKnown), 30% from known
+    let candidates = [];
+    let unknownWords = vocabulary.filter(v => !spellingKnown.has(v.word));
+    let knownWords = vocabulary.filter(v => spellingKnown.has(v.word));
+    
+    // 70% chance pick unknown, 30% pick known
+    const random = Math.random();
+    if (random < 0.7 && unknownWords.length > 0) {
+        candidates = unknownWords;
+    } else if (random >= 0.7 && knownWords.length > 0) {
+        candidates = knownWords;
+    } else {
+        // If one category is empty, use all
+        candidates = vocabulary;
+    }
+    
+    // Random select from candidates
+    const randomIndex = Math.floor(Math.random() * candidates.length);
+    currentDictationWord = candidates[randomIndex];
     
     // Clear previous result
     document.getElementById('dictationInput').value = '';
@@ -368,11 +405,19 @@ function checkDictationAnswer() {
     
     if (userInput === correctWord) {
         resultDiv.innerHTML = '<span class="dictation-correct">✅ 正確！太棒了！</span>';
+        // Mark as known (識串)
+        if (!spellingKnown.has(currentDictationWord.word)) {
+            toggleSpellingKnown(currentDictationWord.word);
+        }
         answerDiv.style.display = 'block';
         document.getElementById('correctAnswer').textContent = currentDictationWord.word;
         document.getElementById('correctMeaning').textContent = currentDictationWord.core_info.cn_meaning;
     } else {
         resultDiv.innerHTML = '<span class="dictation-wrong">❌ 不正確，再試一次？</span>';
+        // Mark as unknown (未識串)
+        if (spellingKnown.has(currentDictationWord.word)) {
+            toggleSpellingKnown(currentDictationWord.word);
+        }
         answerDiv.style.display = 'block';
         document.getElementById('correctAnswer').textContent = currentDictationWord.word;
         document.getElementById('correctMeaning').textContent = currentDictationWord.core_info.cn_meaning;
@@ -627,11 +672,14 @@ function renderVocab(list) {
         }
         
         const isLearned = learnedWords.has(vocab.word);
-        const learnedToggle = '<button onclick="toggleLearned(\'' + escapeHtml(vocab.word).replace(/'/g, "\\\\'") + '\'); renderVocab(filteredVocabulary);" style="float: right; background: ' + (isLearned ? '#27ae60' : '#95a5a6') + '; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85em;">' + (isLearned ? '✅ 已學會' : '🔲 未學會') + '</button>';
+        const isSpellingKnown = spellingKnown.has(vocab.word);
+        const learnedToggle = '<button onclick="toggleLearned(\'' + escapeHtml(vocab.word).replace(/'/g, "\\\\'") + '\'); renderVocab(filteredVocabulary);" style="float: right; margin-left: 8px; background: ' + (isLearned ? '#27ae60' : '#95a5a6') + '; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85em;">' + (isLearned ? '✅ 已學會' : '🔲 未學會') + '</button>';
+        const spellingToggle = '<button onclick="toggleSpellingKnown(\'' + escapeHtml(vocab.word).replace(/'/g, "\\\\'") + '\'); renderVocab(filteredVocabulary);" style="float: right; margin-left: 8px; background: ' + (isSpellingKnown ? '#f39c12' : '#95a5a6') + '; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85em;">' + (isSpellingKnown ? '✓ 識串' : '✗ 未識串') + '</button>';
 
         card.innerHTML = 
             '<div class="vocab-header">' +
                 learnedToggle +
+                spellingToggle +
                 '<div class="word-title" onclick="handleWordClick(\'' + escapeHtml(vocab.word).replace(/'/g, "\\\\'") + '\')">' + escapeHtml(vocab.word) + ' <span class="word-pos">(' + escapeHtml(vocab.pos) + ')</span></div>' +
                 '<div class="date-tag">📅 Added: ' + escapeHtml(vocab.date) + '</div>' +
                 categoryHtml +
