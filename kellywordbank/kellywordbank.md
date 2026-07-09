@@ -5,7 +5,7 @@
 
 ### controversial  (adj) <-- Added on 2026-07-04
 文章分類：social-issues
-解釋: 有爭議的；具爭論性的
+解釋: 有爭議的；具爭論性
 
 **[深度解析 & 語境應用]**
 英文定義: Causing public disagreement and debate. (引起公眾的不和與辯論。)
@@ -255,5 +255,39 @@ B1 / B2 (例句):Recycling metal reduces the need to mine new raw materials and 
 
 同義詞 (Synonyms):-
 反義詞 (Antonyms):-
+
+---
+
+### achieve  (v) <-- Added on 2026-07-09
+文章分類：general
+解釋: 實現；達成；獲得
+
+**[深度解析 & 語境應用]**
+英文定義: To successfully complete something or get a good result that you have been working towards. (成功完成你一直努力追求的事並獲得好結果。)
+重點記憶點: DSE寫作高頻核心動詞，無論是討論個人目標、社會發展還是政策成效都能用，固定搭配 achieve a goal/aim/objective。
+建議用法: 後面直接接名詞作賓語，名詞形式是 achievement，DSE寫作常一起考。
+
+B1 / B2 (例句):Many young people work hard in order to achieve their dream of owning a home in Hong Kong. (許多年輕人努力奮鬥，為了實現在香港置業的夢想。)
+詞組搭配 (Collocations): *achieve a goal*, *achieve success*, *achieve an objective*, *achieve results*.
+
+同義詞 (Synonyms):attain, accomplish, reach.
+反義詞 (Antonyms):fail, miss, lose.
+
+---
+
+### abandon  (v) <-- Added on 2026-07-09
+文章分類：general
+解釋: 放棄；遺棄；離開
+
+**[深度解析 & 語境應用]**
+英文定義: To stop doing something before you have finished it, usually because it is too difficult. (因為太困難而在完成前停止做某事。)
+重點記憶點: DSE閱讀和寫作都常考，比 give up 更正式，表示完全放棄計劃、嘗試，也可以指遺棄人或地方。
+建議用法: 後面直接接賓語：abandon the plan, abandon the attempt，名詞形式是 abandonment。
+
+B1 / B2 (例句):The government had to abandon the controversial construction project because of strong public opposition. (由於公眾強烈反對，政府不得不放棄這個具爭議的建設計劃。)
+詞組搭配 (Collocations): *abandon a project*, *abandon a plan*, *abandon an attempt*, *abandon ship*.
+
+同義詞 (Synonyms):give up, desert, quit.
+反義詞 (Antonyms):continue, keep, maintain.
 
 ---
