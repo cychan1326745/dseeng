@@ -143,11 +143,12 @@ document.addEventListener('DOMContentLoaded', function(){
       <script>
       let vocabHighlightOn = false;
       let vocabWords = [];
-      const vocabUrl = '../kellywordbank-single.md?cache-bust=' + new Date().getTime(); // 避免瀏覽器緩存，每次加載最新
 
       // Auto-load vocabulary from kellywordbank-single.md on page load
       async function loadVocab() {
           try {
+              // Add cache-bust every time to get latest version
+              const vocabUrl = '../kellywordbank-single.md?cache-bust=' + new Date().getTime();
               const response = await fetch(vocabUrl);
               const text = await response.text();
               // Extract all words from lines starting with ###
@@ -162,7 +163,7 @@ document.addEventListener('DOMContentLoaded', function(){
                   .filter(word => word !== null)
                   // Sort by length descending so longer phrases match first
                   .sort((a, b) => b.length - a.length);
-              console.log('Loaded vocab:', vocabWords.length + ' words from kellywordbank-single.md');
+              console.log('Loaded vocab:', vocabWords.length + ' words from kellywordbank-single.md', vocabWords);
           } catch (err) {
               console.error('Failed to load vocabulary:', err);
               // Fallback to some default words
@@ -901,91 +902,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
   <script src="app.js"></script>
 </body>
-</html><script>
-      let vocabHighlightOn = false;
-      const vocabWords = ["recycling companies","assorted plastics","shut down plants","household waste","controversial","food scraps","companies","household","recycling","separate","assorted","confront","probably","plastics","plants","scraps","waste","shut","sort","food","down"];
-
-      async function toggleVocabHighlight() {
-          vocabHighlightOn = !vocabHighlightOn;
-          const btn = document.getElementById('toggleVocabHighlight');
-          if (vocabHighlightOn) {
-              // Wait for vocab to finish loading if not loaded yet
-              if (vocabWords.length === 0) {
-                  btn.textContent = 'Loading vocab...';
-                  await loadVocab();
-              }
-              btn.textContent = 'kelly生字庫: ON';
-              btn.style.background = '#27ae60';
-              applyVocabHighlight();
-          } else {
-              btn.textContent = 'kelly生字庫: OFF';
-              btn.style.background = '#f39c12';
-              removeVocabHighlight();
-          }
-      }
-      
-            function applyVocabHighlight() {
-          // First clear existing highlights from the whole paragraph HTML, then re-apply
-          const paragraphs = document.querySelectorAll('#passagePanel p.paragraph');
-          paragraphs.forEach(function(para) {
-              // Get current HTML and strip all existing marks
-              let html = para.innerHTML;
-              // Remove all <mark> tags but keep content
-              html = html.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g, '$1');
-              
-              // Add highlights for all vocabulary words
-              vocabWords.forEach(function(word) {
-                  const regex = new RegExp('\b' + escapeRegExp(word) + '\b', 'gi');
-                  html = html.replace(regex, '<mark style="background: rgba(52, 152, 219, 0.3);">$&</mark>');
-              });
-              
-              para.innerHTML = html;
-          });
-      }
-if (node.textContent.trim().length > 0) {
-                      textNodes.push(node);
-                  }
-              }
-              
-              // Process each text node with all vocabulary words
-              textNodes.forEach(function(textNode) {
-                  let html = textNode.textContent;
-                  // Replace longer words first
-                  vocabWords.forEach(function(word) {
-                      const regex = new RegExp('\\b' + escapeRegExp(word) + '\\b', 'gi');
-                      html = html.replace(regex, '<mark style="background: rgba(52, 152, 219, 0.3);">$&</mark>');
-                  });
-                  if (html !== textNode.textContent) {
-                      const span = document.createElement('span');
-                      span.innerHTML = html;
-                      textNode.parentNode.replaceChild(span, textNode);
-                  }
-              });
-          });
-      }
-      
-      function removeVocabHighlight() {
-          const marks = document.querySelectorAll('#passagePanel mark');
-          marks.forEach(function(mark) {
-              // Unwrap: move children out
-              const parent = mark.parentNode;
-              while (mark.firstChild) {
-                  parent.insertBefore(mark.firstChild, mark);
-              }
-              parent.removeChild(mark);
-              parent.normalize();
-          });
-      }
-      
-      function escapeRegExp(string) {
-          return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      }
-      
-      document.getElementById('toggleVocabHighlight').addEventListener('click', toggleVocabHighlight);
-      </script>
-
-
-      <p class="paragraph" data-para="1">
+</html>
         <span class="paragraph-num">[1]</span>
         If you live in the United States, you probably do some form of recycling. It’s likely that you separate paper from plastic and glass and metal. You rinse bottles and cans, and you might put food scraps in a container destined for a composting facility. As you sort everything into the right bins, you probably assume that recycling is helping your community and protecting the environment. But is it? Are you in fact wasting your time?
       </p>
