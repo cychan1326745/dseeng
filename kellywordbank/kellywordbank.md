@@ -291,3 +291,37 @@ B1 / B2 (例句):The government had to abandon the controversial construction pr
 反義詞 (Antonyms):continue, keep, maintain.
 
 ---
+
+### protecting  (v-ing / gerund) <-- Added on 2026-07-09
+文章分類：environmental-issues
+解釋: 保護；防護（動詞protect的現在分詞/動名詞）
+
+**[深度解析 & 語境應用]**
+英文定義: Keeping someone or something safe from harm, damage, or illness. (使人或物免於傷害、損壞或疾病。)
+重點記憶點: DSE環境議題最核心詞彙之一，幾乎每次考環境保護都一定出現，當名詞用（動名詞），搭配 very important for protecting the environment。
+建議用法: 放在介系詞後面當動名詞，如: focus on protecting, aim at protecting。
+
+B1 / B2 (例句):The government has introduced new laws aimed at protecting endangered species from extinction. (政府出台了新法律，旨在保護瀕危物種免於滅絕。)
+詞組搭配 (Collocations): *protecting the environment*, *protecting endangered species*, *protecting natural habitats*, worth protecting.
+
+同義詞 (Synonyms):safeguarding, preserving, conserving.
+反義詞 (Antonyms):destroying, harming, endangering.
+
+---
+
+### destined  (adj) <-- Added on 2026-07-09
+文章分類：general
+解釋: 命中註定的；註定會發生的；前往
+
+**[深度解析 & 語境應用]**
+英文定義: Something that is certain to happen and cannot be changed or controlled. (某事一定會發生，無法改變或控制。)
+重點記憶點: DSE閱讀中常考，形容人或事「註定」會有某個結果，固定搭配 be destined for / be destined to do。
+建議用法: 形容命運安排，也可以指交通工具「前往」某個目的地，如: the ship is destined for Hong Kong。
+
+B1 / B2 (例句):Many young people believe they are destined to achieve great success in their careers. (許多年輕人相信他們註定會在事業上取得巨大成功。)
+詞組搭配 (Collocations): *be destined to*, *be destined for*, destined to succeed.
+
+同義詞 (Synonyms):fated, predetermined, meant to be.
+反義詞 (Antonyms):accidental, random, unintended.
+
+---

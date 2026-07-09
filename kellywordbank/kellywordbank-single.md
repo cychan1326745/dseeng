@@ -35,3 +35,7 @@
 ---
 ### abandon  (v) <-- Added on 2026-07-09
 ---
+### protecting  (v-ing / gerund) <-- Added on 2026-07-09
+---
+### destined  (adj) <-- Added on 2026-07-09
+---
