@@ -50,17 +50,17 @@
     <div class="container">
         <header>
             <h1>📚 DSE 英文生字簿 (Dynamic Vocabulary Bank)</h1>
-            <p class="subtitle">自動加載同文件夾 DSE_Vocabulary_Bank.md，<strong>任何英文單詞點擊都可聆聽發音</strong></p>
+            <p class="subtitle">自動加載同文件夾 kellywordbank.md，<strong>任何英文單詞點擊都可聆聽發音</strong></p>
             <button id="speechToggle">SPEECH ON</button>
         </header>
 
         <div id="loading">⏳ 正在加載生字檔... 請稍候...</div>
         <div id="errorMsg">
-            <h3>❌ 無法自動加載 DSE_Vocabulary_Bank.md</h3>
-            <p>請確保 DSE_Vocabulary_Bank.md 放在 vocabulary_bank_dynamic.html 同一個文件夾內</p>
+            <h3>❌ 無法自動加載 kellywordbank.md</h3>
+            <p>請確保 kellywordbank.md 放在 index.html 同一個文件夾內</p>
             <p>或者你可以手動選擇文件：</p>
             <div class="file-upload" style="margin-top: 20px;">
-                <label for="mdFileInput">手動選擇 DSE_Vocabulary_Bank.md</label>
+                <label for="mdFileInput">手動選擇 kellywordbank.md</label>
                 <input type="file" id="mdFileInput" accept=".md,text/markdown">
                 <div id="fileInfo"></div>
             </div>
@@ -92,7 +92,7 @@
 
         <div id="welcome" class="welcome" style="display: none;">
             <h2>👋 歡迎使用！</h2>
-            <p>請點擊上方按鈕選擇你的 <code>DSE_Vocabulary_Bank.md</code> 文件，開始使用。</p>
+            <p>請點擊上方按鈕選擇你的 <code>kellywordbank.md</code> 文件，開始使用。</p>
             <p><strong>✨ 使用方法:</strong> 點擊任何英文單詞，即可聆聽美式發音，右上角可關閉此功能</p>
             <p><strong>✨ 優點:</strong> 每次更新 Markdown 生字後，只需要刷新瀏覽器重新選擇文件即可，這個 HTML 文件永遠不用重新生成！</p>
         </div>
@@ -425,13 +425,13 @@ function resetSearch() {
     applySort();
 }
 
-// Auto load DSE_Vocabulary_Bank.md from same directory
+// Auto load kellywordbank.md from same directory
 function autoLoadMdFile() {
     document.getElementById('loading').style.display = 'block';
     
-    // Get current directory, append DSE_Vocabulary_Bank.md
+    // Get current directory, append kellywordbank.md
     const currentUrl = window.location.href.replace(/\/[^\/]*$/, '/');
-    const mdUrl = currentUrl + 'DSE_Vocabulary_Bank.md?t=' + new Date().getTime(); // cache bust
+    const mdUrl = currentUrl + 'kellywordbank.md?t=' + new Date().getTime(); // cache bust
     
     fetch(mdUrl)
     .then(response => {
