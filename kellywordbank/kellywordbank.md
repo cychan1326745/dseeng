@@ -3,7 +3,7 @@
 
 ---
 
-### Controversial  (adj) <-- Added on 2026-07-04
+### controversial  (adj) <-- Added on 2026-07-04
 文章分類：social-issues
 解釋: 有爭議的；具爭論性的
 
@@ -170,5 +170,73 @@ B1 / B2 (例句):Sorting assorted plastics into different types is one of the bi
 
 同義詞 (Synonyms):mixed plastics, various plastics.
 反義詞 (Antonyms):sorted plastics, separated plastics.
+
+---
+
+### struggle  (v / n) <-- Added on 2026-07-09
+文章分類：social-issues
+解釋: 掙扎；奮鬥；難以進行 (v)；鬥爭；掙扎 (n)
+
+**[深度解析 & 語境應用]**
+英文定義: (v) To try very hard to do something difficult, especially when this involves fighting against problems. (非常努力去做困難的事，尤其涉及對抗問題。)
+重點記憶點: DSE閱讀和寫作高頻詞，常用於形容機構、個人在困境中難以維持運作或生活，在社會議題文章中非常常見。
+建議用法: 不及物動詞，後接介系詞 to/for/with，*struggle to do something* 就是「難以做某事」。
+
+B1 / B2 (例句):Many low-income families struggle to afford rising housing prices in Hong Kong. (許多低收入家庭難以負擔香港不斷上漲的房價。)
+詞組搭配 (Collocations): *struggle to survive*, *struggle with poverty*, *struggle for change*, economic struggle.
+
+同義詞 (Synonyms):fight, strive, contend.
+反義詞 (Antonyms):succeed, thrive, flourish.
+
+---
+
+### unfortunately  (adv) <-- Added on 2026-07-09
+文章分類：general
+解釋: 不幸地；遺憾地；可惜
+
+**[深度解析 & 語境應用]**
+英文定義: Used to say that something is sad, disappointing, or unfortunate. (用來表示某事令人傷心、失望或不幸。)
+重點記憶點: DSE寫作中用來轉折，表達負面結果，比 but 更正式，能增加文章邏輯性，通常放在句首。
+建議用法: 句首修飾整個句子，引出不幸或令人失望的結果。
+
+B1 / B2 (例句):Unfortunately, the government's new policy has not solved the housing problem for young people. (不幸的是，政府的新政策並未解決年輕人的房屋問題。)
+詞組搭配 (Collocations): unfortunately for..., unfortunately, however,...
+
+同義詞 (Synonyms):regrettably, sadly, unluckily.
+反義詞 (Antonyms):fortunately, luckily, thankfully.
+
+---
+
+### appeal  (v / n) <-- Added on 2026-07-09
+文章分類：social-issues
+解釋: 吸引；呼籲；訴求；上訴
+
+**[深度解析 & 語境應用]**
+英文定義: (v) To attract or interest someone; to make a serious request for help or action. (吸引某人興趣；作出嚴肅的求助或行動請求。)
+重點記憶點: DSE常考熟字新義，除了法律上「上訴」的意思，更多考「吸引；引起興趣」或「呼籲」的用法，*appeal to somebody* 是固定搭配，意思是「對某人有吸引力」。
+建議用法: DSE閱讀中常見 *the idea appeals to...*，寫作中可用來表示呼籲公眾採取行動。
+
+B1 / B2 (例句):The idea of living a simple life away from the city appeals to many young people these days. (遠離城市過簡單生活的想法近年吸引了很多年輕人。)
+詞組搭配 (Collocations): *appeal to the public*, *appeal for help*, *appeal to emotions*, popular appeal.
+
+同義詞 (Synonyms):attract, draw, call on.
+反義詞 (Antonyms):repel, deter, discourage.
+
+---
+
+### snippets of information  (n phrase) <-- Added on 2026-07-09
+文章分類：media
+解釋: 零星信息；片段信息
+
+**[深度解析 & 語境應用]**
+英文定義: Small pieces of information that are not complete or full. 不完整的小片信息。
+重點記憶點: DSE閱讀中談及資訊爆炸、假新聞話題常見詞，snippet本義是「小片」，表示人們在社交媒體只得到碎片化的資訊，近年越來越常考。
+建議用法: 固定搭配，總是用複數 *snippets of information*。
+
+B1 / B2 (例句):In the age of social media, many people only get snippets of information instead of reading full news reports. (在社交媒體時代，許多人只獲得零星信息，而不閱讀完整新聞報導。)
+詞組搭配 (Collocations): *snippets of information*, random snippets, short snippets.
+
+同義詞 (Synonyms):bits of information, fragments of information.
+反義詞 (Antonyms):full information, complete data.
 
 ---
