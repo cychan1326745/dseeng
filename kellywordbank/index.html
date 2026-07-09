@@ -125,7 +125,8 @@ function escapeHtml(text) {
         '"': '&quot;',
         "'": '&#039;'
     };
-    return text.replace(/[&<>\"]/g, m => map[m]);
+    // 先轉義&，再轉義其他，避免重複轉義已經存在的實體
+    return text.replace(/&/g, map['&']).replace(/[<>"]/g, m => map[m]);
 }
 
 // Split text into words and wrap English words with clickable spans
