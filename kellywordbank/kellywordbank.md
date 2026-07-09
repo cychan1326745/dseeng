@@ -138,3 +138,37 @@ B1 / B2 (例句):We must confront the problem of air pollution now before it bec
 反義詞 (Antonyms):avoid, evade, ignore.
 
 ---
+
+### recycling companies  (n) <-- Added on 2026-07-09
+文章分類：environmental-issues
+解釋: 回收公司；資源回收企業
+
+**[深度解析 & 語境應用]**
+英文定義: Businesses that collect and process waste materials so that they can be used again. 收集處理廢棄物以便重新利用的企業。
+重點記憶點: DSE垃圾回收、循環經濟話題高頻詞，"recycling" 這裡是名詞作形容詞修飾 "companies"，永遠用複數。
+建議用法: 做主語或賓語，談及私營機構參與垃圾回收時使用。
+
+B1 / B2 (例句):Many recycling companies struggle to make a profit because of the low price of recycled plastic. (因為再生塑料價格低廉，許多回收公司難以盈利。)
+詞組搭配 (Collocations): private recycling companies, local recycling companies, licensed recycling companies.
+
+同義詞 (Synonyms):waste recycling firms, recycling businesses.
+反義詞 (Antonyms):waste disposal companies, landfill operators.
+
+---
+
+### assorted plastics  (n) <-- Added on 2026-07-09
+文章分類：environmental-issues
+解釋: 各式各樣的塑料；混合塑料
+
+**[深度解析 & 語境應用]**
+英文定義: Different types of plastic mixed together. 不同種類的塑料混合在一起。
+重點記憶點: DSE塑料回收話題常考，"assorted" 表示「各種各樣混合在一起」，混合塑料是回收業的一大難題，閱讀中常出現。
+建議用法: 永遠用複數，在討論垃圾分類難度時使用。
+
+B1 / B2 (例句):Sorting assorted plastics into different types is one of the biggest challenges for the recycling industry. (把混合塑料分揀成不同種類是回收業最大挑戰之一。)
+詞組搭配 (Collocations): sorted assorted plastics, processing assorted plastics, mixed assorted plastics.
+
+同義詞 (Synonyms):mixed plastics, various plastics.
+反義詞 (Antonyms):sorted plastics, separated plastics.
+
+---
