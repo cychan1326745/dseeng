@@ -167,7 +167,7 @@ document.addEventListener('DOMContentLoaded', function(){
           } catch (err) {
               console.error('Failed to load vocabulary:', err);
               // Fallback with at least the current words
-              vocabWords = ["controversial","probably","food scraps","sort","separate","household waste","shut down plants","confront","recycling companies","assorted plastics","struggle","unfortunately","appeal","snippets of information","metal","achieve","abandon","protecting","destined"];
+              vocabWords = ["protecting","destined"];
               vocabWords.sort((a, b) => b.length - a.length);
               console.log('Using fallback vocab:', vocabWords.length + ' words', vocabWords);
           }
