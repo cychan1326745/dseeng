@@ -151,11 +151,11 @@ document.addEventListener('DOMContentLoaded', function(){
               const response = await fetch(vocabUrl);
               const text = await response.text();
               // Extract all words from lines starting with ###
-              const lines = text.split('\\n');
+              const lines = text.split('\n');
               vocabWords = lines
                   .filter(line => line.startsWith('### '))
                   .map(line => {
-                      // Extract the word part: "### word  (pos)..." → "word"
+                      // Extract the word part: "### word  (pos)... → "word"
                       const match = line.match(/^###\s+([^(]+)/);
                       return match ? match[1].trim() : null;
                   })
@@ -166,7 +166,7 @@ document.addEventListener('DOMContentLoaded', function(){
           } catch (err) {
               console.error('Failed to load vocabulary:', err);
               // Fallback to some default words
-              vocabWords = ["recycling companies","assorted plastics","shut down plants","household waste","controversial","food scraps"];
+              vocabWords = ["recycling companies","assorted plastics","shut down plants","household waste","controversial","food scraps","protecting","destined"];
           }
       }
 
