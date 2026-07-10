@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head> 
+
+<script>
+let isSpeaking = false;
+let speechEnabled = true; // 默認開啟
+
+function loadSpeechSetting() {
+  const saved = localStorage.getItem('dse-speech-enabled');
+  if (saved !== null) {
+    speechEnabled = saved === 'true';
+  }
+  updateSpeechButton();
+}
+
+function updateSpeechButton() {
+  const btn = document.getElementById('btnToggleSpeech');
+  if (btn) {
+    btn.textContent = speechEnabled ? 'Speech: ON' : 'Speech: OFF';
+    btn.style.background = speechEnabled ? 'rgba(40, 167, 69, 0.3)' : 'rgba(220, 53, 69, 0.3)';
+  }
+}
+
+function toggleSpeech() {
+  speechEnabled = !speechEnabled;
+  localStorage.setItem('dse-speech-enabled', speechEnabled);
+  updateSpeechButton();
+  if (isSpeaking) {
+    speechSynthesis.cancel();
+    isSpeaking = false;
+  }
+}
+
+function readWord(text){
+  if(!speechEnabled) return; // 關閉狀態不發音
+  if(isSpeaking) speechSynthesis.cancel();
+  let utter = new SpeechSynthesisUtterance(text);
+  utter.lang = "en-US";
+  utter.rate = 0.9;
+  isSpeaking = true;
+  utter.onend = ()=> isSpeaking = false;
+  speechSynthesis.speak(utter);
+}
+
+// ── Click-to-read: 撳邊個英文字就讀邊個 ──
+document.addEventListener('DOMContentLoaded', function(){
+  loadSpeechSetting();
+  const btn = document.getElementById('btnToggleSpeech');
+  if (btn) btn.addEventListener('click', toggleSpeech);
+
+  const passage = document.getElementById('passagePanel');
+  if (!passage) return;
+
+  // 用 caretRangeFromPoint 拎 click 位置嘅英文字
+  passage.addEventListener('click', function(e){
+    if(!speechEnabled) return; // 關閉狀態完全不處理，方便選文字
+    // 唔干擾撳落 link / button / input
+    if (e.target.closest('a, button, input, label, select, textarea')) return;
+
+    const range = document.caretRangeFromPoint(e.clientX, e.clientY);
+    if (!range) return;
+    const node = range.startContainer;
+    if (node.nodeType !== Node.TEXT_NODE) return;
+    const offset = range.startOffset;
+    const text = node.textContent;
+
+    // 搵字嘅起始同結束（連 apostrophe 同 hyphen）
+    let start = offset;
+    let end = offset;
+    while (start > 0 && /[a-zA-Z\u00C0-\u024F'ʼ-]/.test(text[start - 1])) start--;
+    while (end < text.length && /[a-zA-Z\u00C0-\u024F'ʼ-]/.test(text[end])) end++;
+    if (start === end) return;
+
+    const word = text.slice(start, end);
+    // 過濾純數字
+    if (/^\d+$/.test(word)) return;
+
+    readWord(word);
+
+    // ── 視覺回饋：短暫 highlight ──
+    // 用 range select 個字
+    const wordRange = document.createRange();
+    wordRange.setStart(node, start);
+    wordRange.setEnd(node, end);
+    const highlight = document.createElement('mark');
+    highlight.style.cssText = 'background:#ffd54f;border-radius:3px;transition:background .3s';
+    try {
+      wordRange.surroundContents(highlight);
+      setTimeout(() => {
+        const parent = highlight.parentNode;
+        if (parent) {
+          while (highlight.firstChild) parent.insertBefore(highlight.firstChild, highlight);
+          parent.removeChild(highlight);
+          parent.normalize();
+        }
+      }, 500);
+    } catch(_) {
+      // 跨 element boundary 就跳過 highlight
+    }
+  });
+});
+</script>
+ 
+<style>
+/* 游標提示：passage 入面嘅文字係㩒得嘅 */
+#passagePanel .paragraph {
+  cursor: default;
+}
+#passagePanel .paragraph * {
+  cursor: pointer;
+}
+</style>
+
+<meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SCMP Young Post Original B2 Level Reading Passage (Youth Digital Well-being Theme) - SCMP B2 Reading Practice</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-brand"><span>DSE</span> SCMP Young Post Original B2 Level Reading Passage (Youth Digital Well-being Theme) Reading Practice</div>
+    <nav class="header-nav">
+      <a href="index.html" class="active">Reading</a>
+      <a href="solution.html">Solution</a>
+    </nav>
+    <div class="header-tools">
+      <button type="button" id="btnToggleSpeech">Speech: ON</button>
+      <button type="button" id="btnLargerText">Larger Text</button>
+      <button type="button" onclick="window.print()">Print</button>
+    </div>
+  </header>
+
+  <div class="main-container" id="mainContainer">
+    <section class="panel passage-panel" id="passagePanel">
+      <h2 class="passage-title">SCMP Young Post Original B2 Level Reading Passage (Youth Digital Well-being Theme)</h2>
+      <p class="passage-subtitle">Text 1 — SCMP Young Post B2 Level Digital Well-being</p>
+      <div class="passage-illustration">📱 🧘 📉</div>
+
+      <div style="text-align: center; margin: 15px 0; display: flex;">
+        <button id="btnToggleKelly" style="flex: 1; padding: 8px 12px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; margin: 0 5px;">
+          Kelly: OFF
+        </button>
+        <button id="btnToggleJenny" style="flex: 1; padding: 8px 12px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; margin: 0 5px;">
+          Jenny: OFF
+        </button>
+        <button id="btnToggleNash" style="flex: 1; padding: 8px 12px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; margin: 0 5px;">
+          Nash: OFF
+        </button>
+      </div>
+
+<script>
+// Article Vocabulary Highlight Toggle - Multiple vocabulary banks
+// Three independent banks with mutually exclusive toggle, different colors
+
+const VOCAB_CONFIG = {
+  kelly: {
+    btnId: 'btnToggleKelly',
+    file: '../008_Kelly_Hermes/kellywordbank/kellywordbank-single.md',
+    color: 'rgba(52, 152, 219, 0.3)', // blue
+    on: false
+  },
+  jenny: {
+    btnId: 'btnToggleJenny',
+    file: '../008_Kelly_Hermes/kellywordbank/jennywordbank-single.md',
+    color: 'rgba(155, 89, 182, 0.3)', // purple
+    on: false
+  },
+  nash: {
+    btnId: 'btnToggleNash',
+    file: '../008_Kelly_Hermes/kellywordbank/nashwordbank-single.md',
+    color: 'rgba(231, 76, 60, 0.3)', // red
+    on: false
+  }
+};
+
+let vocabLoaded = {
+  kelly: false,
+  jenny: false,
+  nash: false
+};
+let vocabWords = {
+  kelly: [],
+  jenny: [],
+  nash: []
+};
+
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Load vocabulary for a specific bank
+async function loadVocab(bank) {
+  try {
+    const config = VOCAB_CONFIG[bank];
+    const response = await fetch(`${config.file}?cache-bust=${new Date().getTime()}`);
+    const text = await response.text();
+    const lines = text.split('\n');
+    const words = [];
+
+    lines.forEach(line => {
+      const match = line.match(/^###\s+([^(]+)/);
+      if (match) {
+        const word = match[1].trim();
+        if (word) words.push(word);
+      }
+    });
+
+    // Sort by length descending - longer phrases match first
+    words.sort((a, b) => b.length - a.length);
+    vocabWords[bank] = words;
+    vocabLoaded[bank] = true;
+    console.log(`Loaded ${vocabWords[bank].length} vocabulary words for ${bank}`);
+  } catch (err) {
+    console.error(`Failed to load vocabulary bank ${bank}:`, err);
+    vocabWords[bank] = [];
+    vocabLoaded[bank] = true;
+  }
+}
+
+// Turn off all other banks when one is turned on
+function turnOffAllExcept(exceptBank) {
+  Object.keys(VOCAB_CONFIG).forEach(bank => {
+    if (bank !== exceptBank && VOCAB_CONFIG[bank].on) {
+      VOCAB_CONFIG[bank].on = false;
+      const btn = document.getElementById(VOCAB_CONFIG[bank].btnId);
+      btn.style.background = '#f39c12';
+      btn.textContent = `${bank.charAt(0).toUpperCase() + bank.slice(1)}: OFF`;
+      removeVocabHighlight(bank);
+    }
+  });
+}
+
+function toggleVocabHighlight(bank) {
+  const config = VOCAB_CONFIG[bank];
+  config.on = !config.on;
+  const btn = document.getElementById(config.btnId);
+
+  if (config.on) {
+    // Turn off all others
+    turnOffAllExcept(bank);
+    btn.textContent = `${bank.charAt(0).toUpperCase() + bank.slice(1)}: ON`;
+    btn.style.background = '#27ae60';
+    applyVocabHighlight(bank);
+  } else {
+    btn.textContent = `${bank.charAt(0).toUpperCase() + bank.slice(1)}: OFF`;
+    btn.style.background = '#f39c12';
+    removeVocabHighlight(bank);
+  }
+}
+
+function applyVocabHighlight(bank) {
+  if (!vocabLoaded[bank]) {
+    setTimeout(() => {
+      if (VOCAB_CONFIG[bank].on) applyVocabHighlight(bank);
+    }, 200);
+    return;
+  }
+
+  if (vocabWords[bank].length === 0) {
+    console.log(`No vocabulary words loaded for ${bank}`);
+    return;
+  }
+
+  const config = VOCAB_CONFIG[bank];
+  const paragraphs = document.querySelectorAll('#passagePanel p.paragraph');
+  
+  console.log(`${bank}: found ${paragraphs.length} paragraphs, ${vocabWords[bank].length} words`);
+
+  paragraphs.forEach(para => {
+    let html = para.innerHTML;
+
+    // First remove any existing highlights
+    html = html.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g, '$1');
+
+    // Apply highlights for this vocab bank
+    vocabWords[bank].forEach(word => {
+      const escaped = escapeRegExp(word);
+      const regex = new RegExp(`\\b${escaped}\\b`, 'gi');
+      html = html.replace(regex, `<mark style="background: ${config.color};">$&</mark>`);
+    });
+
+    para.innerHTML = html;
+  });
+}
+
+function removeVocabHighlight(bank) {
+  const paragraphs = document.querySelectorAll('#passagePanel p.paragraph');
+  paragraphs.forEach(para => {
+    let html = para.innerHTML;
+    html = html.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g, '$1');
+    para.innerHTML = html;
+  });
+}
+
+// Initialize - load all vocabularies
+Object.keys(VOCAB_CONFIG).forEach(bank => {
+  loadVocab(bank);
+  const btn = document.getElementById(VOCAB_CONFIG[bank].btnId);
+  if (btn) {
+    btn.addEventListener('click', () => toggleVocabHighlight(bank));
+  }
+});
+</script>      <p class="paragraph" data-para="1">
+        <span class="paragraph-num">[1]</span>
+        Every day, Hong Kong teenagers spend an average of six to seven hours glued to screens, scrolling through social media, playing online games or watching short video clips. Health officials have released worrying statistics showing that more than 60 per cent of secondary students use digital devices for entertainment for at least two hours on school days. Many educators and parents are alarmed by this trend, which shrinks attention spans and weakens face-to-face communication skills.
+      </p>
+
+      <p class="paragraph" data-para="2">
+        <span class="paragraph-num">[2]</span>
+        The common solution most families choose is strict screen time limits. Parents lock phones away before dinner or ban devices in bedrooms. However, many young people argue that rigid rules only trigger conflicts and secret phone use. Alyssa, a 19-year-old university student, created an online community called Digital Minimalism to offer a different approach. Instead of fully cutting off technology, its members learn to use digital tools intentionally, only keeping online services that match their core values.
+      </p>
+
+      <p class="paragraph" data-para="3">
+        <span class="paragraph-num">[3]</span>
+        The group now has nearly 40,000 local and overseas members. Participants share small victories: finishing a school project without distracting pop-up notifications, navigating city streets without relying on map apps, or having long conversations with friends without checking phones every minute. Aly explains that digital minimalism does not mean rejecting all technology. It encourages people to eliminate meaningless passive scrolling that brings no real joy or useful information.
+      </p>
+
+      <p class="paragraph" data-para="4">
+        <span class="paragraph-num">[4]</span>
+        Psychologists support this philosophy. A recent youth study found constant passive browsing raises anxiety and lowers the ability to focus on long tasks. Our brains become used to fast-changing short content, making thick textbooks or lengthy articles feel boring and unappealing. Many students admit they cannot finish a reading task without repeatedly picking up their phones for quick breaks.
+      </p>
+
+      <p class="paragraph" data-para="5">
+        <span class="paragraph-num">[5]</span>
+        Experts also point out that over-dependence on digital tools erodes practical life skills. Young people who always use translation apps rarely memorise new vocabulary. Those who save every photo on cloud storage lose the habit of printing pictures to share with family. When technology takes over basic daily tasks, teenagers lose independence and creative thinking.
+      </p>
+
+      <p class="paragraph" data-para="6">
+        <span class="paragraph-num">[6]</span>
+        Schools have started to introduce digital well-being lessons as an alternative to harsh device bans. One popular student-designed activity is a card game named Tech Talk. It creates a safe space for teens to talk honestly about online addiction, harmful online content and feelings of loneliness caused by social media comparison. Teachers report that open discussion works far better than strict punishment, as students voluntarily recognise their unhealthy online habits.
+      </p>
+
+      <p class="paragraph" data-para="7">
+        <span class="paragraph-num">[7]</span>
+        Still, digital minimalism does not demand complete disconnection from the online world. Technology can be valuable for study, staying in touch with distant relatives and discovering new hobbies. The key difference lies in conscious, active use rather than mindless scrolling. People should ask themselves whether each app or social page truly improves their daily life before keeping it on their devices.
+      </p>
+
+    </section>
+
+    <div class="divider" id="divider" title="Drag to resize"></div>
+
+    <section class="panel questions-panel" id="questionsPanel">
+      <p class="instruction">Read Text 1 and answer questions 1–15. (About 28 marks)</p>
+
+      <!-- Q1 -->
+      <div class="question-block" id="q1" data-q="1">
+        <div class="question-label">1. According to paragraph 1, what two negative impacts of long screen time are mentioned? (2 marks)</div>
+        <input type="text" class="text-input wide" name="q1" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q1" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q2 -->
+      <div class="question-block" id="q2" data-q="2">
+        <div class="question-label">2. What does the word “rigid” (line 8) mean in context? Choose the correct option.</div>
+        <div class="options">
+          <label><input type="radio" name="q2" value="A">A. flexible</label>
+          <label><input type="radio" name="q2" value="B">B. strict and unchangeable</label>
+          <label><input type="radio" name="q2" value="C">C. simple</label>
+          <label><input type="radio" name="q2" value="D">D. unclear</label>
+        </div>
+
+<div class="inline-solution" id="solution-q2" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q3 -->
+      <div class="question-block" id="q3" data-q="3">
+        <div class="question-label">3. Who created the Digital Minimalism online community?</div>
+        <input type="text" class="text-input wide" name="q3" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q3" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q4 -->
+      <div class="question-block" id="q4" data-q="4">
+        <div class="question-label">4. Decide whether each statement is True (T), False (F) or Not Given (NG). (3 marks) Statements T	F	NG</div>
+<table class="tf-table">
+<thead><tr><th>Statement</th><th>T</th><th>F</th><th>NG</th></tr></thead>
+<tbody>
+    <tr>
+      <td>Digital Minimalism members refuse to use all digital products.</td>
+      <td><input type="radio" name="q4i"></td>
+      <td><input type="radio" name="q4i"></td>
+      <td><input type="radio" name="q4i"></td>
+    </tr>
+    <tr>
+      <td>Some members manage to travel without map applications.</td>
+      <td><input type="radio" name="q4ii"></td>
+      <td><input type="radio" name="q4ii"></td>
+      <td><input type="radio" name="q4ii"></td>
+    </tr>
+    <tr>
+      <td>The community only has local Hong Kong teenage members.</td>
+      <td><input type="radio" name="q4iii"></td>
+      <td><input type="radio" name="q4iii"></td>
+      <td><input type="radio" name="q4iii"></td>
+    </tr>
+    <tr>
+      <td>○	○	○</td>
+      <td><input type="radio" name="q4i"></td>
+      <td><input type="radio" name="q4i"></td>
+      <td><input type="radio" name="q4i"></td>
+    </tr>
+    <tr>
+      <td>○	○</td>
+      <td><input type="radio" name="q4ii"></td>
+      <td><input type="radio" name="q4ii"></td>
+      <td><input type="radio" name="q4ii"></td>
+    </tr>
+    <tr>
+      <td>○	○	○</td>
+      <td><input type="radio" name="q4iii"></td>
+      <td><input type="radio" name="q4iii"></td>
+      <td><input type="radio" name="q4iii"></td>
+    </tr>
+</tbody>
+</table>
+
+<div class="inline-solution" id="solution-q4" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q5 -->
+      <div class="question-block" id="q5" data-q="5">
+        <div class="question-label">5. What does “this philosophy” (line 16) refer to?</div>
+        <input type="text" class="text-input wide" name="q5" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q5" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q6 -->
+      <div class="question-block" id="q6" data-q="6">
+        <div class="question-label">6. According to paragraph 4, why do teenagers find long reading materials uninteresting?</div>
+        <input type="text" class="text-input wide" name="q6" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q6" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q7 -->
+      <div class="question-block" id="q7" data-q="7">
+        <div class="question-label">7. Find one word in paragraph 4 that has a similar meaning to “worries and nervousness”.</div>
+        <input type="text" class="text-input wide" name="q7" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q7" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q8 -->
+      <div class="question-block" id="q8" data-q="8">
+        <div class="question-label">8. Complete the summary below with ONE word taken from the passage for each blank. (4 marks) Too much screen time weakens students’ focus and practical abilities. A new lifestyle known as (i) __________ advises people to stop (ii) __________ online browsing. Schools teach digital well-being via a student-made card game called (iii) __________, which lets teens discuss online troubles freely. Healthy tech use requires awareness instead of automatic, (iv) __________ scrolling.</div>
+        <input type="text" class="text-input wide" name="q8" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q8" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q9 -->
+      <div class="question-block" id="q9" data-q="9">
+        <div class="question-label">9. Give two practical skills lost because of overusing digital tools (paragraph 5).</div>
+        <input type="text" class="text-input wide" name="q9" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q9" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q10 -->
+      <div class="question-block" id="q10" data-q="10">
+        <div class="question-label">10. What does the phrase “harsh device bans” (line 24) contrast with?</div>
+        <input type="text" class="text-input wide" name="q10" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q10" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q11 -->
+      <div class="question-block" id="q11" data-q="11">
+        <div class="question-label">11. According to paragraph 6, why is the Tech Talk game more effective than punishment?</div>
+        <input type="text" class="text-input wide" name="q11" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q11" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q12 -->
+      <div class="question-block" id="q12" data-q="12">
+        <div class="question-label">12. Give one difference and one similarity between strict screen bans and digital minimalism. (2 marks)</div>
+        <input type="text" class="text-input wide" name="q12" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q12" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q13 -->
+      <div class="question-block" id="q13" data-q="13">
+        <div class="question-label">13. What is the writer’s overall attitude towards digital minimalism?</div>
+        <div class="options">
+          <label><input type="radio" name="q13" value="A">A. Fully against it</label>
+          <label><input type="radio" name="q13" value="B">B. Neutral with no opinion</label>
+          <label><input type="radio" name="q13" value="C">C. Generally supportive</label>
+          <label><input type="radio" name="q13" value="D">D. Doubtful about its effects</label>
+        </div>
+
+<div class="inline-solution" id="solution-q13" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q14 -->
+      <div class="question-block" id="q14" data-q="14">
+        <div class="question-label">14. What does the title “Digital Minimalism: A New Lifestyle for Overloaded Teenagers” imply about young people’s current online lives?</div>
+        <input type="text" class="text-input wide" name="q14" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q14" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q15 -->
+      <div class="question-block" id="q15" data-q="15">
+        <div class="question-label">15. What is the main purpose of this SCMP Young Post article?</div>
+        <div class="options">
+          <label><input type="radio" name="q15" value="A">A. To criticise all online activities</label>
+          <label><input type="radio" name="q15" value="B">B. To introduce a balanced way of using technology</label>
+          <label><input type="radio" name="q15" value="C">C. To advise schools to stop teaching digital lessons</label>
+          <label><input type="radio" name="q15" value="D">D. To prove phones are completely harmful to study</label>
+        </div>
+
+<div class="inline-solution" id="solution-q15" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+    </section>
+  </div>
+
+  <footer class="bottom-bar">
+    <div class="palette-section">
+      <span class="palette-label">Question Palette</span>
+      <div class="question-palette" id="questionPalette"></div>
+      <div class="palette-legend">
+        <span class="legend-dot"></span> answered
+      </div>
+    </div>
+    <div class="timer-section" id="timer">00:00</div>
+    <div class="action-buttons">
+      <button class="btn btn-submit" id="btnSubmit">✓ Submit</button>
+      <button class="btn btn-review" id="btnReview">⊞ Review</button>
+      <a class="btn btn-solution" href="solution.html">🔑 Solution</a>
+      <button class="btn btn-reset" id="btnReset">↺ Reset</button>
+    </div>
+  </footer>
+
+  <!-- Submit modal -->
+  <div class="modal-overlay" id="submitModal">
+    <div class="modal">
+      <h3>Are you sure you want to submit?</h3>
+      <p id="submitModalText">You have answered <strong id="answeredCount">0</strong> of 22 questions.</p>
+      <div class="modal-actions">
+        <button class="btn btn-reset" id="btnCancelSubmit">Cancel</button>
+        <button class="btn btn-submit" id="btnConfirmSubmit">Submit and view Answers</button>
+      </div>
+    </div>
+  </div>
+  <!-- Score modal -->
+  <div class="modal-overlay" id="scoreModal">
+    <div class="modal">
+      <h3>Your Results</h3>
+      <div class="score-display">
+        <div class="score-number" id="scoreNumber">0/22</div>
+        <div class="score-label" id="scorePercent">0% correct</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-review" id="btnCloseScore">Review Answers</button>
+        <a class="btn btn-solution" href="solution.html">View Full Solution</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+
+  <script>
+  // Article Vocabulary Highlight Toggle
+  let vocabHighlightOn = false;
+  let vocabWords = [];
+  let vocabLoaded = false;
+
+  function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  // Load vocabulary from external markdown
+  async function loadVocab() {
+    try {
+      const response = await fetch(`../kellywordbank-single.md?cache-bust=${new Date().getTime()}`);
+      const text = await response.text();
+      const lines = text.split('\n');
+      const words = [];
+      
+      // Extract words from lines starting with ###
+      lines.forEach(line => {
+        const match = line.match(/^###\s+([^(]+)/);
+        if (match) {
+          const word = match[1].trim();
+          if (word) words.push(word);
+        }
+      });
+      
+      // Sort by length descending - longer phrases match first
+      words.sort((a, b) => b.length - a.length);
+      vocabWords = words;
+      vocabLoaded = true;
+      console.log(`Loaded ${vocabWords.length} vocabulary words for highlighting`);
+    } catch (err) {
+      console.error('Failed to load vocabulary bank:', err);
+      vocabWords = [];
+      vocabLoaded = true;
+    }
+  }
+
+  function toggleVocabHighlight() {
+    vocabHighlightOn = !vocabHighlightOn;
+    const btn = document.getElementById('btnToggleVocabHighlight');
+    
+    if (vocabHighlightOn) {
+      btn.textContent = '詞彙高亮: ON';
+      btn.style.background = '#27ae60';
+      applyVocabHighlight();
+    } else {
+      btn.textContent = '詞彙高亮: OFF';
+      btn.style.background = '#f39c12';
+      removeVocabHighlight();
+    }
+  }
+
+  function applyVocabHighlight() {
+    if (!vocabLoaded) {
+      // Wait for vocab to load before applying
+      setTimeout(() => {
+        if (vocabHighlightOn) applyVocabHighlight();
+      }, 200);
+      return;
+    }
+    
+    if (vocabWords.length === 0) {
+      console.log('No vocabulary words loaded');
+      return;
+    }
+
+    // Get all paragraphs in passage
+    const paragraphs = document.querySelectorAll('#passagePanel p.paragraph');
+    
+    paragraphs.forEach(para => {
+      let html = para.innerHTML;
+      
+      // First remove any existing highlights
+      html = html.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g, '$1');
+      
+      // Apply highlights to all vocab words
+      vocabWords.forEach(word => {
+        const escaped = escapeRegExp(word);
+        // Match whole word, case-insensitive
+        const regex = new RegExp(`\\b${escaped}\\b`, 'gi');
+        html = html.replace(regex, `<mark style="background: rgba(52, 152, 219, 0.3);">$&</mark>`);
+      });
+      
+      para.innerHTML = html;
+    });
+  }
+
+  function removeVocabHighlight() {
+    const paragraphs = document.querySelectorAll('#passagePanel p.paragraph');
+    paragraphs.forEach(para => {
+      let html = para.innerHTML;
+      html = html.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g, '$1');
+      para.innerHTML = html;
+    });
+  }
+
+  // Initialize immediately - script is at bottom, DOM already loaded
+  loadVocab();
+  const btn = document.getElementById('btnToggleVocabHighlight');
+  if (btn) {
+    btn.addEventListener('click', toggleVocabHighlight);
+  }
+  </script>
+
+</body>
+</html>
