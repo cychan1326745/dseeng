@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head> 
+<script>
+let isSpeaking = false;
+let speechEnabled = true; // 默認開啟
+
+function loadSpeechSetting() {
+  const saved = localStorage.getItem('dse-speech-enabled');
+  if (saved !== null) {
+    speechEnabled = saved === 'true';
+  }
+  updateSpeechButton();
+}
+
+function updateSpeechButton() {
+  const btn = document.getElementById('btnToggleSpeech');
+  if (btn) {
+    btn.textContent = speechEnabled ? 'Speech: ON' : 'Speech: OFF';
+    btn.style.background = speechEnabled ? 'rgba(40, 167, 69, 0.3)' : 'rgba(220, 53, 69, 0.3)';
+  }
+}
+
+function toggleSpeech() {
+  speechEnabled = !speechEnabled;
+  localStorage.setItem('dse-speech-enabled', speechEnabled);
+  updateSpeechButton();
+  if (isSpeaking) {
+    speechSynthesis.cancel();
+    isSpeaking = false;
+  }
+}
+
+function readWord(text){
+  if(!speechEnabled) return; // 關閉狀態不發音
+  if(isSpeaking) speechSynthesis.cancel();
+  let utter = new SpeechSynthesisUtterance(text);
+  utter.lang = "en-US";
+  utter.rate = 0.9;
+  isSpeaking = true;
+  utter.onend = ()=> isSpeaking = false;
+  speechSynthesis.speak(utter);
+}
+
+// ── Click-to-read: 撳邊個英文字就讀邊個 ──
+document.addEventListener('DOMContentLoaded', function(){
+  loadSpeechSetting();
+  const btn = document.getElementById('btnToggleSpeech');
+  if (btn) btn.addEventListener('click', toggleSpeech);
+
+  const passage = document.getElementById('passagePanel');
+  if (!passage) return;
+
+  // 用 caretRangeFromPoint 拎 click 位置嘅英文字
+  passage.addEventListener('click', function(e){
+    if(!speechEnabled) return; // 關閉狀態完全不處理，方便選文字
+    // 唔干擾撳落 link / button / input
+    if (e.target.closest('a, button, input, label, select, textarea')) return;
+
+    const range = document.caretRangeFromPoint(e.clientX, e.clientY);
+    if (!range) return;
+    const node = range.startContainer;
+    if (node.nodeType !== Node.TEXT_NODE) return;
+    const offset = range.startOffset;
+    const text = node.textContent;
+
+    // 搵字嘅起始同結束（連 apostrophe 同 hyphen）
+    let start = offset;
+    let end = offset;
+    while (start > 0 && /[a-zA-Z\u00C0-\u024F'ʼ-]/.test(text[start - 1])) start--;
+    while (end < text.length && /[a-zA-Z\u00C0-\u024F'ʼ-]/.test(text[end])) end++;
+    if (start === end) return;
+
+    const word = text.slice(start, end);
+    // 過濾純數字
+    if (/^\d+$/.test(word)) return;
+
+    readWord(word);
+
+    // ── 視覺回饋：短暫 highlight ──
+    // 用 range select 個字
+    const wordRange = document.createRange();
+    wordRange.setStart(node, start);
+    wordRange.setEnd(node, end);
+    const highlight = document.createElement('mark');
+    highlight.style.cssText = 'background:#ffd54f;border-radius:3px;transition:background .3s';
+    try {
+      wordRange.surroundContents(highlight);
+      setTimeout(() => {
+        const parent = highlight.parentNode;
+        if (parent) {
+          while (highlight.firstChild) parent.insertBefore(highlight.firstChild, highlight);
+          parent.removeChild(highlight);
+          parent.normalize();
+        }
+      }, 500);
+    } catch(_) {
+      // 跨 element boundary 就跳過 highlight
+    }
+  });
+});
+</script>
+ 
+<style>
+/* 游標提示：passage 入面嘅文字係㩒得嘅 */
+#passagePanel .paragraph {
+  cursor: default;
+}
+#passagePanel .paragraph * {
+  cursor: pointer;
+}
+</style>
+
+<meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inhale calm, exhale stress: breathing exercises to learn and practise - DSE Reading Practice</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-brand"><span>DSE</span> Reading Practice</div>
+    <nav class="header-nav">
+      <a href="index.html" class="active">Reading</a>
+      <a href="solution.html">Solution</a>
+    </nav>
+    <div class="header-tools">
+      <button type="button" id="btnToggleSpeech">Speech: ON</button>
+      <button type="button" id="btnLargerText">Larger Text</button>
+      <button type="button" onclick="window.print()">Print</button>
+    </div>
+  </header>
+
+  <div class="main-container" id="mainContainer">
+    <section class="panel passage-panel" id="passagePanel">
+      <h2 class="passage-title">Inhale calm, exhale stress: breathing exercises to learn and practise</h2>
+      <p class="passage-subtitle">Text 1 — DSE Reading Practice</p>
+      <div class="passage-illustration">📖 ✏️</div>
+
+      <div style="text-align: center; margin: 15px 0; display: flex;">
+        <button id="btnToggleKelly" style="flex: 1; padding: 8px 12px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; margin: 0 5px;">
+          Kelly: OFF
+        </button>
+        <button id="btnToggleJenny" style="flex: 1; padding: 8px 12px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; margin: 0 5px;">
+          Jenny: OFF
+        </button>
+        <button id="btnToggleNash" style="flex: 1; padding: 8px 12px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; margin: 0 5px;">
+          Nash: OFF
+        </button>
+      </div>
+
+<script>
+// Article Vocabulary Highlight Toggle - Multiple vocabulary banks
+const VOCAB_CONFIG = {
+  kelly: {
+    btnId: 'btnToggleKelly',
+    file: '../008_Kelly_Hermes/kellywordbank/kellywordbank-single.md',
+    color: 'rgba(52, 152, 219, 0.3)',
+    on: false
+  },
+  jenny: {
+    btnId: 'btnToggleJenny',
+    file: '../008_Kelly_Hermes/kellywordbank/jennywordbank-single.md',
+    color: 'rgba(155, 89, 182, 0.3)',
+    on: false
+  },
+  nash: {
+    btnId: 'btnToggleNash',
+    file: '../008_Kelly_Hermes/kellywordbank/nashwordbank-single.md',
+    color: 'rgba(231, 76, 60, 0.3)',
+    on: false
+  }
+};
+
+let vocabLoaded = { kelly: false, jenny: false, nash: false };
+let vocabWords = { kelly: [], jenny: [], nash: [] };
+
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+async function loadVocab(bank) {
+  try {
+    const config = VOCAB_CONFIG[bank];
+    const response = await fetch(config.file + "?cache-bust=" + new Date().getTime());
+    const text = await response.text();
+    const lines = text.split("\n");
+    const words = [];
+    lines.forEach(line => {
+      const match = line.match(/^###\s+([^(]+)/);
+      if (match) {
+        const word = match[1].trim();
+        if (word) words.push(word);
+      }
+    });
+    words.sort((a, b) => b.length - a.length);
+    vocabWords[bank] = words;
+    vocabLoaded[bank] = true;
+  } catch (err) {
+    vocabWords[bank] = [];
+    vocabLoaded[bank] = true;
+  }
+}
+
+function turnOffAllExcept(exceptBank) {
+  Object.keys(VOCAB_CONFIG).forEach(bank => {
+    if (bank !== exceptBank && VOCAB_CONFIG[bank].on) {
+      VOCAB_CONFIG[bank].on = false;
+      const btn = document.getElementById(VOCAB_CONFIG[bank].btnId);
+      btn.style.background = '#f39c12';
+      btn.textContent = bank.charAt(0).toUpperCase() + bank.slice(1) + ': OFF';
+      removeVocabHighlight(bank);
+    }
+  });
+}
+
+function toggleVocabHighlight(bank) {
+  const config = VOCAB_CONFIG[bank];
+  config.on = !config.on;
+  const btn = document.getElementById(config.btnId);
+  if (config.on) {
+    turnOffAllExcept(bank);
+    btn.textContent = bank.charAt(0).toUpperCase() + bank.slice(1) + ': ON';
+    btn.style.background = '#27ae60';
+    applyVocabHighlight(bank);
+  } else {
+    btn.textContent = bank.charAt(0).toUpperCase() + bank.slice(1) + ': OFF';
+    btn.style.background = '#f39c12';
+    removeVocabHighlight(bank);
+  }
+}
+
+function applyVocabHighlight(bank) {
+  if (!vocabLoaded[bank]) {
+    setTimeout(() => { if (VOCAB_CONFIG[bank].on) applyVocabHighlight(bank); }, 200);
+    return;
+  }
+  if (vocabWords[bank].length === 0) return;
+  const config = VOCAB_CONFIG[bank];
+  const paragraphs = document.querySelectorAll('#passagePanel p.paragraph');
+  paragraphs.forEach(para => {
+    let html = para.innerHTML;
+    html = html.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g, '$1');
+    vocabWords[bank].forEach(word => {
+      const escaped = escapeRegExp(word);
+      const regex = new RegExp('\\b' + escaped + '\\b', 'gi');
+      html = html.replace(regex, '<mark style="background: ' + config.color + ';">$&</mark>');
+    });
+    para.innerHTML = html;
+  });
+}
+
+function removeVocabHighlight(bank) {
+  const paragraphs = document.querySelectorAll('#passagePanel p.paragraph');
+  paragraphs.forEach(para => {
+    let html = para.innerHTML;
+    html = html.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g, '$1');
+    para.innerHTML = html;
+  });
+}
+
+Object.keys(VOCAB_CONFIG).forEach(bank => {
+  loadVocab(bank);
+  const btn = document.getElementById(VOCAB_CONFIG[bank].btnId);
+  if (btn) {
+    btn.addEventListener('click', () => toggleVocabHighlight(bank));
+  }
+});
+</script>
+      <p class="paragraph" data-para="1">
+        <span class="paragraph-num">[1]</span>
+        When you are stressed, do people often tell you to take a deep breath? While this advice is meant to be helpful, it can be difficult to follow when you are upset and overwhelmed.
+      </p>
+
+      <p class="paragraph" data-para="2">
+        <span class="paragraph-num">[2]</span>
+        Breathing is something we mostly do without much thought. But you may have noticed how it changes when you feel strong emotions like anger, frustration or sadness. Our breaths can become short and shallow because our bodies physically respond to our emotions. This type of breathing can actually make us feel worse.
+      </p>
+
+      <p class="paragraph" data-para="3">
+        <span class="paragraph-num">[3]</span>
+        Changing the way we breathe will help calm down our nervous system, which is our body&#39;s command centre. It sends messages between our brain and the rest of our body, regulating our emotions and controlling how we move and feel.
+      </p>
+
+      <p class="paragraph" data-para="4">
+        <span class="paragraph-num">[4]</span>
+        Slowing down and taking deep, mindful breaths is a great way to send a message to your brain to remain calm during times of stress. Here are a few breathing exercises to practise. Give them a go now so that you are ready when you need them.
+      </p>
+
+      <p class="paragraph" data-para="5">
+        <span class="paragraph-num">[5]</span>
+        This is a simple yet powerful breathing exercise that is great when you need a quick mental reset. Hold your left hand out, making sure to spread your fingers. Then, using your right hand&#39;s index or pointer finger, trace around your left hand&#39;s thumb and fingers, breathing in as you trace up and breathing out as you trace down. This should be about five breaths in total. Repeat a few times if you need to. Tracing your fingers and thumb gives you something physical to focus on. You can also think of the phrases &quot;breathe in&quot; and &quot;breathe out&quot; to help your mind focus. If you really take your time, it can amount to a minute of mindful breathing.
+      </p>
+
+      <p class="paragraph" data-para="6">
+        <span class="paragraph-num">[6]</span>
+        This exercise is a great way to learn how to take deep breaths that really fill your lungs with air. This type of deep breathing is called diaphragmatic breathing. The diaphragm is a thin, dome-shaped muscle that usually moves down when we breathe in and up as we breathe out.
+      </p>
+
+      <p class="paragraph" data-para="7">
+        <span class="paragraph-num">[7]</span>
+        You can start practising this exercise while lying down, for example, in bed. Lie on your back and place one hand on your lower abdomen – your lower belly. Breathe in and out through your nose and concentrate on how you inhale and exhale. Take a few breaths like this.
+      </p>
+
+      <p class="paragraph" data-para="8">
+        <span class="paragraph-num">[8]</span>
+        Next, think about the hand that is on your belly. Can you feel it moving? If not, try to deepen the breath you take in so that your hand rises with your belly. Imagine there is a balloon inside your belly that is filling with air.
+      </p>
+
+      <p class="paragraph" data-para="9">
+        <span class="paragraph-num">[9]</span>
+        Take your time as you breathe out so that your hand slowly lowers. Imagine the balloon deflating. Repeat the phrases &quot;breathe in&quot; and &quot;breathe out&quot; in your head to help you focus.
+      </p>
+
+      <p class="paragraph" data-para="10">
+        <span class="paragraph-num">[10]</span>
+        With some practice, you will no longer need to place your hand on your belly to check your breathing. And once you are really familiar with this exercise, you can try it while standing or sitting instead of lying down.
+      </p>
+
+      <p class="paragraph" data-para="11">
+        <span class="paragraph-num">[11]</span>
+        Hopefully, these breathing exercises will provide you with some relief in tricky situations.
+      </p>
+    </section>
+
+    <div class="divider" id="divider" title="Drag to resize"></div>
+
+    <section class="panel questions-panel" id="questionsPanel">
+      <p class="instruction">Read Text 1 and answer questions 1-15. (20 marks)</p>
+
+      <!-- Q1 -->
+      <div class="question-block" id="q1" data-q="1">
+        <div class="question-label">1. According to paragraph 1, what problem does the writer identify about the advice to &quot;take a deep breath&quot; when someone is stressed?<br>________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q1" placeholder="Your answer" style="width:100%;">
+
+<div class="inline-solution" id="solution-q1" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <strong>Answer:</strong> The advice can be difficult to follow when someone is upset and overwhelmed. / It is hard to put into practice when you are feeling strong emotions.
+</div>
+      </div>
+
+      <!-- Q2 -->
+      <div class="question-block" id="q2" data-q="2">
+        <div class="question-label">2. Choose the word closest in contextual meaning to &quot;overwhelmed&quot; (line 2).<br>A. excited<br>B. confused<br>C. defeated by emotion<br>D. distracted<br>○ A ○ B ○ C ○ D</div>
+        <div class="options">
+          <label><input type="radio" name="q2" value="A">A. excited</label>
+          <label><input type="radio" name="q2" value="B">B. confused</label>
+          <label><input type="radio" name="q2" value="C">C. defeated by emotion</label>
+        </div>
+
+<div class="inline-solution" id="solution-q2" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <strong>Answer:</strong> C
+</div>
+      </div>
+
+      <!-- Q3 -->
+      <div class="question-block" id="q3" data-q="3">
+        <div class="question-label">3. What does the word &quot;it&quot; in &quot;how it changes&quot; (paragraph 2) refer to?<br>________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q3" placeholder="Your answer" style="width:100%;">
+
+<div class="inline-solution" id="solution-q3" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <strong>Answer:</strong> &quot;It&quot; refers to breathing / the way we breathe.
+</div>
+      </div>
+
+      <!-- Q4 -->
+      <div class="question-block" id="q4" data-q="4">
+        <div class="question-label">4. Decide whether the following statements are True, False, or Not Given according to the passage. (3 marks)<br>Statements:<br>i) Shallow breathing can make us feel worse emotionally.<br>ii) The nervous system only controls how we move.<br>iii) Finger-tracing breathing exercises should take about one minute.<br>T       F       NG<br>i)  ○       ○       ○<br>ii) ○       ○       ○<br>iii)○       ○       ○</div>
+        <table class="tf-table">
+          <thead><tr><th>Statement</th><th>T</th><th>F</th><th>NG</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>Shallow breathing can make us feel worse emotionally.</td>
+              <td><input type="radio" name="q4a" value="T"></td>
+              <td><input type="radio" name="q4a" value="F"></td>
+              <td><input type="radio" name="q4a" value="NG"></td>
+            </tr>
+            <tr>
+              <td>The nervous system only controls how we move.</td>
+              <td><input type="radio" name="q4b" value="T"></td>
+              <td><input type="radio" name="q4b" value="F"></td>
+              <td><input type="radio" name="q4b" value="NG"></td>
+            </tr>
+            <tr>
+              <td>Finger-tracing breathing exercises should take about one minute.</td>
+              <td><input type="radio" name="q4c" value="T"></td>
+              <td><input type="radio" name="q4c" value="F"></td>
+              <td><input type="radio" name="q4c" value="NG"></td>
+            </tr>
+          </tbody>
+        </table>
+
+<div class="inline-solution" id="solution-q4" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <strong>Answer:</strong> i) True<br>ii) False (it also regulates emotions and controls how we feel)<br>iii) True
+</div>
+      </div>
+
+      <!-- Q5 -->
+      <div class="question-block" id="q5" data-q="5">
+        <div class="question-label">5. According to paragraph 3, what are TWO functions of the nervous system mentioned in the passage?<br>________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q5" placeholder="Your answer" style="width:100%;">
+
+<div class="inline-solution" id="solution-q5" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <strong>Answer:</strong> It sends messages between the brain and the rest of the body, AND it regulates emotions / controls how we move and feel. (Any two: sends messages, regulates emotions, controls movement, controls feelings)
+</div>
+      </div>
+
+      <!-- Q6 -->
+      <div class="question-block" id="q6" data-q="6">
+        <div class="question-label">6. Explain in your own words what &quot;mindful breaths&quot; (paragraph 4) means.<br>________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q6" placeholder="Your answer" style="width:100%;">
+
+<div class="inline-solution" id="solution-q6" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <strong>Answer:</strong> Mindful breaths means breathing with full attention and awareness, focusing on each breath rather than breathing automatically without thinking.
+</div>
+      </div>
+
+      <!-- Q7 -->
+      <div class="question-block" id="q7" data-q="7">
+        <div class="question-label">7. Complete the summary below using ONE word from the passage for each blank. (4 marks)<br>The finger-tracing exercise involves using your (i)________ hand&#39;s finger to trace around your left hand. You should breathe (ii)________ as you trace up and breathe out as you trace down. This exercise gives you something (iii)________ to focus on. With practice, it can amount to a minute of (iv)________ breathing.</div>
+        <div class="flow-chart">
+          <input type="text" class="text-input short" name="q7a" placeholder="Your answer" style="margin:4px;">
+          <input type="text" class="text-input short" name="q7b" placeholder="Your answer" style="margin:4px;">
+          <input type="text" class="text-input short" name="q7c" placeholder="Your answer" style="margin:4px;">
+          <input type="text" class="text-input short" name="q7d" placeholder="Your answer" style="margin:4px;">
+        </div>
+
+<div class="inline-solution" id="solution-q7" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <strong>Answer:</strong> (i) right<br>(ii) in<br>(iii) physical<br>(iv) mindful
+</div>
+      </div>
+
+      <!-- Q8 -->
+      <div class="question-block" id="q8" data-q="8">
+        <div class="question-label">8. Why does the writer suggest practising breathing exercises before you actually need them? (paragraph 4)<br>________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q8" placeholder="Your answer" style="width:100%;">
+
+<div class="inline-solution" id="solution-q8" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <strong>Answer:</strong> So that you are ready / prepared to use them when you actually feel stressed or need them.
+</div>
+      </div>
+
+      <!-- Q9 -->
+      <div class="question-block" id="q9" data-q="9">
+        <div class="question-label">9. What is &quot;diaphragmatic breathing&quot; according to paragraph 6?<br>________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q9" placeholder="Your answer" style="width:100%;">
+
+<div class="inline-solution" id="solution-q9" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <strong>Answer:</strong> Diaphragmatic breathing is a type of deep breathing that fills the lungs with air, using the diaphragm muscle which moves down when breathing in and up when breathing out.
+</div>
+      </div>
+
+      <!-- Q10 -->
+      <div class="question-block" id="q10" data-q="10">
+        <div class="question-label">10. Give ONE difference and ONE similarity between the two breathing exercises described in the passage. (2 marks)<br>Difference: ________________________________________________________________<br>Similarity: ________________________________________________________________</div>
+        <div style="margin-top: 8px;">
+          <div style="margin-bottom: 8px;"><strong>Difference:</strong></div>
+          <input type="text" class="text-input wide" name="q10a" placeholder="Your answer" style="width:100%;">
+          <div style="margin: 8px 0;"><strong>Similarity:</strong></div>
+          <input type="text" class="text-input wide" name="q10b" placeholder="Your answer" style="width:100%;">
+        </div>
+
+<div class="inline-solution" id="solution-q10" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <strong>Answer:</strong> Difference: The first exercise uses finger-tracing while the second focuses on belly movement / lying down. / The first is for a quick mental reset, the second teaches deep diaphragmatic breathing.<br>Similarity: Both involve slow, controlled breathing / both use the phrases &quot;breathe in&quot; and &quot;breathe out&quot; to focus the mind.
+</div>
+      </div>
+
+      <!-- Q11 -->
+      <div class="question-block" id="q11" data-q="11">
+        <div class="question-label">11. According to the passage, what concern might someone have when first trying the belly-breathing exercise? (paragraph 8)<br>________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q11" placeholder="Your answer" style="width:100%;">
+
+<div class="inline-solution" id="solution-q11" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <strong>Answer:</strong> They might not be able to feel their hand moving on their belly / they might not feel their belly rising when they breathe in.
+</div>
+      </div>
+
+      <!-- Q12 -->
+      <div class="question-block" id="q12" data-q="12">
+        <div class="question-label">12. List TWO suggestions the writer gives to help people focus during the breathing exercises.<br>________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q12" placeholder="Your answer" style="width:100%;">
+
+<div class="inline-solution" id="solution-q12" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <strong>Answer:</strong> (Any two:)<br>- Thinking of the phrases &quot;breathe in&quot; and &quot;breathe out&quot; in your head<br>- Tracing your fingers and thumb (physical focus)<br>- Imagining a balloon filling with air / deflating
+</div>
+      </div>
+
+      <!-- Q13 -->
+      <div class="question-block" id="q13" data-q="13">
+        <div class="question-label">13. What does the writer mean by &quot;Imagine the balloon deflating&quot; (paragraph 9)?<br>________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q13" placeholder="Your answer" style="width:100%;">
+
+<div class="inline-solution" id="solution-q13" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <strong>Answer:</strong> It means imagining the air slowly leaving your belly as you breathe out, so that your hand lowers gently and your breathing becomes slow and controlled.
+</div>
+      </div>
+
+      <!-- Q14 -->
+      <div class="question-block" id="q14" data-q="14">
+        <div class="question-label">14. Choose the best description of the writer&#39;s overall attitude towards breathing exercises.<br>A. Fully critical – they are a waste of time<br>B. Generally supportive – they can be helpful<br>C. Completely neutral – no opinion is given<br>D. Deeply doubtful – they are unlikely to work<br>○ A ○ B ○ C ○ D</div>
+        <div class="options">
+          <label><input type="radio" name="q14" value="A">A. Fully critical – they are a waste of time</label>
+          <label><input type="radio" name="q14" value="B">B. Generally supportive – they can be helpful</label>
+          <label><input type="radio" name="q14" value="C">C. Completely neutral – no opinion is given</label>
+        </div>
+
+<div class="inline-solution" id="solution-q14" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <strong>Answer:</strong> B
+</div>
+      </div>
+
+      <!-- Q15 -->
+      <div class="question-block" id="q15" data-q="15">
+        <div class="question-label">15. What does the title &quot;Inhale calm, exhale stress&quot; suggest about the main message of the passage?<br>________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q15" placeholder="Your answer" style="width:100%;">
+
+<div class="inline-solution" id="solution-q15" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <strong>Answer:</strong> The title suggests that by controlling your breathing (inhaling and exhaling), you can replace stress with calmness / the main message is that breathing exercises can help you manage stress and feel calmer.
+</div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="bottom-bar">
+    <div class="palette-section">
+      <span class="palette-label">Question Palette</span>
+      <div class="question-palette" id="questionPalette"></div>
+      <div class="palette-legend">
+        <span class="legend-dot"></span> answered
+      </div>
+    </div>
+    <div class="timer-section" id="timer">00:00</div>
+    <div class="action-buttons">
+      <button class="btn btn-submit" id="btnSubmit">✓ Submit</button>
+      <button class="btn btn-review" id="btnReview">⊞ Review</button>
+      <a class="btn btn-solution" href="solution.html">🔑 Solution</a>
+      <button class="btn btn-reset" id="btnReset">↺ Reset</button>
+    </div>
+  </footer>
+
+  <!-- Submit modal -->
+  <div class="modal-overlay" id="submitModal">
+    <div class="modal">
+      <h3>Are you sure you want to submit?</h3>
+      <p id="submitModalText">You have answered <strong id="answeredCount">0</strong> of 15 questions.</p>
+      <div class="modal-actions">
+        <button class="btn btn-reset" id="btnCancelSubmit">Cancel</button>
+        <button class="btn btn-submit" id="btnConfirmSubmit">Submit and view Answers</button>
+      </div>
+    </div>
+  </div>
+  <!-- Score modal -->
+  <div class="modal-overlay" id="scoreModal">
+    <div class="modal">
+      <h3>Your Results</h3>
+      <div class="score-display">
+        <div class="score-number" id="scoreNumber">0/15</div>
+        <div class="score-label" id="scorePercent">0% correct</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-review" id="btnCloseScore">Review Answers</button>
+        <a class="btn btn-solution" href="solution.html">View Full Solution</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

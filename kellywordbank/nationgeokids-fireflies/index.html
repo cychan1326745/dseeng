@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+let isSpeaking = false;
+let speechEnabled = true;
+function loadSpeechSetting() {
+  const saved = localStorage.getItem('dse-speech-enabled');
+  if (saved !== null) speechEnabled = saved === 'true';
+  updateSpeechButton();
+}
+function updateSpeechButton() {
+  const btn = document.getElementById('btnToggleSpeech');
+  if (btn) {
+    btn.textContent = speechEnabled ? 'Speech: ON' : 'Speech: OFF';
+    btn.style.background = speechEnabled ? 'rgba(40, 167, 69, 0.3)' : 'rgba(220, 53, 69, 0.3)';
+  }
+}
+function toggleSpeech() {
+  speechEnabled = !speechEnabled;
+  localStorage.setItem('dse-speech-enabled', speechEnabled);
+  updateSpeechButton();
+  if (isSpeaking) { speechSynthesis.cancel(); isSpeaking = false; }
+}
+function readWord(text){
+  if(!speechEnabled) return;
+  if(isSpeaking) speechSynthesis.cancel();
+  let utter = new SpeechSynthesisUtterance(text);
+  utter.lang = "en-US"; utter.rate = 0.9;
+  isSpeaking = true;
+  utter.onend = ()=> isSpeaking = false;
+  speechSynthesis.speak(utter);
+}
+document.addEventListener('DOMContentLoaded', function(){
+  loadSpeechSetting();
+  const btn = document.getElementById('btnToggleSpeech');
+  if (btn) btn.addEventListener('click', toggleSpeech);
+  const passage = document.getElementById('passagePanel');
+  if (!passage) return;
+  passage.addEventListener('click', function(e){
+    if(!speechEnabled) return;
+    if (e.target.closest('a, button, input, label, select, textarea')) return;
+    const range = document.caretRangeFromPoint(e.clientX, e.clientY);
+    if (!range) return;
+    const node = range.startContainer;
+    if (node.nodeType !== Node.TEXT_NODE) return;
+    const offset = range.startOffset;
+    const text = node.textContent;
+    let start = offset, end = offset;
+    while (start > 0 && /[a-zA-Z\u00C0-\u024F'\u02BC-]/.test(text[start - 1])) start--;
+    while (end < text.length && /[a-zA-Z\u00C0-\u024F'\u02BC-]/.test(text[end])) end++;
+    if (start === end) return;
+    const word = text.slice(start, end);
+    if (/^\d+$/.test(word)) return;
+    readWord(word);
+    const wordRange = document.createRange();
+    wordRange.setStart(node, start);
+    wordRange.setEnd(node, end);
+    const highlight = document.createElement('mark');
+    highlight.style.cssText = 'background:#ffd54f;border-radius:3px;transition:background .3s';
+    try {
+      wordRange.surroundContents(highlight);
+      setTimeout(() => {
+        const parent = highlight.parentNode;
+        if (parent) {
+          while (highlight.firstChild) parent.insertBefore(highlight.firstChild, highlight);
+          parent.removeChild(highlight);
+          parent.normalize();
+        }
+      }, 500);
+    } catch(_) {}
+  });
+});
+</script>
+<style>
+#passagePanel .paragraph { cursor: default; }
+#passagePanel .paragraph * { cursor: pointer; }
+</style>
+<meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fireflies: Nature's Tiny Glowing Night Lights - DSE 2012 Part A</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-brand"><span>DSE</span> 2012 Part A Reading Practice</div>
+    <nav class="header-nav">
+      <a href="index.html" class="active">Reading</a>
+      <a href="solution.html">Solution</a>
+    </nav>
+    <div class="header-tools">
+      <button type="button" id="btnToggleSpeech">Speech: ON</button>
+      <button type="button" id="btnLargerText">Larger Text</button>
+      <button type="button" onclick="window.print()">Print</button>
+    </div>
+  </header>
+  <div class="main-container" id="mainContainer">
+    <section class="panel passage-panel" id="passagePanel">
+      <h2 class="passage-title">Fireflies: Nature's Tiny Glowing Night Lights</h2>
+      <p class="passage-subtitle">Text 2 — Nat Geo Kids Adapted B2 Reading</p>
+      <div class="passage-illustration">✨ 🪲 🌙</div>
+      <div style="text-align: center; margin: 15px 0; display: flex;">
+        <button id="btnToggleKelly" style="flex:1;padding:8px 12px;background:#f39c12;color:white;border:none;border-radius:4px;cursor:pointer;font-size:15px;margin:0 5px;">Kelly: OFF</button>
+        <button id="btnToggleJenny" style="flex:1;padding:8px 12px;background:#f39c12;color:white;border:none;border-radius:4px;cursor:pointer;font-size:15px;margin:0 5px;">Jenny: OFF</button>
+        <button id="btnToggleNash" style="flex:1;padding:8px 12px;background:#f39c12;color:white;border:none;border-radius:4px;cursor:pointer;font-size:15px;margin:0 5px;">Nash: OFF</button>
+      </div>
+<script>
+const VOCAB_CONFIG = {
+  kelly: { btnId:'btnToggleKelly', file:'../008_Kelly_Hermes/kellywordbank/kellywordbank-single.md', color:'rgba(52,152,219,0.3)', on:false },
+  jenny: { btnId:'btnToggleJenny', file:'../008_Kelly_Hermes/kellywordbank/jennywordbank-single.md', color:'rgba(155,89,182,0.3)', on:false },
+  nash: { btnId:'btnToggleNash', file:'../008_Kelly_Hermes/kellywordbank/nashwordbank-single.md', color:'rgba(231,76,60,0.3)', on:false }
+};
+let vocabLoaded = { kelly:false, jenny:false, nash:false };
+let vocabWords = { kelly:[], jenny:[], nash:[] };
+function escapeRegExp(s) { return s.replace(/[.*+?${}()|[\]\\]/g, '\\$&'); }
+async function loadVocab(bank) {
+  try {
+    const r = await fetch(VOCAB_CONFIG[bank].file+'?cache-bust='+new Date().getTime());
+    const t = await r.text();
+    const w = [];
+    t.split('\n').forEach(l => { const m = l.match(/^###\s+([^(]+)/); if(m) { const wd = m[1].trim(); if(wd) w.push(wd); } });
+    w.sort((a,b)=>b.length-a.length);
+    vocabWords[bank] = w; vocabLoaded[bank] = true;
+  } catch(e) { vocabWords[bank] = []; vocabLoaded[bank] = true; }
+}
+function turnOffAllExcept(b) {
+  Object.keys(VOCAB_CONFIG).forEach(bank => {
+    if(bank!==b && VOCAB_CONFIG[bank].on) {
+      VOCAB_CONFIG[bank].on = false;
+      const btn = document.getElementById(VOCAB_CONFIG[bank].btnId);
+      btn.style.background='#f39c12'; btn.textContent=bank.charAt(0).toUpperCase()+bank.slice(1)+': OFF';
+      removeVocabHighlight(bank);
+    }
+  });
+}
+function toggleVocabHighlight(bank) {
+  const c = VOCAB_CONFIG[bank]; c.on = !c.on;
+  const btn = document.getElementById(c.btnId);
+  if(c.on) { turnOffAllExcept(bank); btn.textContent=bank.charAt(0).toUpperCase()+bank.slice(1)+': ON'; btn.style.background='#27ae60'; applyVocabHighlight(bank); }
+  else { btn.textContent=bank.charAt(0).toUpperCase()+bank.slice(1)+': OFF'; btn.style.background='#f39c12'; removeVocabHighlight(bank); }
+}
+function applyVocabHighlight(bank) {
+  if(!vocabLoaded[bank]) { setTimeout(()=>{ if(VOCAB_CONFIG[bank].on) applyVocabHighlight(bank); },200); return; }
+  if(vocabWords[bank].length===0) return;
+  const c = VOCAB_CONFIG[bank];
+  document.querySelectorAll('#passagePanel p.paragraph').forEach(para => {
+    let h = para.innerHTML.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g,'$1');
+    vocabWords[bank].forEach(w => { const e = escapeRegExp(w); h = h.replace(new RegExp('\\b'+e+'\\b','gi'), '<mark style="background:'+c.color+';">$&</mark>'); });
+    para.innerHTML = h;
+  });
+}
+function removeVocabHighlight(bank) {
+  document.querySelectorAll('#passagePanel p.paragraph').forEach(para => { para.innerHTML = para.innerHTML.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g,'$1'); });
+}
+Object.keys(VOCAB_CONFIG).forEach(bank => { loadVocab(bank); const btn = document.getElementById(VOCAB_CONFIG[bank].btnId); if(btn) btn.addEventListener('click',()=>toggleVocabHighlight(bank)); });
+</script>
+      <p class="paragraph" data-para="1">
+        <span class="paragraph-num">[1]</span>
+        Fireflies, also called lightning bugs, are soft-bodied beetles famous for their natural glowing lights, a scientific trait named bioluminescence. Thousands of firefly species live across warm temperate forests, grasslands and wet marshlands on every continent except Antarctica. Unlike electric lights that waste most energy as heat, firefly light produces zero extra warmth; nearly 100% of chemical energy inside their bodies turns directly into soft yellow-green glow, making it one of the most efficient light sources on Earth.
+      </p>
+      <p class="paragraph" data-para="2">
+        <span class="paragraph-num">[2]</span>
+        The glowing light comes from two special chemicals inside a small organ under the firefly's abdomen: luciferin and luciferase. When oxygen mixes with these two substances, a gentle flash of light appears. Every firefly species has its own unique flashing pattern — some blink single quick pulses, others draw slow long glowing trails. Male fireflies fly low through dusk foliage and flash their species-specific signals to attract quiet females hiding under leaves, who reply with matching short glows if they accept the male's mating invitation.
+      </p>
+      <p class="paragraph" data-para="3">
+        <span class="paragraph-num">[3]</span>
+        Fireflies have multi-purpose glow signals that serve more than just mating. When young firefly larvae (known as glowworms) live underground or underwater, their constant faint glow warns predators like birds, frogs and spiders that their bodies hold bitter, unpleasant poison. Predators learn to avoid any small glowing insect after one bad bitter taste. Even adult fireflies flash bright warning bursts when grabbed or disturbed to scare attackers off before being eaten.
+      </p>
+      <p class="paragraph" data-para="4">
+        <span class="paragraph-num">[4]</span>
+        A full firefly life cycle takes roughly one year, split into four clear growth stages: egg, larva, pupa and adult. Females lay tiny glowing eggs in damp moss beside streams. Larvae spend 9–10 months hunting tiny snails and worms underground, using their glowing tails to navigate dark soil. In spring, larvae wrap themselves inside mud pupal shells to transform; after two weeks, fully winged adult fireflies emerge to mate, lay eggs and start the cycle again. Adult fireflies live only two to four weeks, and many stop eating solid food entirely once they mature.
+      </p>
+      <p class="paragraph" data-para="5">
+        <span class="paragraph-num">[5]</span>
+        Four widespread human activities rapidly shrink global firefly populations. First, bright artificial streetlights, shop signs and home garden lamps overwhelm the faint firefly flashes, blocking mating signals so males and females cannot find each other. Second, chemical pesticides sprayed on lawns and farmland poison firefly eggs, larvae and mature beetles. Third, wet marsh breeding grounds are drained to build housing developments, removing the damp dark soil fireflies need to lay eggs. Fourth, mass tourist firefly-watching tours trample moss nesting zones and disrupt evening mating flash displays.
+      </p>
+      <p class="paragraph" data-para="6">
+        <span class="paragraph-num">[6]</span>
+        Global insect conservation groups launch simple firefly protection plans. Local governments install dim, warm low-light street lamps in wetland areas to avoid drowning out firefly glow signals. Farmers and gardeners switch to natural organic pest control instead of toxic chemical sprays. Regulated guided firefly tours set strict no-flash photography rules and mark off off-limits moss egg-laying zones to prevent trampling. Citizen science projects invite teens to count firefly flash groups each summer and send population data to insect biologists worldwide.
+      </p>
+      <p class="paragraph" data-para="7">
+        <span class="paragraph-num">[7]</span>
+        Fireflies are vital indicator species for healthy wetland and forest environments. If firefly numbers vanish from a stream or meadow, it proves the water, soil or light balance has been damaged by human pollution or habitat loss. Protecting firefly breeding marshes restores safe living space for snails, frogs, dragonflies and dozens of other small wetland creatures that rely on dark, undisturbed damp natural zones.
+      </p>
+
+    </section>
+    <div class="divider" id="divider" title="Drag to resize"></div>
+    <section class="panel questions-panel" id="questionsPanel">
+      <p class="instruction">Read the text and answer questions 1–15. (20 marks)</p>
+
+      <div class="question-block" id="q1" data-q="1">
+        <div class="question-label">1. What scientific word describes fireflies' natural ability to produce glowing light?</div>
+        <input type="text" class="text-input wide" name="q1" placeholder="Your answer">
+<div class="inline-solution" id="solution-q1" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">1</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q2" data-q="2">
+        <div class="question-label">2. Choose the word closest in meaning to "bioluminescence" (line 2)</div>
+        <div class="options">
+          <label><input type="radio" name="q2" value="A"> A. natural living things creating their own light</label>
+          <label><input type="radio" name="q2" value="B"> B. electric light bulbs powered by batteries</label>
+          <label><input type="radio" name="q2" value="C"> C. chemical poisons stored inside insect bodies</label>
+          <label><input type="radio" name="q2" value="D"> D. plant photosynthesis that makes oxygen</label>
+        </div>
+<div class="inline-solution" id="solution-q2" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">2</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q3" data-q="3">
+        <div class="question-label">3. What two special chemicals inside fireflies create their glowing flashes?</div>
+        <input type="text" class="text-input wide" name="q3" placeholder="Your answer">
+<div class="inline-solution" id="solution-q3" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">3</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q4" data-q="4">
+        <div class="question-label">4. Decide True / False / Not Given (3 marks)</div>
+        <table class="tf-table">
+          <thead><tr><th>Statement</th><th>T</th><th>F</th><th>NG</th></tr></thead>
+          <tbody>
+            <tr><td>(i) Firefly light releases large amounts of waste heat, like household lamps.</td><td><input type="radio" name="q4i" value="T"></td><td><input type="radio" name="q4i" value="F"></td><td><input type="radio" name="q4i" value="NG"></td></tr>
+            <tr><td>(ii) Each firefly species uses a unique flashing pattern to attract mates.</td><td><input type="radio" name="q4ii" value="T"></td><td><input type="radio" name="q4ii" value="F"></td><td><input type="radio" name="q4ii" value="NG"></td></tr>
+            <tr><td>(iii) Adult fireflies live for over ten months after emerging from pupal shells.</td><td><input type="radio" name="q4iii" value="T"></td><td><input type="radio" name="q4iii" value="F"></td><td><input type="radio" name="q4iii" value="NG"></td></tr>
+          </tbody>
+        </table>
+<div class="inline-solution" id="solution-q4" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">4</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q5" data-q="5">
+        <div class="question-label">5. Name four human threats that cause firefly population decline (paragraph 5)</div>
+        <input type="text" class="text-input wide" name="q5" placeholder="Your answer">
+<div class="inline-solution" id="solution-q5" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">5</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q6" data-q="6">
+        <div class="question-label">6. What do firefly larvae's constant faint glows warn predators about (paragraph 3)?</div>
+        <input type="text" class="text-input wide" name="q6" placeholder="Your answer">
+<div class="inline-solution" id="solution-q6" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">6</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q7" data-q="7">
+        <div class="question-label">7. Find one word in paragraph 7 meaning animals that signal environmental health damage</div>
+        <input type="text" class="text-input" name="q7" placeholder="Your answer">
+<div class="inline-solution" id="solution-q7" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">7</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q8" data-q="8">
+        <div class="question-label">8. Complete the summary with ONE word taken from the passage (4 marks)</div>
+        <div class="flow-chart">
+          <p>(i) safeguard firefly <input type="text" class="text-input short" name="q8i" placeholder="Your answer"></p>
+          <p>(ii) share data with insect <input type="text" class="text-input short" name="q8ii" placeholder="Your answer"></p>
+          <p>(iii) damaged wetland <input type="text" class="text-input short" name="q8iii" placeholder="Your answer"></p>
+          <p>(iv) all small water and forest <input type="text" class="text-input short" name="q8iv" placeholder="Your answer"></p>
+        </div>
+<div class="inline-solution" id="solution-q8" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">8</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q9" data-q="9">
+        <div class="question-label">9. What three official conservation rules protect wild firefly populations (paragraph 6)?</div>
+        <input type="text" class="text-input wide" name="q9" placeholder="Your answer">
+<div class="inline-solution" id="solution-q9" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">9</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q10" data-q="10">
+        <div class="question-label">10. Give one difference and one similarity between adult flying fireflies and underground glowworm larvae (2 marks)</div>
+        <p>(i) Difference: <input type="text" class="text-input wide" name="q10i" placeholder="Your answer"></p>
+        <p>(ii) Similarity: <input type="text" class="text-input wide" name="q10ii" placeholder="Your answer"></p>
+<div class="inline-solution" id="solution-q10" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">10</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q11" data-q="11">
+        <div class="question-label">11. How long do fully mature winged adult fireflies live after leaving their mud pupal shells (paragraph 4)?</div>
+        <input type="text" class="text-input wide" name="q11" placeholder="Your answer">
+<div class="inline-solution" id="solution-q11" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">11</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q12" data-q="12">
+        <div class="question-label">12. What three volunteer citizen science actions help study and protect fireflies (paragraphs 6 &amp; 7)?</div>
+        <input type="text" class="text-input wide" name="q12" placeholder="Your answer">
+<div class="inline-solution" id="solution-q12" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">12</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q13" data-q="13">
+        <div class="question-label">13. Why do bright streetlights stop fireflies from reproducing successfully (paragraph 5)?</div>
+        <input type="text" class="text-input wide" name="q13" placeholder="Your answer">
+<div class="inline-solution" id="solution-q13" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">13</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q14" data-q="14">
+        <div class="question-label">14. What is the writer's overall attitude toward firefly wetland conservation?</div>
+        <div class="options">
+          <label><input type="radio" name="q14" value="A"> A. Fully pessimistic</label>
+          <label><input type="radio" name="q14" value="B"> B. Generally hopeful</label>
+          <label><input type="radio" name="q14" value="C"> C. Completely neutral</label>
+          <label><input type="radio" name="q14" value="D"> D. Strongly doubtful</label>
+        </div>
+<div class="inline-solution" id="solution-q14" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">14</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q15" data-q="15">
+        <div class="question-label">15. What does the title "Fireflies: Nature's Tiny Glowing Night Lights" imply about fireflies' key natural feature?</div>
+        <input type="text" class="text-input wide" name="q15" placeholder="Your answer">
+<div class="inline-solution" id="solution-q15" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">15</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <h4 class="end-marker">— End of the Test —</h4>
+      <p class="submit-hint">Please Submit to view your score, solution and explanations.</p>
+    </section>
+  </div>
+  <footer class="bottom-bar">
+    <div class="palette-section">
+      <span class="palette-label">Question Palette</span>
+      <div class="question-palette" id="questionPalette"></div>
+      <div class="palette-legend"><span class="legend-dot"></span> answered</div>
+    </div>
+    <div class="timer-section" id="timer">00:00</div>
+    <div class="action-buttons">
+      <button class="btn btn-submit" id="btnSubmit">✓ Submit</button>
+      <button class="btn btn-review" id="btnReview">⊞ Review</button>
+      <a class="btn btn-solution" href="solution.html">🔑 Solution</a>
+      <button class="btn btn-reset" id="btnReset">↺ Reset</button>
+    </div>
+  </footer>
+  <div class="modal-overlay" id="submitModal">
+    <div class="modal">
+      <h3>Are you sure you want to submit?</h3>
+      <p id="submitModalText">You have answered <strong id="answeredCount">0</strong> of 15 questions.</p>
+      <div class="modal-actions">
+        <button class="btn btn-reset" id="btnCancelSubmit">Cancel</button>
+        <button class="btn btn-submit" id="btnConfirmSubmit">Submit and view Answers</button>
+      </div>
+    </div>
+  </div>
+  <div class="modal-overlay" id="scoreModal">
+    <div class="modal">
+      <h3>Your Results</h3>
+      <div class="score-display">
+        <div class="score-number" id="scoreNumber">0/15</div>
+        <div class="score-label" id="scorePercent">0% correct</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-review" id="btnCloseScore">Review Answers</button>
+        <a class="btn btn-solution" href="solution.html">View Full Solution</a>
+      </div>
+    </div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

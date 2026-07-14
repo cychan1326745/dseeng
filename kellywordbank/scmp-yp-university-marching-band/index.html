@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head> 
+
+<script>
+let isSpeaking = false;
+let speechEnabled = true;
+
+function loadSpeechSetting() {
+  const saved = localStorage.getItem('dse-speech-enabled');
+  if (saved !== null) {
+    speechEnabled = saved === 'true';
+  }
+  updateSpeechButton();
+}
+
+function updateSpeechButton() {
+  const btn = document.getElementById('btnToggleSpeech');
+  if (btn) {
+    btn.textContent = speechEnabled ? 'Speech: ON' : 'Speech: OFF';
+    btn.style.background = speechEnabled ? 'rgba(40, 167, 69, 0.3)' : 'rgba(220, 53, 69, 0.3)';
+  }
+}
+
+function toggleSpeech() {
+  speechEnabled = !speechEnabled;
+  localStorage.setItem('dse-speech-enabled', speechEnabled);
+  updateSpeechButton();
+  if (isSpeaking) {
+    speechSynthesis.cancel();
+    isSpeaking = false;
+  }
+}
+
+function readWord(text){
+  if(!speechEnabled) return;
+  if(isSpeaking) speechSynthesis.cancel();
+  let utter = new SpeechSynthesisUtterance(text);
+  utter.lang = "en-US";
+  utter.rate = 0.9;
+  isSpeaking = true;
+  utter.onend = ()=> isSpeaking = false;
+  speechSynthesis.speak(utter);
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  loadSpeechSetting();
+  const btn = document.getElementById('btnToggleSpeech');
+  if (btn) btn.addEventListener('click', toggleSpeech);
+
+  const passage = document.getElementById('passagePanel');
+  if (!passage) return;
+
+  passage.addEventListener('click', function(e){
+    if(!speechEnabled) return;
+    if (e.target.closest('a, button, input, label, select, textarea')) return;
+
+    const range = document.caretRangeFromPoint(e.clientX, e.clientY);
+    if (!range) return;
+    const node = range.startContainer;
+    if (node.nodeType !== Node.TEXT_NODE) return;
+    const offset = range.startOffset;
+    const text = node.textContent;
+
+    let start = offset;
+    let end = offset;
+    while (start > 0 && /[a-zA-Z\u00C0-\u024F'ʼ-]/.test(text[start - 1])) start--;
+    while (end < text.length && /[a-zA-Z\u00C0-\u024F'ʼ-]/.test(text[end])) end++;
+    if (start === end) return;
+
+    const word = text.slice(start, end);
+    if (/^\d+$/.test(word)) return;
+
+    readWord(word);
+
+    const wordRange = document.createRange();
+    wordRange.setStart(node, start);
+    wordRange.setEnd(node, end);
+    const highlight = document.createElement('mark');
+    highlight.style.cssText = 'background:#ffd54f;border-radius:3px;transition:background .3s';
+    try {
+      wordRange.surroundContents(highlight);
+      setTimeout(() => {
+        const parent = highlight.parentNode;
+        if (parent) {
+          while (highlight.firstChild) parent.insertBefore(highlight.firstChild, highlight);
+          parent.removeChild(highlight);
+          parent.normalize();
+        }
+      }, 500);
+    } catch(_) {
+    }
+  });
+});
+</script>
+
+<style>
+#passagePanel .paragraph {
+  cursor: default;
+}
+#passagePanel .paragraph * {
+  cursor: pointer;
+}
+</style>
+
+<meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>University marching band blends American and Hong Kong culture for unique performance - DSE Reading Practice</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-brand"><span>DSE</span> Reading Practice</div>
+    <nav class="header-nav">
+      <a href="index.html" class="active">Reading</a>
+      <a href="solution.html">Solution</a>
+    </nav>
+    <div class="header-tools">
+      <button type="button" id="btnToggleSpeech">Speech: ON</button>
+      <button type="button" id="btnLargerText">Larger Text</button>
+      <button type="button" onclick="window.print()">Print</button>
+    </div>
+  </header>
+
+  <div class="main-container" id="mainContainer">
+    <section class="panel passage-panel" id="passagePanel">
+      <h2 class="passage-title">University marching band blends American and Hong Kong culture for unique performance</h2>
+      <p class="passage-subtitle">DSE Reading Comprehension Practice</p>
+      <div class="passage-illustration">📖 ✏️</div>
+
+      <div style="text-align: center; margin: 15px 0; display: flex;">
+        <button id="btnToggleKelly" style="flex: 1; padding: 8px 12px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; margin: 0 5px;">
+          Kelly: OFF
+        </button>
+        <button id="btnToggleJenny" style="flex: 1; padding: 8px 12px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; margin: 0 5px;">
+          Jenny: OFF
+        </button>
+        <button id="btnToggleNash" style="flex: 1; padding: 8px 12px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; margin: 0 5px;">
+          Nash: OFF
+        </button>
+      </div>
+
+<script>
+const VOCAB_CONFIG = {
+  kelly: {
+    btnId: 'btnToggleKelly',
+    file: '../008_Kelly_Hermes/kellywordbank/kellywordbank-single.md',
+    color: 'rgba(52, 152, 219, 0.3)',
+    on: false
+  },
+  jenny: {
+    btnId: 'btnToggleJenny',
+    file: '../008_Kelly_Hermes/kellywordbank/jennywordbank-single.md',
+    color: 'rgba(155, 89, 182, 0.3)',
+    on: false
+  },
+  nash: {
+    btnId: 'btnToggleNash',
+    file: '../008_Kelly_Hermes/kellywordbank/nashwordbank-single.md',
+    color: 'rgba(231, 76, 60, 0.3)',
+    on: false
+  }
+};
+
+let vocabLoaded = { kelly: false, jenny: false, nash: false };
+let vocabWords = { kelly: [], jenny: [], nash: [] };
+
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+async function loadVocab(bank) {
+  try {
+    const config = VOCAB_CONFIG[bank];
+    const response = await fetch(`${config.file}?cache-bust=${new Date().getTime()}`);
+    const text = await response.text();
+    const lines = text.split('\n');
+    const words = [];
+    lines.forEach(line => {
+      const match = line.match(/^###\s+([^(]+)/);
+      if (match) {
+        const word = match[1].trim();
+        if (word) words.push(word);
+      }
+    });
+    words.sort((a, b) => b.length - a.length);
+    vocabWords[bank] = words;
+    vocabLoaded[bank] = true;
+  } catch (err) {
+    vocabWords[bank] = [];
+    vocabLoaded[bank] = true;
+  }
+}
+
+function turnOffAllExcept(exceptBank) {
+  Object.keys(VOCAB_CONFIG).forEach(bank => {
+    if (bank !== exceptBank && VOCAB_CONFIG[bank].on) {
+      VOCAB_CONFIG[bank].on = false;
+      const btn = document.getElementById(VOCAB_CONFIG[bank].btnId);
+      btn.style.background = '#f39c12';
+      btn.textContent = `${bank.charAt(0).toUpperCase() + bank.slice(1)}: OFF`;
+      removeVocabHighlight(bank);
+    }
+  });
+}
+
+function toggleVocabHighlight(bank) {
+  const config = VOCAB_CONFIG[bank];
+  config.on = !config.on;
+  const btn = document.getElementById(config.btnId);
+  if (config.on) {
+    turnOffAllExcept(bank);
+    btn.textContent = `${bank.charAt(0).toUpperCase() + bank.slice(1)}: ON`;
+    btn.style.background = '#27ae60';
+    applyVocabHighlight(bank);
+  } else {
+    btn.textContent = `${bank.charAt(0).toUpperCase() + bank.slice(1)}: OFF`;
+    btn.style.background = '#f39c12';
+    removeVocabHighlight(bank);
+  }
+}
+
+function applyVocabHighlight(bank) {
+  if (!vocabLoaded[bank]) {
+    setTimeout(() => { if (VOCAB_CONFIG[bank].on) applyVocabHighlight(bank); }, 200);
+    return;
+  }
+  if (vocabWords[bank].length === 0) return;
+  const config = VOCAB_CONFIG[bank];
+  const paragraphs = document.querySelectorAll('#passagePanel p.paragraph');
+  paragraphs.forEach(para => {
+    let html = para.innerHTML;
+    html = html.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g, '$1');
+    vocabWords[bank].forEach(word => {
+      const escaped = escapeRegExp(word);
+      const regex = new RegExp(`\\b${escaped}\\b`, 'gi');
+      html = html.replace(regex, `<mark style="background: ${config.color};">$&</mark>`);
+    });
+    para.innerHTML = html;
+  });
+}
+
+function removeVocabHighlight(bank) {
+  const paragraphs = document.querySelectorAll('#passagePanel p.paragraph');
+  paragraphs.forEach(para => {
+    let html = para.innerHTML;
+    html = html.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g, '$1');
+    para.innerHTML = html;
+  });
+}
+
+Object.keys(VOCAB_CONFIG).forEach(bank => {
+  loadVocab(bank);
+  const btn = document.getElementById(VOCAB_CONFIG[bank].btnId);
+  if (btn) btn.addEventListener('click', () => toggleVocabHighlight(bank));
+});
+</script>
+      <p class="paragraph" data-para="1">
+        <span class="paragraph-num">[1]</span>
+        University marching band blends American and Hong Kong culture for unique performance
+      </p>
+
+      <p class="paragraph" data-para="2">
+        <span class="paragraph-num">[2]</span>
+        Following the drum beats, members of the Eastern Michigan University (EMU) Marching Band ran through the stage in two lines. The 16 students from the United States delivered an immersive musical experience to their audience in Hong Kong.
+      </p>
+
+      <p class="paragraph" data-para="3">
+        <span class="paragraph-num">[3]</span>
+        While they performed American classics such as "Washington Post March", they also played an authentic version of the Cantopop anthem "Below the Lion Rock".
+      </p>
+
+      <p class="paragraph" data-para="4">
+        <span class="paragraph-num">[4]</span>
+        "Every time we hear the song, [from] now until forever, we're going to think about this experience and the people of Hong Kong and how we felt being here," said Jacob Mann, 22, a music education student from EMU majoring in trumpet and head drum.
+      </p>
+
+      <p class="paragraph" data-para="5">
+        <span class="paragraph-num">[5]</span>
+        The group was invited by the US Consulate General Hong Kong and Macau to commemorate the 250th anniversary of American independence at the Asia Society Hong Kong last week. It was the first international concert in the band's history.
+      </p>
+
+      <p class="paragraph" data-para="6">
+        <span class="paragraph-num">[6]</span>
+        "This is a huge deal for us. It's historic," said Nick Smith, 41, the associate director of bands for the School of Music and Dance at EMU. "To be part of a huge celebration ... that's monumental."
+      </p>
+
+      <p class="paragraph" data-para="7">
+        <span class="paragraph-num">[7]</span>
+        EMU, located in the US state of Michigan, is the alma mater of Julie Eadeh, the Consul General of the US Consulate General Hong Kong and Macau.
+      </p>
+
+      <p class="paragraph" data-para="8">
+        <span class="paragraph-num">[8]</span>
+        Formed in 1924, the EMU Marching Band has more than 180 members from a variety of academic disciplines. They often perform during halftime shows at the university's American football games, giving the crowd the energy to cheer on their team.
+      </p>
+
+      <p class="paragraph" data-para="9">
+        <span class="paragraph-num">[9]</span>
+        Marching bands have a military history in many European countries, but modern ones in the US have become a key part of parades and sports events.
+      </p>
+
+      <p class="paragraph" data-para="10">
+        <span class="paragraph-num">[10]</span>
+        The concert was carefully curated to present a broad picture of American culture to the Hong Kong audience.
+      </p>
+
+      <p class="paragraph" data-para="11">
+        <span class="paragraph-num">[11]</span>
+        "The secret to programming a concert is to ensure that you give the audience a little bit of everything," Smith said. "Everything has been really calculated and thoughtful to hopefully ... give the audience a whole taste of America."
+      </p>
+
+      <p class="paragraph" data-para="12">
+        <span class="paragraph-num">[12]</span>
+        Though they could bring only 16 students, the band prepared clips of their past performances to show the audience the scale of the band. They also performed at the US Independence Day Reception at Hong Kong's Ocean Park Marriott Hotel last week.
+      </p>
+
+      <p class="paragraph" data-para="13">
+        <span class="paragraph-num">[13]</span>
+        The students found that the unique insights they gained during their five-day stay in the city offered new meaning to the song "Below the Lion Rock".
+      </p>
+
+      <p class="paragraph" data-para="14">
+        <span class="paragraph-num">[14]</span>
+        "It was introduced to us as a ... piece that's really special to Hong Kong," Mann said. "Just knowing that we're going to mix our cultures to be able to perform this piece is something really special."
+      </p>
+
+      <p class="paragraph" data-para="15">
+        <span class="paragraph-num">[15]</span>
+        "I think it's about pride. Taking pride in the country, in the culture, and who we are as a people and who they are," he added.
+      </p>
+
+      <p class="paragraph" data-para="16">
+        <span class="paragraph-num">[16]</span>
+        Kaylee Monville, 22, is a music education graduate from EMU who majored in the piccolo and drum. She said she pictured the city when she played the music: "The beauty of everything that we've been seeing kind of envisions this piece," she said.
+      </p>
+
+      <p class="paragraph" data-para="17">
+        <span class="paragraph-num">[17]</span>
+        "I get a little emotional because ... it's a sign that we are here and we are making an impact, connecting with people and bringing them together with us."
+      </p>
+
+      <p class="paragraph" data-para="18">
+        <span class="paragraph-num">[18]</span>
+        The consulate arranged for the students to visit the Hong Kong Palace Museum and Man Mo Temple to help them learn about Hong Kong's culture. The city itself also left the students in awe.
+      </p>
+
+      <p class="paragraph" data-para="19">
+        <span class="paragraph-num">[19]</span>
+        "When we look at the city, we think of how many people there are," Mann said. "Seeing all the buildings ... it really puts that in perspective for us. Everywhere we've gone, people have been so nice and so welcoming."
+      </p>
+
+      <p class="paragraph" data-para="20">
+        <span class="paragraph-num">[20]</span>
+        Monville said she enjoyed exploring Hong Kong's history and how its diversity mirrors that of the US. In particular, she felt connected to the antique ceramics at the museum.
+      </p>
+
+      <p class="paragraph" data-para="21">
+        <span class="paragraph-num">[21]</span>
+        She explained that the process of creating a ceramic piece is similar to music, as it takes a lot of time and practice to perfect. "We put hours and hours into our rehearsal for one performance that's going to be able to be seen by people," she said. "It's a really cool thing to connect in that way ... their history to ours."
+      </p>
+
+      <p class="paragraph" data-para="22">
+        <span class="paragraph-num">[22]</span>
+        For Smith, these moments are the true value of cultural exchange. "There's nothing more powerful than going outside your home and experiencing what other people experience," he said. "To be able to travel and experience a whole different culture helps us all put life in perspective."
+      </p>
+
+      <p class="paragraph" data-para="23">
+        <span class="paragraph-num">[23]</span>
+        Bonded through music, the group discovered that even thousands of miles from home, music speaks a language everyone understands. For the students, the memories may take years to fully sink in. Yet the melodies they carried across the ocean have already left a lasting impression.
+      </p>
+
+
+    </section>
+
+    <div class="divider" id="divider" title="Drag to resize"></div>
+
+    <section class="panel questions-panel" id="questionsPanel">
+      <p class="instruction">Read the passage and answer questions 1–15.</p>
+
+      <!-- Q1 -->
+      <div class="question-block" id="q1" data-q="1">
+        <div class="question-label">1. Short answer According to paragraph 1, how many students from the United States performed in Hong Kong?  _______________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q1" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q1" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">16 students.</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q2 -->
+      <div class="question-block" id="q2" data-q="2">
+        <div class="question-label">2. Vocabulary (Multiple Choice) The word "immersive" in paragraph 1 is closest in meaning to:</div>
+        <div class="options">
+          <label><input type="radio" name="q2" value="A">A. brief and simple</label>
+          <label><input type="radio" name="q2" value="B">B. deeply engaging</label>
+          <label><input type="radio" name="q2" value="C">C. visually impressive only</label>
+          <label><input type="radio" name="q2" value="D">D. difficult to understand</label>
+        </div>
+
+<div class="inline-solution" id="solution-q2" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">B – deeply engaging</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q3 -->
+      <div class="question-block" id="q3" data-q="3">
+        <div class="question-label">3. Pronoun reference In paragraph 13, what does "it" refer to in the sentence "It was introduced to us as a ... piece that's really special to Hong Kong"?  _______________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q3" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q3" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">"It" refers to the song "Below the Lion Rock".</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q4 -->
+      <div class="question-block" id="q4" data-q="4">
+        <div class="question-label">4. True / False / Not Given Read the following statements. Decide if each statement is True (T), False (F), or Not Given (NG) according to the passage.</div>
+        <table class="tf-table">
+          <thead><tr><th>Statement</th><th>T</th><th>F</th><th>NG</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>(a) The EMU Marching Band has performed internationally many times before.</td>
+              <td><input type="radio" name="q4_a" value="T"></td>
+              <td><input type="radio" name="q4_a" value="F"></td>
+              <td><input type="radio" name="q4_a" value="NG"></td>
+            </tr>
+            <tr>
+              <td>(b) The band performed only American music during their concert in Hong Kong.</td>
+              <td><input type="radio" name="q4_b" value="T"></td>
+              <td><input type="radio" name="q4_b" value="F"></td>
+              <td><input type="radio" name="q4_b" value="NG"></td>
+            </tr>
+            <tr>
+              <td>(c) The students visited cultural sites in Hong Kong arranged by the consulate.</td>
+              <td><input type="radio" name="q4_c" value="T"></td>
+              <td><input type="radio" name="q4_c" value="F"></td>
+              <td><input type="radio" name="q4_c" value="NG"></td>
+            </tr>
+          </tbody>
+        </table>
+
+<div class="inline-solution" id="solution-q4" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">(a) F (paragraph 4 says it was the first international concert in the band's history) (b) F (paragraph 2 says they performed American classics AND the Cantopop anthem "Below the Lion Rock") (c) T (paragraph 16 says the consulate arranged visits to the Hong Kong Palace Museum and Man Mo Temple)</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q5 -->
+      <div class="question-block" id="q5" data-q="5">
+        <div class="question-label">5. Short answer (list points) According to paragraph 11, what are TWO things the band did to show the audience the full scale of their performances?  (1) ___________________________________________________________________________ (2) ___________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q5" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q5" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">(1) They prepared clips of their past performances to show the audience the scale of the band. (2) They also performed at the US Independence Day Reception at Hong Kong's Ocean Park Marriott Hotel.</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q6 -->
+      <div class="question-block" id="q6" data-q="6">
+        <div class="question-label">6. Explain word in own words In paragraph 19, Monville says Hong Kong's diversity "mirrors" that of the US. What does "mirrors" mean in this context?  _______________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q6" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q6" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">"Mirrors" means reflects / is similar to / corresponds to.</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q7 -->
+      <div class="question-block" id="q7" data-q="7">
+        <div class="question-label">7. Summary (fill in blanks with ONE word from the passage) Complete the summary below using ONE word from the passage for each blank.  The EMU Marching Band was invited by the US Consulate General to celebrate the (a) _____________ anniversary of American independence. The concert was carefully (b) _____________ to give the audience a taste of America. The students also performed the Cantopop anthem "Below the Lion Rock", which they felt was about (c) _____________ in the country and culture. The consulate arranged visits to the Hong Kong Palace Museum and Man Mo Temple to help the students learn about Hong Kong's (d) _____________.</div>
+        <input type="text" class="text-input wide" name="q7" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q7" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">(a) 250th / 250 (b) curated / calculated (c) pride (d) culture</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q8 -->
+      <div class="question-block" id="q8" data-q="8">
+        <div class="question-label">8. Reason / Purpose According to paragraph 4, why was the EMU Marching Band invited to perform in Hong Kong?  _______________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q8" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q8" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">The band was invited to commemorate the 250th anniversary of American independence.</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q9 -->
+      <div class="question-block" id="q9" data-q="9">
+        <div class="question-label">9. Define concept According to paragraph 10, what does Nick Smith say is the "secret to programming a concert"?  _______________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q9" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q9" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">The secret is to ensure that you give the audience a little bit of everything – to present a broad picture of American culture.</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q10 -->
+      <div class="question-block" id="q10" data-q="10">
+        <div class="question-label">10. Difference and Similarity According to the passage, what is ONE similarity and ONE difference between marching bands in the US and their historical origins?  Similarity: ___________________________________________________________________  Difference: __________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q10" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q10" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">Similarity: Marching bands have a military history in many European countries. Difference: Modern marching bands in the US have become a key part of parades and sports events (rather than military functions).</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q11 -->
+      <div class="question-block" id="q11" data-q="11">
+        <div class="question-label">11. View / Concern According to paragraph 18, what did Jacob Mann find impressive about Hong Kong?  _______________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q11" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q11" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">Mann was impressed by the scale of the city – how many people there are and how tall the buildings are. He also found the people nice and welcoming.</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q12 -->
+      <div class="question-block" id="q12" data-q="12">
+        <div class="question-label">12. List suggestions / actions According to paragraphs 16-17, what are TWO things the consulate arranged for the students to do during their stay?  (1) ___________________________________________________________________________ (2) ___________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q12" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q12" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">(1) Visit the Hong Kong Palace Museum (2) Visit Man Mo Temple</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q13 -->
+      <div class="question-block" id="q13" data-q="13">
+        <div class="question-label">13. Define activity According to paragraph 23, what does Kaylee Monville say is similar between creating ceramics and making music?  _______________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q13" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q13" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">Monville says both ceramics and music take a lot of time and practice to perfect. Both involve putting hours of rehearsal into something that will be seen by people.</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q14 -->
+      <div class="question-block" id="q14" data-q="14">
+        <div class="question-label">14. Multiple Choice (Author's Attitude) What is the author's overall attitude towards the cultural exchange between the EMU band and Hong Kong?</div>
+        <div class="options">
+          <label><input type="radio" name="q14" value="A">A. Fully critical</label>
+          <label><input type="radio" name="q14" value="B">B. Generally supportive</label>
+          <label><input type="radio" name="q14" value="C">C. Completely neutral</label>
+          <label><input type="radio" name="q14" value="D">D. Deeply doubtful</label>
+        </div>
+
+<div class="inline-solution" id="solution-q14" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">B – Generally supportive (the article presents the exchange in a positive light, emphasising connection, cultural understanding, and lasting impressions)</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q15 -->
+      <div class="question-block" id="q15" data-q="15">
+        <div class="question-label">15. Title meaning What does the title "University marching band blends American and Hong Kong culture for unique performance" suggest about the article's main theme?  _______________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q15" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q15" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">The title suggests the article focuses on how the EMU Marching Band combined American musical traditions with Hong Kong's local culture (by performing Cantopop alongside American classics) to create a one-of-a-kind performance.</div>
+</article>
+</div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="bottom-bar">
+    <div class="palette-section">
+      <span class="palette-label">Question Palette</span>
+      <div class="question-palette" id="questionPalette"></div>
+      <div class="palette-legend">
+        <span class="legend-dot"></span> answered
+      </div>
+    </div>
+    <div class="timer-section" id="timer">00:00</div>
+    <div class="action-buttons">
+      <button class="btn btn-submit" id="btnSubmit">✓ Submit</button>
+      <button class="btn btn-review" id="btnReview">⊞ Review</button>
+      <a class="btn btn-solution" href="solution.html">🔑 Solution</a>
+      <button class="btn btn-reset" id="btnReset">↺ Reset</button>
+    </div>
+  </footer>
+
+  <!-- Submit modal -->
+  <div class="modal-overlay" id="submitModal">
+    <div class="modal">
+      <h3>Are you sure you want to submit?</h3>
+      <p id="submitModalText">You have answered <strong id="answeredCount">0</strong> of 15 questions.</p>
+      <div class="modal-actions">
+        <button class="btn btn-reset" id="btnCancelSubmit">Cancel</button>
+        <button class="btn btn-submit" id="btnConfirmSubmit">Submit and view Answers</button>
+      </div>
+    </div>
+  </div>
+  <!-- Score modal -->
+  <div class="modal-overlay" id="scoreModal">
+    <div class="modal">
+      <h3>Your Results</h3>
+      <div class="score-display">
+        <div class="score-number" id="scoreNumber">0/15</div>
+        <div class="score-label" id="scorePercent">0% correct</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-review" id="btnCloseScore">Review Answers</button>
+        <a class="btn btn-solution" href="solution.html">View Full Solution</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

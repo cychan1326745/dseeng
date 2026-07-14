@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+let isSpeaking = false;
+let speechEnabled = true;
+function loadSpeechSetting() {
+  const saved = localStorage.getItem('dse-speech-enabled');
+  if (saved !== null) speechEnabled = saved === 'true';
+  updateSpeechButton();
+}
+function updateSpeechButton() {
+  const btn = document.getElementById('btnToggleSpeech');
+  if (btn) {
+    btn.textContent = speechEnabled ? 'Speech: ON' : 'Speech: OFF';
+    btn.style.background = speechEnabled ? 'rgba(40, 167, 69, 0.3)' : 'rgba(220, 53, 69, 0.3)';
+  }
+}
+function toggleSpeech() {
+  speechEnabled = !speechEnabled;
+  localStorage.setItem('dse-speech-enabled', speechEnabled);
+  updateSpeechButton();
+  if (isSpeaking) { speechSynthesis.cancel(); isSpeaking = false; }
+}
+function readWord(text){
+  if(!speechEnabled) return;
+  if(isSpeaking) speechSynthesis.cancel();
+  let utter = new SpeechSynthesisUtterance(text);
+  utter.lang = "en-US"; utter.rate = 0.9;
+  isSpeaking = true;
+  utter.onend = ()=> isSpeaking = false;
+  speechSynthesis.speak(utter);
+}
+document.addEventListener('DOMContentLoaded', function(){
+  loadSpeechSetting();
+  const btn = document.getElementById('btnToggleSpeech');
+  if (btn) btn.addEventListener('click', toggleSpeech);
+  const passage = document.getElementById('passagePanel');
+  if (!passage) return;
+  passage.addEventListener('click', function(e){
+    if(!speechEnabled) return;
+    if (e.target.closest('a, button, input, label, select, textarea')) return;
+    const range = document.caretRangeFromPoint(e.clientX, e.clientY);
+    if (!range) return;
+    const node = range.startContainer;
+    if (node.nodeType !== Node.TEXT_NODE) return;
+    const offset = range.startOffset;
+    const text = node.textContent;
+    let start = offset, end = offset;
+    while (start > 0 && /[a-zA-Z\u00C0-\u024F'\u02BC-]/.test(text[start - 1])) start--;
+    while (end < text.length && /[a-zA-Z\u00C0-\u024F'\u02BC-]/.test(text[end])) end++;
+    if (start === end) return;
+    const word = text.slice(start, end);
+    if (/^\d+$/.test(word)) return;
+    readWord(word);
+    const wordRange = document.createRange();
+    wordRange.setStart(node, start);
+    wordRange.setEnd(node, end);
+    const highlight = document.createElement('mark');
+    highlight.style.cssText = 'background:#ffd54f;border-radius:3px;transition:background .3s';
+    try {
+      wordRange.surroundContents(highlight);
+      setTimeout(() => {
+        const parent = highlight.parentNode;
+        if (parent) {
+          while (highlight.firstChild) parent.insertBefore(highlight.firstChild, highlight);
+          parent.removeChild(highlight);
+          parent.normalize();
+        }
+      }, 500);
+    } catch(_) {}
+  });
+});
+</script>
+<style>
+#passagePanel .paragraph { cursor: default; }
+#passagePanel .paragraph * { cursor: pointer; }
+</style>
+<meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Koalas: Australia's Eucalyptus Marsupials - DSE 2012 Part A</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-brand"><span>DSE</span> 2012 Part A Reading Practice</div>
+    <nav class="header-nav">
+      <a href="index.html" class="active">Reading</a>
+      <a href="solution.html">Solution</a>
+    </nav>
+    <div class="header-tools">
+      <button type="button" id="btnToggleSpeech">Speech: ON</button>
+      <button type="button" id="btnLargerText">Larger Text</button>
+      <button type="button" onclick="window.print()">Print</button>
+    </div>
+  </header>
+  <div class="main-container" id="mainContainer">
+    <section class="panel passage-panel" id="passagePanel">
+      <h2 class="passage-title">Koalas: Australia's Eucalyptus Marsupials</h2>
+      <p class="passage-subtitle">Text 1 — Nat Geo Kids Adapted B2 Reading</p>
+      <div class="passage-illustration">🐨 🌿 🇦🇺</div>
+      <div style="text-align: center; margin: 15px 0; display: flex;">
+        <button id="btnToggleKelly" style="flex:1;padding:8px 12px;background:#f39c12;color:white;border:none;border-radius:4px;cursor:pointer;font-size:15px;margin:0 5px;">Kelly: OFF</button>
+        <button id="btnToggleJenny" style="flex:1;padding:8px 12px;background:#f39c12;color:white;border:none;border-radius:4px;cursor:pointer;font-size:15px;margin:0 5px;">Jenny: OFF</button>
+        <button id="btnToggleNash" style="flex:1;padding:8px 12px;background:#f39c12;color:white;border:none;border-radius:4px;cursor:pointer;font-size:15px;margin:0 5px;">Nash: OFF</button>
+      </div>
+<script>
+const VOCAB_CONFIG = {
+  kelly: { btnId:'btnToggleKelly', file:'../008_Kelly_Hermes/kellywordbank/kellywordbank-single.md', color:'rgba(52,152,219,0.3)', on:false },
+  jenny: { btnId:'btnToggleJenny', file:'../008_Kelly_Hermes/kellywordbank/jennywordbank-single.md', color:'rgba(155,89,182,0.3)', on:false },
+  nash: { btnId:'btnToggleNash', file:'../008_Kelly_Hermes/kellywordbank/nashwordbank-single.md', color:'rgba(231,76,60,0.3)', on:false }
+};
+let vocabLoaded = { kelly:false, jenny:false, nash:false };
+let vocabWords = { kelly:[], jenny:[], nash:[] };
+function escapeRegExp(s) { return s.replace(/[.*+?${}()|[\]\\]/g, '\\$&'); }
+async function loadVocab(bank) {
+  try {
+    const r = await fetch(VOCAB_CONFIG[bank].file+'?cache-bust='+new Date().getTime());
+    const t = await r.text();
+    const w = [];
+    t.split('\n').forEach(l => { const m = l.match(/^###\s+([^(]+)/); if(m) { const wd = m[1].trim(); if(wd) w.push(wd); } });
+    w.sort((a,b)=>b.length-a.length);
+    vocabWords[bank] = w; vocabLoaded[bank] = true;
+  } catch(e) { vocabWords[bank] = []; vocabLoaded[bank] = true; }
+}
+function turnOffAllExcept(b) {
+  Object.keys(VOCAB_CONFIG).forEach(bank => {
+    if(bank!==b && VOCAB_CONFIG[bank].on) {
+      VOCAB_CONFIG[bank].on = false;
+      const btn = document.getElementById(VOCAB_CONFIG[bank].btnId);
+      btn.style.background='#f39c12'; btn.textContent=bank.charAt(0).toUpperCase()+bank.slice(1)+': OFF';
+      removeVocabHighlight(bank);
+    }
+  });
+}
+function toggleVocabHighlight(bank) {
+  const c = VOCAB_CONFIG[bank]; c.on = !c.on;
+  const btn = document.getElementById(c.btnId);
+  if(c.on) { turnOffAllExcept(bank); btn.textContent=bank.charAt(0).toUpperCase()+bank.slice(1)+': ON'; btn.style.background='#27ae60'; applyVocabHighlight(bank); }
+  else { btn.textContent=bank.charAt(0).toUpperCase()+bank.slice(1)+': OFF'; btn.style.background='#f39c12'; removeVocabHighlight(bank); }
+}
+function applyVocabHighlight(bank) {
+  if(!vocabLoaded[bank]) { setTimeout(()=>{ if(VOCAB_CONFIG[bank].on) applyVocabHighlight(bank); },200); return; }
+  if(vocabWords[bank].length===0) return;
+  const c = VOCAB_CONFIG[bank];
+  document.querySelectorAll('#passagePanel p.paragraph').forEach(para => {
+    let h = para.innerHTML.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g,'$1');
+    vocabWords[bank].forEach(w => { const e = escapeRegExp(w); h = h.replace(new RegExp('\\b'+e+'\\b','gi'), '<mark style="background:'+c.color+';">$&</mark>'); });
+    para.innerHTML = h;
+  });
+}
+function removeVocabHighlight(bank) {
+  document.querySelectorAll('#passagePanel p.paragraph').forEach(para => { para.innerHTML = para.innerHTML.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g,'$1'); });
+}
+Object.keys(VOCAB_CONFIG).forEach(bank => { loadVocab(bank); const btn = document.getElementById(VOCAB_CONFIG[bank].btnId); if(btn) btn.addEventListener('click',()=>toggleVocabHighlight(bank)); });
+</script>
+      <p class="paragraph" data-para="1">
+        <span class="paragraph-num">[1]</span>
+        Many people mistakenly call koalas "koala bears", but these fluffy grey animals are not bears at all. They belong to a special group of mammals called marsupials, which raise their newborn babies inside a soft pouch on the mother's belly. Wild koalas only live in eucalyptus woodlands across eastern Australia, where every part of their daily life depends fully on eucalyptus trees. Their thick woolly grey fur keeps them warm during cold mountain nights and shields their skin from harsh hot sunlight in summer.
+      </p>
+      <p class="paragraph" data-para="2">
+        <span class="paragraph-num">[2]</span>
+        Eucalyptus leaves are the only food koalas will eat, and this strange diet shapes nearly all their habits. The leaves contain natural poison and extremely low calories, so koalas must save energy wherever possible. An adult koala eats roughly one kilogram of eucalyptus foliage each day, then sleeps 18 to 22 hours straight to conserve limited energy supplies. The word "koala" comes from an old Aboriginal language phrase meaning "no drink", because koalas rarely climb down to waterholes; they absorb almost all needed liquid from moist eucalyptus leaves.
+      </p>
+      <p class="paragraph" data-para="3">
+        <span class="paragraph-num">[3]</span>
+        Koala family life follows a slow, gentle cycle. A baby koala, named a joey, is born tiny, blind and hairless after just one month of development inside its mother. Using strong smell and touch, the newborn crawls from the birth opening straight into its mother's pouch, where it attaches to a milk teat for six months. Once the joey grows fur and opens its eyes, it rides on its mum's back for another half-year, learning which eucalyptus leaves are safe to eat and how to grip tree branches with clawed hands.
+      </p>
+      <p class="paragraph" data-para="4">
+        <span class="paragraph-num">[4]</span>
+        Sharp physical traits help koalas live high in treetops. Each hand has two separate thumbs, plus rough padded palms and curved claws to lock onto slippery bark. On their hind feet, two toes grow fused together into a single grooming claw, which they use to comb tangled fur and remove insects. Koalas are highly territorial; adult males mark their "home trees" with scent gland secretions and will chase unfamiliar koalas away from their feeding and resting zones.
+      </p>
+      <p class="paragraph" data-para="5">
+        <span class="paragraph-num">[5]</span>
+        Three major human threats push wild koala numbers steadily down. First, farmers and city developers clear eucalyptus forests to build housing and crop fields, destroying the only habitat koalas can survive in. Second, hotter, longer droughts and massive bushfires caused by climate change burn millions of eucalyptus trees and leave koalas with no food or shelter. Third, a widespread bacterial disease called chlamydia spreads quickly through wild populations, making females unable to produce healthy joeys.
+      </p>
+      <p class="paragraph" data-para="6">
+        <span class="paragraph-num">[6]</span>
+        Australian wildlife groups run targeted koala rescue and protection work. Wildlife hospitals treat sick and injured koalas, rehabilitate orphaned joeys, and release recovered animals into protected eucalyptus reserves. National park laws ban tree clearing inside core koala living zones, and local councils plant thousands of native eucalyptus saplings to rebuild lost forest corridors between separated wild groups. Eco-tour guides teach visitors to never touch wild koalas and stay quiet near treetop resting spots.
+      </p>
+      <p class="paragraph" data-para="7">
+        <span class="paragraph-num">[7]</span>
+        Koalas are beloved global wildlife icons, but their survival relies entirely on intact eucalyptus forests. Teenagers can join tree-planting volunteer days, share koala conservation facts with family, and avoid supporting brands that source timber from Australian native woodland clearing. Protecting koalas means preserving whole Australian forest ecosystems for birds, insects and other small marsupials that share eucalyptus habitats.
+      </p>
+
+    </section>
+    <div class="divider" id="divider" title="Drag to resize"></div>
+    <section class="panel questions-panel" id="questionsPanel">
+      <p class="instruction">Read the text and answer questions 1–15. (20 marks)</p>
+
+      <div class="question-block" id="q1" data-q="1">
+        <div class="question-label">1. Why are koalas not classified as bears?</div>
+        <input type="text" class="text-input wide" name="q1" placeholder="Your answer">
+<div class="inline-solution" id="solution-q1" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">1</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q2" data-q="2">
+        <div class="question-label">2. Choose the word closest in meaning to "marsupials" (line 3)</div>
+        <div class="options">
+          <label><input type="radio" name="q2" value="A"> A. mammals that raise babies in a belly pouch</label>
+          <label><input type="radio" name="q2" value="B"> B. large forest carnivores with thick fur</label>
+          <label><input type="radio" name="q2" value="C"> C. reptiles that lay eggs in tree hollows</label>
+          <label><input type="radio" name="q2" value="D"> D. fish that live in freshwater streams</label>
+        </div>
+<div class="inline-solution" id="solution-q2" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">2</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q3" data-q="3">
+        <div class="question-label">3. Where do koalas get nearly all their drinking liquid?</div>
+        <input type="text" class="text-input wide" name="q3" placeholder="Your answer">
+<div class="inline-solution" id="solution-q3" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">3</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q4" data-q="4">
+        <div class="question-label">4. Decide True / False / Not Given (3 marks)</div>
+        <table class="tf-table">
+          <thead><tr><th>Statement</th><th>T</th><th>F</th><th>NG</th></tr></thead>
+          <tbody>
+            <tr><td>(i) Koalas sleep less than ten hours every single day.</td><td><input type="radio" name="q4i" value="T"></td><td><input type="radio" name="q4i" value="F"></td><td><input type="radio" name="q4i" value="NG"></td></tr>
+            <tr><td>(ii) Newborn joeys are blind, hairless and extremely tiny at birth.</td><td><input type="radio" name="q4ii" value="T"></td><td><input type="radio" name="q4ii" value="F"></td><td><input type="radio" name="q4ii" value="NG"></td></tr>
+            <tr><td>(iii) Koalas regularly climb down to rivers to drink fresh water.</td><td><input type="radio" name="q4iii" value="T"></td><td><input type="radio" name="q4iii" value="F"></td><td><input type="radio" name="q4iii" value="NG"></td></tr>
+          </tbody>
+        </table>
+<div class="inline-solution" id="solution-q4" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">4</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q5" data-q="5">
+        <div class="question-label">5. Name three human-caused threats that reduce wild koala populations (paragraph 5)</div>
+        <input type="text" class="text-input wide" name="q5" placeholder="Your answer">
+<div class="inline-solution" id="solution-q5" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">5</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q6" data-q="6">
+        <div class="question-label">6. What special body part on koalas' hind feet do they use to comb their fur?</div>
+        <input type="text" class="text-input wide" name="q6" placeholder="Your answer">
+<div class="inline-solution" id="solution-q6" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">6</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q7" data-q="7">
+        <div class="question-label">7. Find one word in paragraph 6 meaning safe, restricted wild animal living areas</div>
+        <input type="text" class="text-input" name="q7" placeholder="Your answer">
+<div class="inline-solution" id="solution-q7" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">7</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q8" data-q="8">
+        <div class="question-label">8. Complete the summary with ONE word taken from the passage (4 marks)</div>
+        <div class="flow-chart">
+          <p>(i) plant eucalyptus saplings to rebuild forest <input type="text" class="text-input short" name="q8i" placeholder="Your answer"></p>
+          <p>(ii) restore intact eucalyptus <input type="text" class="text-input short" name="q8ii" placeholder="Your answer"></p>
+          <p>(iii) sharing the same woodland <input type="text" class="text-input short" name="q8iii" placeholder="Your answer"></p>
+          <p>(iv) timber from cleared native Australian <input type="text" class="text-input short" name="q8iv" placeholder="Your answer"></p>
+        </div>
+<div class="inline-solution" id="solution-q8" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">8</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q9" data-q="9">
+        <div class="question-label">9. What three conservation projects do Australian wildlife organisations carry out (paragraph 6)?</div>
+        <input type="text" class="text-input wide" name="q9" placeholder="Your answer">
+<div class="inline-solution" id="solution-q9" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">9</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q10" data-q="10">
+        <div class="question-label">10. Give one difference and one similarity between adult male koalas and baby joeys (2 marks)</div>
+        <p>(i) Difference: <input type="text" class="text-input wide" name="q10i" placeholder="Your answer"></p>
+        <p>(ii) Similarity: <input type="text" class="text-input wide" name="q10ii" placeholder="Your answer"></p>
+<div class="inline-solution" id="solution-q10" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">10</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q11" data-q="11">
+        <div class="question-label">11. How do adult male koalas defend their territorial home trees from strangers (paragraph 4)?</div>
+        <input type="text" class="text-input wide" name="q11" placeholder="Your answer">
+<div class="inline-solution" id="solution-q11" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">11</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q12" data-q="12">
+        <div class="question-label">12. What three student actions support wild koala protection (paragraph 7)?</div>
+        <input type="text" class="text-input wide" name="q12" placeholder="Your answer">
+<div class="inline-solution" id="solution-q12" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">12</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q13" data-q="13">
+        <div class="question-label">13. Why do koalas need to sleep up to 22 hours daily (paragraph 2)?</div>
+        <input type="text" class="text-input wide" name="q13" placeholder="Your answer">
+<div class="inline-solution" id="solution-q13" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">13</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q14" data-q="14">
+        <div class="question-label">14. What is the writer's overall attitude toward koala conservation efforts?</div>
+        <div class="options">
+          <label><input type="radio" name="q14" value="A"> A. Completely hopeless</label>
+          <label><input type="radio" name="q14" value="B"> B. Generally hopeful</label>
+          <label><input type="radio" name="q14" value="C"> C. Fully neutral</label>
+          <label><input type="radio" name="q14" value="D"> D. Deeply doubtful</label>
+        </div>
+<div class="inline-solution" id="solution-q14" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">14</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q15" data-q="15">
+        <div class="question-label">15. What does the title "Koalas: Australia's Eucalyptus Marsupials" tell readers about koalas' natural home and diet?</div>
+        <input type="text" class="text-input wide" name="q15" placeholder="Your answer">
+<div class="inline-solution" id="solution-q15" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">15</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <h4 class="end-marker">— End of the Test —</h4>
+      <p class="submit-hint">Please Submit to view your score, solution and explanations.</p>
+    </section>
+  </div>
+  <footer class="bottom-bar">
+    <div class="palette-section">
+      <span class="palette-label">Question Palette</span>
+      <div class="question-palette" id="questionPalette"></div>
+      <div class="palette-legend"><span class="legend-dot"></span> answered</div>
+    </div>
+    <div class="timer-section" id="timer">00:00</div>
+    <div class="action-buttons">
+      <button class="btn btn-submit" id="btnSubmit">✓ Submit</button>
+      <button class="btn btn-review" id="btnReview">⊞ Review</button>
+      <a class="btn btn-solution" href="solution.html">🔑 Solution</a>
+      <button class="btn btn-reset" id="btnReset">↺ Reset</button>
+    </div>
+  </footer>
+  <div class="modal-overlay" id="submitModal">
+    <div class="modal">
+      <h3>Are you sure you want to submit?</h3>
+      <p id="submitModalText">You have answered <strong id="answeredCount">0</strong> of 15 questions.</p>
+      <div class="modal-actions">
+        <button class="btn btn-reset" id="btnCancelSubmit">Cancel</button>
+        <button class="btn btn-submit" id="btnConfirmSubmit">Submit and view Answers</button>
+      </div>
+    </div>
+  </div>
+  <div class="modal-overlay" id="scoreModal">
+    <div class="modal">
+      <h3>Your Results</h3>
+      <div class="score-display">
+        <div class="score-number" id="scoreNumber">0/15</div>
+        <div class="score-label" id="scorePercent">0% correct</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-review" id="btnCloseScore">Review Answers</button>
+        <a class="btn btn-solution" href="solution.html">View Full Solution</a>
+      </div>
+    </div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

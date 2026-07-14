@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+let isSpeaking=false,speechEnabled=true;
+function loadSpeechSetting(){const s=localStorage.getItem('dse-speech-enabled');if(s!==null)speechEnabled=s==='true';updateSpeechButton();}
+function updateSpeechButton(){const b=document.getElementById('btnToggleSpeech');if(b){b.textContent=speechEnabled?'Speech: ON':'Speech: OFF';b.style.background=speechEnabled?'rgba(40,167,69,0.3)':'rgba(220,53,69,0.3)';}}
+function toggleSpeech(){speechEnabled=!speechEnabled;localStorage.setItem('dse-speech-enabled',speechEnabled);updateSpeechButton();if(isSpeaking){speechSynthesis.cancel();isSpeaking=false;}}
+function readWord(t){if(!speechEnabled)return;if(isSpeaking)speechSynthesis.cancel();let u=new SpeechSynthesisUtterance(t);u.lang="en-US";u.rate=0.9;isSpeaking=true;u.onend=()=>isSpeaking=false;speechSynthesis.speak(u);}
+document.addEventListener('DOMContentLoaded',function(){
+loadSpeechSetting();const b=document.getElementById('btnToggleSpeech');if(b)b.addEventListener('click',toggleSpeech);
+const p=document.getElementById('passagePanel');if(!p)return;
+p.addEventListener('click',function(e){
+if(!speechEnabled)return;if(e.target.closest('a,button,input,label,select,textarea'))return;
+const r=document.caretRangeFromPoint(e.clientX,e.clientY);if(!r)return;
+const n=r.startContainer;if(n.nodeType!==Node.TEXT_NODE)return;
+const o=r.startOffset,t=n.textContent;let s=o,e2=o;
+while(s>0&&/[a-zA-Z\u00C0-\u024F'\u02BC-]/.test(t[s-1]))s--;
+while(e2<t.length&&/[a-zA-Z\u00C0-\u024F'\u02BC-]/.test(t[e2]))e2++;
+if(s===e2)return;const w=t.slice(s,e2);if(/^\d+$/.test(w))return;readWord(w);
+const wr=document.createRange();wr.setStart(n,s);wr.setEnd(n,e2);
+const h=document.createElement('mark');h.style.cssText='background:#ffd54f;border-radius:3px;transition:background .3s';
+try{wr.surroundContents(h);setTimeout(()=>{const pa=h.parentNode;if(pa){while(h.firstChild)pa.insertBefore(h.firstChild,h);pa.removeChild(h);pa.normalize();}},500);}catch(_){}
+});});
+</script>
+<style>#passagePanel .paragraph{cursor:default;}#passagePanel .paragraph *{cursor:pointer;}</style>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Gentle Sea Cows – Manatees - DSE 2012 Part A</title><link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="site-header">
+<div class="site-brand"><span>DSE</span> 2012 Part A Reading Practice</div>
+<nav class="header-nav"><a href="index.html" class="active">Reading</a><a href="solution.html">Solution</a></nav>
+<div class="header-tools">
+<button type="button" id="btnToggleSpeech">Speech: ON</button>
+<button type="button" id="btnLargerText">Larger Text</button>
+<button type="button" onclick="window.print()">Print</button>
+</div>
+</header>
+<div class="main-container" id="mainContainer">
+<section class="panel passage-panel" id="passagePanel">
+<h2 class="passage-title">Gentle Sea Cows – Manatees</h2>
+<p class="passage-subtitle">Text 1 — Nat Geo Kids Adapted B2 Reading</p>
+<div class="passage-illustration">🐋 🌊 🪫</div>
+<div style="text-align:center;margin:15px 0;display:flex;">
+<button id="btnToggleKelly" style="flex:1;padding:8px 12px;background:#f39c12;color:white;border:none;border-radius:4px;cursor:pointer;font-size:15px;margin:0 5px;">Kelly: OFF</button>
+<button id="btnToggleJenny" style="flex:1;padding:8px 12px;background:#f39c12;color:white;border:none;border-radius:4px;cursor:pointer;font-size:15px;margin:0 5px;">Jenny: OFF</button>
+<button id="btnToggleNash" style="flex:1;padding:8px 12px;background:#f39c12;color:white;border:none;border-radius:4px;cursor:pointer;font-size:15px;margin:0 5px;">Nash: OFF</button>
+</div>
+<script>
+const VC={kelly:{b:'btnToggleKelly',f:'../008_Kelly_Hermes/kellywordbank/kellywordbank-single.md',c:'rgba(52,152,219,0.3)',o:false},jenny:{b:'btnToggleJenny',f:'../008_Kelly_Hermes/kellywordbank/jennywordbank-single.md',c:'rgba(155,89,182,0.3)',o:false},nash:{b:'btnToggleNash',f:'../008_Kelly_Hermes/kellywordbank/nashwordbank-single.md',c:'rgba(231,76,60,0.3)',o:false}};
+let vl={kelly:false,jenny:false,nash:false},vw={kelly:[],jenny:[],nash:[]};
+function esc(s){return s.replace(/[.*+?${}()|[\]\\]/g,'\\$&');}
+async function lv(b){try{const r=await fetch(VC[b].f+'?cb='+Date.now());const t=await r.text();const w=[];t.split('\n').forEach(l=>{const m=l.match(/^###\s+([^(]+)/);if(m){const wd=m[1].trim();if(wd)w.push(wd);}});w.sort((a,b)=>b.length-a.length);vw[b]=w;vl[b]=true;}catch(e){vw[b]=[];vl[b]=true;}}
+function toff(b){Object.keys(VC).forEach(bk=>{if(bk!==b&&VC[bk].o){VC[bk].o=false;const btn=document.getElementById(VC[bk].b);btn.style.background='#f39c12';btn.textContent=bk.charAt(0).toUpperCase()+bk.slice(1)+': OFF';rv(bk);}});}
+function tv(b){const c=VC[b];c.o=!c.o;const btn=document.getElementById(c.b);if(c.o){toff(b);btn.textContent=b.charAt(0).toUpperCase()+b.slice(1)+': ON';btn.style.background='#27ae60';av(b);}else{btn.textContent=b.charAt(0).toUpperCase()+b.slice(1)+': OFF';btn.style.background='#f39c12';rv(b);}}
+function av(b){if(!vl[b]){setTimeout(()=>{if(VC[b].o)av(b);},200);return;}if(vw[b].length===0)return;const c=VC[b];document.querySelectorAll('#passagePanel p.paragraph').forEach(p=>{let h=p.innerHTML.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g,'$1');vw[b].forEach(w=>{const e=esc(w);h=h.replace(new RegExp('\\b'+e+'\\b','gi'),'<mark style="background:'+c.c+';">$&</mark>');});p.innerHTML=h;});}
+function rv(b){document.querySelectorAll('#passagePanel p.paragraph').forEach(p=>{p.innerHTML=p.innerHTML.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g,'$1');});}
+Object.keys(VC).forEach(b=>{lv(b);const btn=document.getElementById(VC[b].b);if(btn)btn.addEventListener('click',()=>tv(b));});
+</script>
+      <p class="paragraph" data-para="1">
+        <span class="paragraph-num">[1]</span>
+        Manatees are large, slow-moving marine mammals often nicknamed "sea cows". They live in warm shallow freshwater rivers, coastal lagoons and tropical ocean bays across Florida, the Caribbean and West Africa. Unlike fish, manatees must swim to the water surface every three to five minutes to breathe air through their round blowholes on top of their heads. Their grey wrinkled skin is covered in thin short hair, and algae often grow on their backs, turning their bodies a greenish-brown shade.
+      </p>
+      <p class="paragraph" data-para="2">
+        <span class="paragraph-num">[2]</span>
+        These peaceful animals are strict herbivores, meaning they only eat underwater plants. A single adult manatee can graze on up to 50 kilograms of seagrass and water lettuce every single day. Their flat, wide molar teeth constantly grow and wear down from grinding tough plant stems, so they never run out of teeth to feed. Since manatees spend most of their time feeding near the water's surface, they are easy to spot floating in calm, warm waters with lots of aquatic vegetation.
+      </p>
+      <p class="paragraph" data-para="3">
+        <span class="paragraph-num">[3]</span>
+        Manatees have no natural predators in their habitats, yet human activity has pushed them to the edge of extinction. Fast motorboat propellers cut deep scars into their soft bodies, causing serious injuries or slow painful death. Many waterways are blocked by fishing nets, which trap manatees underwater and stop them from reaching the surface to breathe. Cold winter weather is another hidden danger: if water temperatures drop below 20°C, manatees lose energy and suffer life-threatening cold stress.
+      </p>
+      <p class="paragraph" data-para="4">
+        <span class="paragraph-num">[4]</span>
+        Warm natural springs act as vital winter shelters for Florida manatees. These underground spring streams stay at a steady 22°C all year long. Hundreds of manatees gather in spring sanctuaries between December and March to escape cold coastal seawater. Local wildlife parks build viewing boardwalks beside spring pools, letting visitors watch manatees without stepping into their resting zones.
+      </p>
+      <p class="paragraph" data-para="5">
+        <span class="paragraph-num">[5]</span>
+        Governments worldwide have introduced strict protection laws to save manatee populations. All speed limits for motorboats are lowered in manatee living zones to reduce propeller strikes. Fishing gear that can trap marine mammals is banned in lagoons and rivers. Protected wildlife sanctuaries mark off spring feeding and resting areas where boats and swimmers are completely forbidden to enter.
+      </p>
+      <p class="paragraph" data-para="6">
+        <span class="paragraph-num">[6]</span>
+        Local rescue teams run manatee rehabilitation centres for injured or cold-stressed individuals. Vets treat propeller wounds and nurse weak manatees back to health with fresh seagrass and warm controlled pools. Once they fully recover, healthy manatees are released back into safe protected waterways with plenty of plant food and low boat traffic.
+      </p>
+      <p class="paragraph" data-para="7">
+        <span class="paragraph-num">[7]</span>
+        Ordinary teens can help protect wild manatees without visiting coastal areas. Share boat speed rules with family members who own watercraft, avoid buying seafood caught with harmful drift nets, and donate to wildlife rescue charities. Manatees play a key role in balancing wetland ecosystems: heavy grazing keeps seagrass beds thin enough for sunlight to reach small water creatures, supporting the whole coastal food chain.
+      </p>
+
+</section>
+<div class="divider" id="divider" title="Drag to resize"></div>
+<section class="panel questions-panel" id="questionsPanel">
+<p class="instruction">Read the text and answer questions 1–15. (20 marks)</p>
+
+      <div class="question-block" id="q1" data-q="1">
+        <div class="question-label">1. Why do manatees regularly swim up to the water surface?</div>
+        <input type="text" class="text-input wide" name="q1" placeholder="Your answer">
+<div class="inline-solution" id="solution-q1" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">1</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q2" data-q="2">
+        <div class="question-label">2. Choose the word closest in meaning to "herbivores" (line 6)</div>
+        <div class="options"><label><input type="radio" name="q2" value="A"> A. animals that eat only plants</label><label><input type="radio" name="q2" value="B"> B. sea predators that hunt fish</label><label><input type="radio" name="q2" value="C"> C. mammals that live on ice</label><label><input type="radio" name="q2" value="D"> D. creatures that live on both land and sea</label></div>
+<div class="inline-solution" id="solution-q2" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">2</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q3" data-q="3">
+        <div class="question-label">3. What natural plant often grows all over manatees’ skin?</div>
+        <input type="text" class="text-input wide" name="q3" placeholder="Your answer">
+<div class="inline-solution" id="solution-q3" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">3</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q4" data-q="4">
+        <div class="question-label">4. Decide True / False / Not Given (3 marks)</div>
+        <table class="tf-table"><thead><tr><th>Statement</th><th>T</th><th>F</th><th>NG</th></tr></thead><tbody><tr><td>(i) Manatees eat roughly 10 kilograms of underwater plants each day.</td><td><input type="radio" name="q4i" value="T"></td><td><input type="radio" name="q4i" value="F"></td><td><input type="radio" name="q4i" value="NG"></td></tr><tr><td>(ii) Cold water below 20°C causes dangerous cold stress for manatees.</td><td><input type="radio" name="q4ii" value="T"></td><td><input type="radio" name="q4ii" value="F"></td><td><input type="radio" name="q4ii" value="NG"></td></tr><tr><td>(iii) Manatees are hunted by large sharks as their main natural prey.</td><td><input type="radio" name="q4iii" value="T"></td><td><input type="radio" name="q4iii" value="F"></td><td><input type="radio" name="q4iii" value="NG"></td></tr></tbody></table>
+<div class="inline-solution" id="solution-q4" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">4</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q5" data-q="5">
+        <div class="question-label">5. Name three major threats that harm wild manatees (paragraph 3)</div>
+        <input type="text" class="text-input wide" name="q5" placeholder="Your answer">
+<div class="inline-solution" id="solution-q5" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">5</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q6" data-q="6">
+        <div class="question-label">6. Why do hundreds of manatees gather in natural spring pools during winter (paragraph 4)?</div>
+        <input type="text" class="text-input wide" name="q6" placeholder="Your answer">
+<div class="inline-solution" id="solution-q6" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">6</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q7" data-q="7">
+        <div class="question-label">7. Find one word in paragraph 5 meaning safe restricted areas for wild animals</div>
+        <input type="text" class="text-input" name="q7" placeholder="Your answer">
+<div class="inline-solution" id="solution-q7" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">7</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q8" data-q="8">
+        <div class="question-label">8. Complete the summary with ONE word taken from the passage (4 marks)</div>
+        <div class="flow-chart"><p>Warm natural springs serve as winter (i) <input type="text" class="text-input short" name="q8i" placeholder="Your answer"> for Florida manatees.</p><p>Teenagers can reject harmful fishing (ii) <input type="text" class="text-input short" name="q8ii" placeholder="Your answer">.</p><p>Manatees control seagrass growth to balance coastal wetland (iii) <input type="text" class="text-input short" name="q8iii" placeholder="Your answer">.</p><p>Protecting them safeguards the whole coastal food (iv) <input type="text" class="text-input short" name="q8iv" placeholder="Your answer">.</p></div>
+<div class="inline-solution" id="solution-q8" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">8</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q9" data-q="9">
+        <div class="question-label">9. What three official government rules protect wild manatees (paragraph 5)?</div>
+        <input type="text" class="text-input wide" name="q9" placeholder="Your answer">
+<div class="inline-solution" id="solution-q9" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">9</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q10" data-q="0">
+        <div class="question-label">10. Give one difference and one similarity between manatees and fish (2 marks)</div>
+        <p>(i) Difference: <input type="text" class="text-input wide" name="q10i" placeholder="Your answer"></p><p>(ii) Similarity: <input type="text" class="text-input wide" name="q10ii" placeholder="Your answer"></p>
+<div class="inline-solution" id="solution-q10" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">0</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q11" data-q="1">
+        <div class="question-label">11. What work do wildlife vets do at manatee rehabilitation centres (paragraph 6)?</div>
+        <input type="text" class="text-input wide" name="q11" placeholder="Your answer">
+<div class="inline-solution" id="solution-q11" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">1</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q12" data-q="2">
+        <div class="question-label">12. What three simple actions can teenagers take to support manatee conservation (paragraph 7)?</div>
+        <input type="text" class="text-input wide" name="q12" placeholder="Your answer">
+<div class="inline-solution" id="solution-q12" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">2</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q13" data-q="3">
+        <div class="question-label">13. What ecological job do manatees do by grazing large amounts of seagrass (paragraph 7)?</div>
+        <input type="text" class="text-input wide" name="q13" placeholder="Your answer">
+<div class="inline-solution" id="solution-q13" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">3</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q14" data-q="4">
+        <div class="question-label">14. What is the writer’s overall attitude toward manatee protection work?</div>
+        <div class="options"><label><input type="radio" name="q14" value="A"> A. Completely hopeless</label><label><input type="radio" name="q14" value="B"> B. Generally hopeful</label><label><input type="radio" name="q14" value="C"> C. Fully neutral</label><label><input type="radio" name="q14" value="D"> D. Deeply doubtful</label></div>
+<div class="inline-solution" id="solution-q14" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">4</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q15" data-q="5">
+        <div class="question-label">15. What does the title “Gentle Sea Cows – Manatees” tell readers about manatees’ character and diet?</div>
+        <input type="text" class="text-input wide" name="q15" placeholder="Your answer">
+<div class="inline-solution" id="solution-q15" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">5</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <h4 class="end-marker">— End of the Test —</h4>
+      <p class="submit-hint">Please Submit to view your score, solution and explanations.</p>
+</section>
+</div>
+<footer class="bottom-bar">
+<div class="palette-section">
+<span class="palette-label">Question Palette</span>
+<div class="question-palette" id="questionPalette"></div>
+<div class="palette-legend"><span class="legend-dot"></span> answered</div>
+</div>
+<div class="timer-section" id="timer">00:00</div>
+<div class="action-buttons">
+<button class="btn btn-submit" id="btnSubmit">✓ Submit</button>
+<button class="btn btn-review" id="btnReview">⊞ Review</button>
+<a class="btn btn-solution" href="solution.html">🔑 Solution</a>
+<button class="btn btn-reset" id="btnReset">↺ Reset</button>
+</div>
+</footer>
+<div class="modal-overlay" id="submitModal">
+<div class="modal"><h3>Are you sure you want to submit?</h3>
+<p id="submitModalText">You have answered <strong id="answeredCount">0</strong> of 15 questions.</p>
+<div class="modal-actions">
+<button class="btn btn-reset" id="btnCancelSubmit">Cancel</button>
+<button class="btn btn-submit" id="btnConfirmSubmit">Submit and view Answers</button>
+</div></div></div>
+<div class="modal-overlay" id="scoreModal">
+<div class="modal"><h3>Your Results</h3>
+<div class="score-display">
+<div class="score-number" id="scoreNumber">0/15</div>
+<div class="score-label" id="scorePercent">0% correct</div>
+</div>
+<div class="modal-actions">
+<button class="btn btn-review" id="btnCloseScore">Review Answers</button>
+<a class="btn btn-solution" href="solution.html">View Full Solution</a>
+</div></div></div>
+<script src="app.js"></script>
+</body>
+</html>

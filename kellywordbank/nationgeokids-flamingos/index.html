@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+let isSpeaking = false;
+let speechEnabled = true;
+function loadSpeechSetting() {
+  const saved = localStorage.getItem('dse-speech-enabled');
+  if (saved !== null) speechEnabled = saved === 'true';
+  updateSpeechButton();
+}
+function updateSpeechButton() {
+  const btn = document.getElementById('btnToggleSpeech');
+  if (btn) {
+    btn.textContent = speechEnabled ? 'Speech: ON' : 'Speech: OFF';
+    btn.style.background = speechEnabled ? 'rgba(40, 167, 69, 0.3)' : 'rgba(220, 53, 69, 0.3)';
+  }
+}
+function toggleSpeech() {
+  speechEnabled = !speechEnabled;
+  localStorage.setItem('dse-speech-enabled', speechEnabled);
+  updateSpeechButton();
+  if (isSpeaking) { speechSynthesis.cancel(); isSpeaking = false; }
+}
+function readWord(text){
+  if(!speechEnabled) return;
+  if(isSpeaking) speechSynthesis.cancel();
+  let utter = new SpeechSynthesisUtterance(text);
+  utter.lang = "en-US"; utter.rate = 0.9;
+  isSpeaking = true;
+  utter.onend = ()=> isSpeaking = false;
+  speechSynthesis.speak(utter);
+}
+document.addEventListener('DOMContentLoaded', function(){
+  loadSpeechSetting();
+  const btn = document.getElementById('btnToggleSpeech');
+  if (btn) btn.addEventListener('click', toggleSpeech);
+  const passage = document.getElementById('passagePanel');
+  if (!passage) return;
+  passage.addEventListener('click', function(e){
+    if(!speechEnabled) return;
+    if (e.target.closest('a, button, input, label, select, textarea')) return;
+    const range = document.caretRangeFromPoint(e.clientX, e.clientY);
+    if (!range) return;
+    const node = range.startContainer;
+    if (node.nodeType !== Node.TEXT_NODE) return;
+    const offset = range.startOffset;
+    const text = node.textContent;
+    let start = offset, end = offset;
+    while (start > 0 && /[a-zA-Z\u00C0-\u024F'\u02BC-]/.test(text[start - 1])) start--;
+    while (end < text.length && /[a-zA-Z\u00C0-\u024F'\u02BC-]/.test(text[end])) end++;
+    if (start === end) return;
+    const word = text.slice(start, end);
+    if (/^\d+$/.test(word)) return;
+    readWord(word);
+    const wordRange = document.createRange();
+    wordRange.setStart(node, start);
+    wordRange.setEnd(node, end);
+    const highlight = document.createElement('mark');
+    highlight.style.cssText = 'background:#ffd54f;border-radius:3px;transition:background .3s';
+    try {
+      wordRange.surroundContents(highlight);
+      setTimeout(() => {
+        const parent = highlight.parentNode;
+        if (parent) {
+          while (highlight.firstChild) parent.insertBefore(highlight.firstChild, highlight);
+          parent.removeChild(highlight);
+          parent.normalize();
+        }
+      }, 500);
+    } catch(_) {}
+  });
+});
+</script>
+<style>
+#passagePanel .paragraph { cursor: default; }
+#passagePanel .paragraph * { cursor: pointer; }
+</style>
+<meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flamingos: Pink Birds of Salt Lagoons - DSE 2012 Part A</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-brand"><span>DSE</span> 2012 Part A Reading Practice</div>
+    <nav class="header-nav">
+      <a href="index.html" class="active">Reading</a>
+      <a href="solution.html">Solution</a>
+    </nav>
+    <div class="header-tools">
+      <button type="button" id="btnToggleSpeech">Speech: ON</button>
+      <button type="button" id="btnLargerText">Larger Text</button>
+      <button type="button" onclick="window.print()">Print</button>
+    </div>
+  </header>
+  <div class="main-container" id="mainContainer">
+    <section class="panel passage-panel" id="passagePanel">
+      <h2 class="passage-title">Flamingos: Pink Birds of Salt Lagoons</h2>
+      <p class="passage-subtitle">Text 1 — Nat Geo Kids Adapted B2 Reading</p>
+      <div class="passage-illustration">🦩 🌅 💧</div>
+      <div style="text-align: center; margin: 15px 0; display: flex;">
+        <button id="btnToggleKelly" style="flex:1;padding:8px 12px;background:#f39c12;color:white;border:none;border-radius:4px;cursor:pointer;font-size:15px;margin:0 5px;">Kelly: OFF</button>
+        <button id="btnToggleJenny" style="flex:1;padding:8px 12px;background:#f39c12;color:white;border:none;border-radius:4px;cursor:pointer;font-size:15px;margin:0 5px;">Jenny: OFF</button>
+        <button id="btnToggleNash" style="flex:1;padding:8px 12px;background:#f39c12;color:white;border:none;border-radius:4px;cursor:pointer;font-size:15px;margin:0 5px;">Nash: OFF</button>
+      </div>
+<script>
+const VOCAB_CONFIG = {
+  kelly: { btnId:'btnToggleKelly', file:'../008_Kelly_Hermes/kellywordbank/kellywordbank-single.md', color:'rgba(52,152,219,0.3)', on:false },
+  jenny: { btnId:'btnToggleJenny', file:'../008_Kelly_Hermes/kellywordbank/jennywordbank-single.md', color:'rgba(155,89,182,0.3)', on:false },
+  nash: { btnId:'btnToggleNash', file:'../008_Kelly_Hermes/kellywordbank/nashwordbank-single.md', color:'rgba(231,76,60,0.3)', on:false }
+};
+let vocabLoaded = { kelly:false, jenny:false, nash:false };
+let vocabWords = { kelly:[], jenny:[], nash:[] };
+function escapeRegExp(s) { return s.replace(/[.*+?${}()|[\]\\]/g, '\\$&'); }
+async function loadVocab(bank) {
+  try {
+    const r = await fetch(VOCAB_CONFIG[bank].file+'?cache-bust='+new Date().getTime());
+    const t = await r.text();
+    const w = [];
+    t.split('\n').forEach(l => { const m = l.match(/^###\s+([^(]+)/); if(m) { const wd = m[1].trim(); if(wd) w.push(wd); } });
+    w.sort((a,b)=>b.length-a.length);
+    vocabWords[bank] = w; vocabLoaded[bank] = true;
+  } catch(e) { vocabWords[bank] = []; vocabLoaded[bank] = true; }
+}
+function turnOffAllExcept(b) {
+  Object.keys(VOCAB_CONFIG).forEach(bank => {
+    if(bank!==b && VOCAB_CONFIG[bank].on) {
+      VOCAB_CONFIG[bank].on = false;
+      const btn = document.getElementById(VOCAB_CONFIG[bank].btnId);
+      btn.style.background='#f39c12'; btn.textContent=bank.charAt(0).toUpperCase()+bank.slice(1)+': OFF';
+      removeVocabHighlight(bank);
+    }
+  });
+}
+function toggleVocabHighlight(bank) {
+  const c = VOCAB_CONFIG[bank]; c.on = !c.on;
+  const btn = document.getElementById(c.btnId);
+  if(c.on) { turnOffAllExcept(bank); btn.textContent=bank.charAt(0).toUpperCase()+bank.slice(1)+': ON'; btn.style.background='#27ae60'; applyVocabHighlight(bank); }
+  else { btn.textContent=bank.charAt(0).toUpperCase()+bank.slice(1)+': OFF'; btn.style.background='#f39c12'; removeVocabHighlight(bank); }
+}
+function applyVocabHighlight(bank) {
+  if(!vocabLoaded[bank]) { setTimeout(()=>{ if(VOCAB_CONFIG[bank].on) applyVocabHighlight(bank); },200); return; }
+  if(vocabWords[bank].length===0) return;
+  const c = VOCAB_CONFIG[bank];
+  document.querySelectorAll('#passagePanel p.paragraph').forEach(para => {
+    let h = para.innerHTML.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g,'$1');
+    vocabWords[bank].forEach(w => { const e = escapeRegExp(w); h = h.replace(new RegExp('\\b'+e+'\\b','gi'), '<mark style="background:'+c.color+';">$&</mark>'); });
+    para.innerHTML = h;
+  });
+}
+function removeVocabHighlight(bank) {
+  document.querySelectorAll('#passagePanel p.paragraph').forEach(para => { para.innerHTML = para.innerHTML.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g,'$1'); });
+}
+Object.keys(VOCAB_CONFIG).forEach(bank => { loadVocab(bank); const btn = document.getElementById(VOCAB_CONFIG[bank].btnId); if(btn) btn.addEventListener('click',()=>toggleVocabHighlight(bank)); });
+</script>
+      <p class="paragraph" data-para="1">
+        <span class="paragraph-num">[1]</span>
+        Flamingos are famous for their bright pink-red feathers and long curved necks, living in shallow salt lakes and coastal lagoons across Africa, South America and Southern Europe. Many people wrongly believe flamingos are born pink; in fact, baby chicks hatch with plain grey down feathers. Their signature colourful plumage only develops after years of eating tiny water creatures filled with natural orange-red pigments called carotenoids. Without this special diet, adult flamingos turn pale white over time.
+      </p>
+      <p class="paragraph" data-para="2">
+        <span class="paragraph-num">[2]</span>
+        Their whole body is perfectly adapted to feed in muddy salty water. Long flexible necks let them dip their heads fully underwater upside down. A unique curved beak filters mud, salt and waste out of water, trapping small shrimp, algae and insect larvae as food. Their long thin legs have tough scaly skin that resists sharp salt crystals and hot muddy ground. Webbed feet help them stand steady on soft mud and swim short distances across lagoons.
+      </p>
+      <p class="paragraph" data-para="3">
+        <span class="paragraph-num">[3]</span>
+        Flamingos live in huge noisy flocks, sometimes gathering groups of over one hundred thousand birds. Living in massive crowds brings two key survival advantages. First, hundreds of pairs watch for predators such as eagles and wild foxes at the same time, so danger is spotted instantly. Second, large flocks share warmth during cold nights, protecting fragile chicks from freezing winds near open water. Every flock member communicates with loud honking calls to stay connected.
+      </p>
+      <p class="paragraph" data-para="4">
+        <span class="paragraph-num">[4]</span>
+        Breeding season follows strict group rules. All flamingos in one lagoon lay eggs within the same short window, so all chicks grow up together. Pairs build small cone-shaped mounds from mud to lift eggs above floodwater and hot salt soil. Each couple only lays one single egg per year; both parents take turns sitting on the egg to keep it warm for around thirty days. After hatching, adults feed their babies a special nutrient-rich liquid produced inside their throats.
+      </p>
+      <p class="paragraph" data-para="5">
+        <span class="paragraph-num">[5]</span>
+        Human activity creates growing threats to wild flamingo populations. Salt mining companies drain shallow lagoons to collect mineral salt, wiping out the tiny shrimp and algae flamingos rely on for food. Tourists walking too close to nesting mounds scare parent birds away, leaving unhatched eggs exposed to heat and predators. Plastic waste floating on lagoon surfaces also traps young flamingos and poisons their food sources.
+      </p>
+      <p class="paragraph" data-para="6">
+        <span class="paragraph-num">[6]</span>
+        Global conservation groups carry out practical protection work. Local governments mark off protected no-entry nesting zones around salt lagoons, banning mining and uncontrolled tourist access. Scientists build artificial shallow feeding pools filled with shrimp to replace lost natural lagoon habitats. Tour operators run guided distant-watching tours so visitors can admire flamingos without disturbing their homes.
+      </p>
+      <p class="paragraph" data-para="7">
+        <span class="paragraph-num">[7]</span>
+        Flamingos are more than just colourful sightseeing birds. Their presence signals clean, balanced wetland ecosystems. If flamingos disappear from a lagoon, it proves the water environment has become damaged by human pollution or habitat loss. Protecting these pink water birds means saving fragile wetland homes for thousands of other small water creatures too.
+      </p>
+
+    </section>
+    <div class="divider" id="divider" title="Drag to resize"></div>
+    <section class="panel questions-panel" id="questionsPanel">
+      <p class="instruction">Read the text and answer questions 1–15. (20 marks)</p>
+
+      <div class="question-block" id="q1" data-q="1">
+        <div class="question-label">1. Why do flamingos grow bright pink feathers as adults?</div>
+        <input type="text" class="text-input wide" name="q1" placeholder="Your answer">
+<div class="inline-solution" id="solution-q1" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">1</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q2" data-q="2">
+        <div class="question-label">2. Choose the word closest in meaning to "pigments" (line 4)</div>
+        <div class="options">
+          <label><input type="radio" name="q2" value="A"> A. colour-producing natural substances</label>
+          <label><input type="radio" name="q2" value="B"> B. clear fresh water</label>
+          <label><input type="radio" name="q2" value="C"> C. hard salt crystals</label>
+          <label><input type="radio" name="q2" value="D"> D. tiny flying insects</label>
+        </div>
+<div class="inline-solution" id="solution-q2" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">2</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q3" data-q="3">
+        <div class="question-label">3. What special tool do flamingos use to filter food from muddy salt water?</div>
+        <input type="text" class="text-input wide" name="q3" placeholder="Your answer">
+<div class="inline-solution" id="solution-q3" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">3</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q4" data-q="4">
+        <div class="question-label">4. Decide True / False / Not Given (3 marks)</div>
+        <table class="tf-table">
+          <thead><tr><th>Statement</th><th>T</th><th>F</th><th>NG</th></tr></thead>
+          <tbody>
+            <tr><td>(i) Newly hatched flamingo chicks have bright pink feathers.</td><td><input type="radio" name="q4i" value="T"></td><td><input type="radio" name="q4i" value="F"></td><td><input type="radio" name="q4i" value="NG"></td></tr>
+            <tr><td>(ii) Flamingos build mud mounds to stop eggs from being flooded.</td><td><input type="radio" name="q4ii" value="T"></td><td><input type="radio" name="q4ii" value="F"></td><td><input type="radio" name="q4ii" value="NG"></td></tr>
+            <tr><td>(iii) Flamingos live alone instead of forming big flocks.</td><td><input type="radio" name="q4iii" value="T"></td><td><input type="radio" name="q4iii" value="F"></td><td><input type="radio" name="q4iii" value="NG"></td></tr>
+          </tbody>
+        </table>
+<div class="inline-solution" id="solution-q4" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">4</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q5" data-q="5">
+        <div class="question-label">5. Name two survival benefits of living in huge flamingo flocks (paragraph 3)</div>
+        <input type="text" class="text-input wide" name="q5" placeholder="Your answer">
+<div class="inline-solution" id="solution-q5" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">5</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q6" data-q="6">
+        <div class="question-label">6. What two human activities destroy flamingo natural feeding habitats (paragraph 5)?</div>
+        <input type="text" class="text-input wide" name="q6" placeholder="Your answer">
+<div class="inline-solution" id="solution-q6" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">6</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q7" data-q="7">
+        <div class="question-label">7. Find one word in paragraph 6 meaning areas where people cannot enter to protect wildlife</div>
+        <input type="text" class="text-input" name="q7" placeholder="Your answer">
+<div class="inline-solution" id="solution-q7" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">7</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q8" data-q="8">
+        <div class="question-label">8. Complete the summary with ONE word taken from the passage (4 marks)</div>
+        <div class="flow-chart">
+          <p>(i) protected <input type="text" class="text-input short" name="q8i" placeholder="Your answer"> zones</p>
+          <p>(ii) healthy wetland <input type="text" class="text-input short" name="q8ii" placeholder="Your answer"></p>
+          <p>(iii) fragile water <input type="text" class="text-input short" name="q8iii" placeholder="Your answer"></p>
+          <p>(iv) without causing habitat <input type="text" class="text-input short" name="q8iv" placeholder="Your answer"></p>
+        </div>
+<div class="inline-solution" id="solution-q8" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">8</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q9" data-q="9">
+        <div class="question-label">9. What three conservation actions help protect wild flamingos (paragraph 6)?</div>
+        <input type="text" class="text-input wide" name="q9" placeholder="Your answer">
+<div class="inline-solution" id="solution-q9" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">9</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q10" data-q="10">
+        <div class="question-label">10. Give one difference and one similarity between adult flamingos and baby flamingo chicks (2 marks)</div>
+        <p>(i) Difference: <input type="text" class="text-input wide" name="q10i" placeholder="Your answer"></p>
+        <p>(ii) Similarity: <input type="text" class="text-input wide" name="q10ii" placeholder="Your answer"></p>
+<div class="inline-solution" id="solution-q10" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">10</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q11" data-q="11">
+        <div class="question-label">11. How do parent flamingos feed their newly hatched chicks (paragraph 4)?</div>
+        <input type="text" class="text-input wide" name="q11" placeholder="Your answer">
+<div class="inline-solution" id="solution-q11" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">11</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q12" data-q="12">
+        <div class="question-label">12. What three body features help flamingos survive in muddy salt lagoons (paragraph 2)?</div>
+        <input type="text" class="text-input wide" name="q12" placeholder="Your answer">
+<div class="inline-solution" id="solution-q12" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">12</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q13" data-q="13">
+        <div class="question-label">13. What will happen to a lagoon ecosystem if all flamingos leave the area (paragraph 7)?</div>
+        <input type="text" class="text-input wide" name="q13" placeholder="Your answer">
+<div class="inline-solution" id="solution-q13" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">13</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q14" data-q="14">
+        <div class="question-label">14. What is the writer's overall attitude toward flamingo conservation?</div>
+        <div class="options">
+          <label><input type="radio" name="q14" value="A"> A. Completely hopeless</label>
+          <label><input type="radio" name="q14" value="B"> B. Generally hopeful</label>
+          <label><input type="radio" name="q14" value="C"> C. Fully neutral</label>
+          <label><input type="radio" name="q14" value="D"> D. Deeply doubtful</label>
+        </div>
+<div class="inline-solution" id="solution-q14" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">14</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q15" data-q="15">
+        <div class="question-label">15. What does the title "Flamingos: Pink Birds of Salt Lagoons" imply about flamingos' natural home?</div>
+        <input type="text" class="text-input wide" name="q15" placeholder="Your answer">
+<div class="inline-solution" id="solution-q15" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">15</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <h4 class="end-marker">— End of the Test —</h4>
+      <p class="submit-hint">Please Submit to view your score, solution and explanations.</p>
+    </section>
+  </div>
+  <footer class="bottom-bar">
+    <div class="palette-section">
+      <span class="palette-label">Question Palette</span>
+      <div class="question-palette" id="questionPalette"></div>
+      <div class="palette-legend"><span class="legend-dot"></span> answered</div>
+    </div>
+    <div class="timer-section" id="timer">00:00</div>
+    <div class="action-buttons">
+      <button class="btn btn-submit" id="btnSubmit">✓ Submit</button>
+      <button class="btn btn-review" id="btnReview">⊞ Review</button>
+      <a class="btn btn-solution" href="solution.html">🔑 Solution</a>
+      <button class="btn btn-reset" id="btnReset">↺ Reset</button>
+    </div>
+  </footer>
+  <div class="modal-overlay" id="submitModal">
+    <div class="modal">
+      <h3>Are you sure you want to submit?</h3>
+      <p id="submitModalText">You have answered <strong id="answeredCount">0</strong> of 15 questions.</p>
+      <div class="modal-actions">
+        <button class="btn btn-reset" id="btnCancelSubmit">Cancel</button>
+        <button class="btn btn-submit" id="btnConfirmSubmit">Submit and view Answers</button>
+      </div>
+    </div>
+  </div>
+  <div class="modal-overlay" id="scoreModal">
+    <div class="modal">
+      <h3>Your Results</h3>
+      <div class="score-display">
+        <div class="score-number" id="scoreNumber">0/15</div>
+        <div class="score-label" id="scorePercent">0% correct</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-review" id="btnCloseScore">Review Answers</button>
+        <a class="btn btn-solution" href="solution.html">View Full Solution</a>
+      </div>
+    </div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

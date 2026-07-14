@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+let isSpeaking = false;
+let speechEnabled = true;
+function loadSpeechSetting() {
+  const saved = localStorage.getItem('dse-speech-enabled');
+  if (saved !== null) speechEnabled = saved === 'true';
+  updateSpeechButton();
+}
+function updateSpeechButton() {
+  const btn = document.getElementById('btnToggleSpeech');
+  if (btn) {
+    btn.textContent = speechEnabled ? 'Speech: ON' : 'Speech: OFF';
+    btn.style.background = speechEnabled ? 'rgba(40, 167, 69, 0.3)' : 'rgba(220, 53, 69, 0.3)';
+  }
+}
+function toggleSpeech() {
+  speechEnabled = !speechEnabled;
+  localStorage.setItem('dse-speech-enabled', speechEnabled);
+  updateSpeechButton();
+  if (isSpeaking) { speechSynthesis.cancel(); isSpeaking = false; }
+}
+function readWord(text){
+  if(!speechEnabled) return;
+  if(isSpeaking) speechSynthesis.cancel();
+  let utter = new SpeechSynthesisUtterance(text);
+  utter.lang = "en-US"; utter.rate = 0.9;
+  isSpeaking = true;
+  utter.onend = ()=> isSpeaking = false;
+  speechSynthesis.speak(utter);
+}
+document.addEventListener('DOMContentLoaded', function(){
+  loadSpeechSetting();
+  const btn = document.getElementById('btnToggleSpeech');
+  if (btn) btn.addEventListener('click', toggleSpeech);
+  const passage = document.getElementById('passagePanel');
+  if (!passage) return;
+  passage.addEventListener('click', function(e){
+    if(!speechEnabled) return;
+    if (e.target.closest('a, button, input, label, select, textarea')) return;
+    const range = document.caretRangeFromPoint(e.clientX, e.clientY);
+    if (!range) return;
+    const node = range.startContainer;
+    if (node.nodeType !== Node.TEXT_NODE) return;
+    const offset = range.startOffset;
+    const text = node.textContent;
+    let start = offset, end = offset;
+    while (start > 0 && /[a-zA-Z\u00C0-\u024F'ʼ-]/.test(text[start - 1])) start--;
+    while (end < text.length && /[a-zA-Z\u00C0-\u024F'ʼ-]/.test(text[end])) end++;
+    if (start === end) return;
+    const word = text.slice(start, end);
+    if (/^\d+$/.test(word)) return;
+    readWord(word);
+    const wordRange = document.createRange();
+    wordRange.setStart(node, start);
+    wordRange.setEnd(node, end);
+    const highlight = document.createElement('mark');
+    highlight.style.cssText = 'background:#ffd54f;border-radius:3px;transition:background .3s';
+    try {
+      wordRange.surroundContents(highlight);
+      setTimeout(() => {
+        const parent = highlight.parentNode;
+        if (parent) {
+          while (highlight.firstChild) parent.insertBefore(highlight.firstChild, highlight);
+          parent.removeChild(highlight);
+          parent.normalize();
+        }
+      }, 500);
+    } catch(_) {}
+  });
+});
+</script>
+<style>
+#passagePanel .paragraph { cursor: default; }
+#passagePanel .paragraph * { cursor: pointer; }
+</style>
+<meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Puffins – Sea Parrots of Northern Ocean Cliffs - DSE 2012 Part A</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-brand"><span>DSE</span> 2012 Part A Reading Practice</div>
+    <nav class="header-nav">
+      <a href="index.html" class="active">Reading</a>
+      <a href="solution.html">Solution</a>
+    </nav>
+    <div class="header-tools">
+      <button type="button" id="btnToggleSpeech">Speech: ON</button>
+      <button type="button" id="btnLargerText">Larger Text</button>
+      <button type="button" onclick="window.print()">Print</button>
+    </div>
+  </header>
+  <div class="main-container" id="mainContainer">
+    <section class="panel passage-panel" id="passagePanel">
+      <h2 class="passage-title">Puffins – Sea Parrots of Northern Ocean Cliffs</h2>
+      <p class="passage-subtitle">Text 3 — Nat Geo Kids Adapted B2 Reading</p>
+      <div class="passage-illustration">🐧 🌊 🪨</div>
+      <div style="text-align: center; margin: 15px 0; display: flex;">
+        <button id="btnToggleKelly" style="flex:1;padding:8px 12px;background:#f39c12;color:white;border:none;border-radius:4px;cursor:pointer;font-size:15px;margin:0 5px;">Kelly: OFF</button>
+        <button id="btnToggleJenny" style="flex:1;padding:8px 12px;background:#f39c12;color:white;border:none;border-radius:4px;cursor:pointer;font-size:15px;margin:0 5px;">Jenny: OFF</button>
+        <button id="btnToggleNash" style="flex:1;padding:8px 12px;background:#f39c12;color:white;border:none;border-radius:4px;cursor:pointer;font-size:15px;margin:0 5px;">Nash: OFF</button>
+      </div>
+<script>
+const VOCAB_CONFIG = {
+  kelly: { btnId:'btnToggleKelly', file:'../008_Kelly_Hermes/kellywordbank/kellywordbank-single.md', color:'rgba(52,152,219,0.3)', on:false },
+  jenny: { btnId:'btnToggleJenny', file:'../008_Kelly_Hermes/kellywordbank/jennywordbank-single.md', color:'rgba(155,89,182,0.3)', on:false },
+  nash: { btnId:'btnToggleNash', file:'../008_Kelly_Hermes/kellywordbank/nashwordbank-single.md', color:'rgba(231,76,60,0.3)', on:false }
+};
+let vocabLoaded = { kelly:false, jenny:false, nash:false };
+let vocabWords = { kelly:[], jenny:[], nash:[] };
+function escapeRegExp(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+async function loadVocab(bank) {
+  try {
+    const r = await fetch(VOCAB_CONFIG[bank].file+'?cache-bust='+new Date().getTime());
+    const t = await r.text();
+    const w = [];
+    t.split('\n').forEach(l => { const m = l.match(/^###\s+([^(]+)/); if(m) { const wd = m[1].trim(); if(wd) w.push(wd); } });
+    w.sort((a,b)=>b.length-a.length);
+    vocabWords[bank] = w; vocabLoaded[bank] = true;
+  } catch(e) { vocabWords[bank] = []; vocabLoaded[bank] = true; }
+}
+function turnOffAllExcept(b) {
+  Object.keys(VOCAB_CONFIG).forEach(bank => {
+    if(bank!==b && VOCAB_CONFIG[bank].on) {
+      VOCAB_CONFIG[bank].on = false;
+      const btn = document.getElementById(VOCAB_CONFIG[bank].btnId);
+      btn.style.background='#f39c12'; btn.textContent=bank.charAt(0).toUpperCase()+bank.slice(1)+': OFF';
+      removeVocabHighlight(bank);
+    }
+  });
+}
+function toggleVocabHighlight(bank) {
+  const c = VOCAB_CONFIG[bank]; c.on = !c.on;
+  const btn = document.getElementById(c.btnId);
+  if(c.on) { turnOffAllExcept(bank); btn.textContent=bank.charAt(0).toUpperCase()+bank.slice(1)+': ON'; btn.style.background='#27ae60'; applyVocabHighlight(bank); }
+  else { btn.textContent=bank.charAt(0).toUpperCase()+bank.slice(1)+': OFF'; btn.style.background='#f39c12'; removeVocabHighlight(bank); }
+}
+function applyVocabHighlight(bank) {
+  if(!vocabLoaded[bank]) { setTimeout(()=>{ if(VOCAB_CONFIG[bank].on) applyVocabHighlight(bank); },200); return; }
+  if(vocabWords[bank].length===0) return;
+  const c = VOCAB_CONFIG[bank];
+  document.querySelectorAll('#passagePanel p.paragraph').forEach(para => {
+    let h = para.innerHTML.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g,'$1');
+    vocabWords[bank].forEach(w => { const e = escapeRegExp(w); h = h.replace(new RegExp('\\b'+e+'\\b','gi'), '<mark style="background:'+c.color+';">$&</mark>'); });
+    para.innerHTML = h;
+  });
+}
+function removeVocabHighlight(bank) {
+  document.querySelectorAll('#passagePanel p.paragraph').forEach(para => { para.innerHTML = para.innerHTML.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g,'$1'); });
+}
+Object.keys(VOCAB_CONFIG).forEach(bank => { loadVocab(bank); const btn = document.getElementById(VOCAB_CONFIG[bank].btnId); if(btn) btn.addEventListener('click',()=>toggleVocabHighlight(bank)); });
+</script>
+      <p class="paragraph" data-para="1">
+        <span class="paragraph-num">[1]</span>
+        Puffins are small black-and-white seabirds famous for their huge colourful orange, red and yellow beaks, earning them the cute nickname "sea parrots". They spend eight months of every year floating and hunting out on the cold open North Atlantic and Arctic oceans, only returning to rocky coastal cliff tops during short summer breeding season. In winter, their bright patterned beaks fade to dull grey and shrink slightly; the vivid multi-coloured bill only grows bright again each spring to attract mating partners.
+      </p>
+      <p class="paragraph" data-para="2">
+        <span class="paragraph-num">[2]</span>
+        Puffins have perfectly adapted bodies for both flying and diving. Short strong wings beat fast to lift their small bodies above ocean waves, while underwater those same wings act as flippers to swim deep down after fish. They can dive to depths of 60 metres and hold their breath underwater for up to one minute. Their special ridged tongue and sharp inner beak spikes lock small fish tightly inside their mouths, so they can carry dozens of sand eels back to cliff nests in one single trip without dropping prey.
+      </p>
+      <p class="paragraph" data-para="3">
+        <span class="paragraph-num">[3]</span>
+        Every summer, thousands of puffins crowd onto bare rocky island cliffs to dig underground nesting burrows. They use sharp claws and strong beaks to dig one-metre-long tunnels into soft cliff soil. Each pair of puffins lays just one single white egg per year inside the dark burrow. Both parents share incubation shifts, sitting on the egg for around forty days until the fluffy grey chick hatches. For six weeks after hatching, mum and dad puffins take turns diving to catch fish to feed their growing baby.
+      </p>
+      <p class="paragraph" data-para="4">
+        <span class="paragraph-num">[4]</span>
+        Three main human-caused threats have cut global puffin numbers sharply over the past 30 years. Warming ocean temperatures from climate change push small fish like sand eels far away from cliff breeding grounds, leaving puffins with little food to feed their chicks. Plastic waste floating on the sea surface poisons puffins that mistake colourful plastic fragments for edible fish. Overfishing by large commercial boats also removes massive amounts of the tiny sea creatures puffins rely on as their main diet.
+      </p>
+      <p class="paragraph" data-para="5">
+        <span class="paragraph-num">[5]</span>
+        Northern European and Canadian wildlife groups run dedicated puffin conservation programmes. Protected cliff nesting islands ban all tourist landing during breeding months to avoid frightening parent birds away from their eggs. Strict fishing quotas limit how many small sand eels commercial boats can catch each year, keeping enough fish stock for wild seabirds. Beach clean-up volunteer events remove tons of floating ocean plastic that endangers diving puffins.
+      </p>
+      <p class="paragraph" data-para="6">
+        <span class="paragraph-num">[6]</span>
+        Citizen science projects invite ordinary teenagers and visitors to help monitor puffin colonies. People join organised cliff observation walks to count nesting pairs and record chick survival rates each summer. All collected bird population data is shared with marine biologists to track long-term puffin population rises and falls across the North Atlantic ocean.
+      </p>
+      <p class="paragraph" data-para="7">
+        <span class="paragraph-num">[7]</span>
+        Puffins are important indicators of ocean health. If local puffin numbers drop quickly, it signals that ocean fish stocks are shrinking or seawater temperatures are rising dangerously fast. Protecting puffin nesting cliffs, limiting overfishing and clearing marine plastic waste helps balance cold northern ocean food webs and supports hundreds of other seabird and marine species that share the same ocean habitat.
+      </p>
+
+    </section>
+    <div class="divider" id="divider" title="Drag to resize"></div>
+    <section class="panel questions-panel" id="questionsPanel">
+      <p class="instruction">Read the text and answer questions 1–15. (20 marks)</p>
+
+      <div class="question-block" id="q1" data-q="1">
+        <div class="question-label">1. When do puffins grow their bright multi-coloured beaks (paragraph 1)?</div>
+        <input type="text" class="text-input wide" name="q1" placeholder="Your answer">
+<div class="inline-solution" id="solution-q1" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">1</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q2" data-q="2">
+        <div class="question-label">2. Choose the word closest in meaning to "burrows" (line 9)</div>
+        <div class="options">
+          <label><input type="radio" name="q2" value="A"> A. underground nesting tunnels dug into cliff soil</label>
+          <label><input type="radio" name="q2" value="B"> B. floating ocean fishing boats</label>
+          <label><input type="radio" name="q2" value="C"> C. shallow rock pools full of small fish</label>
+          <label><input type="radio" name="q2" value="D"> D. winter ice caves on sea ice</label>
+        </div>
+<div class="inline-solution" id="solution-q2" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">2</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q3" data-q="3">
+        <div class="question-label">3. What special part of a puffin's mouth lets it carry many fish at once without dropping them?</div>
+        <input type="text" class="text-input wide" name="q3" placeholder="Your answer">
+<div class="inline-solution" id="solution-q3" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">3</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q4" data-q="4">
+        <div class="question-label">4. Decide True / False / Not Given (3 marks)</div>
+        <table class="tf-table">
+          <thead><tr><th>Statement</th><th>T</th><th>F</th><th>NG</th></tr></thead>
+          <tbody>
+            <tr><td>(i) Puffins stay on rocky cliffs all twelve months of every year.</td><td><input type="radio" name="q4i" value="T"></td><td><input type="radio" name="q4i" value="F"></td><td><input type="radio" name="q4i" value="NG"></td></tr>
+            <tr><td>(ii) Puffin wings work as swimming flippers when diving underwater.</td><td><input type="radio" name="q4ii" value="T"></td><td><input type="radio" name="q4ii" value="F"></td><td><input type="radio" name="q4ii" value="NG"></td></tr>
+            <tr><td>(iii) Each puffin pair lays three or four eggs inside their cliff burrow each summer.</td><td><input type="radio" name="q4iii" value="T"></td><td><input type="radio" name="q4iii" value="F"></td><td><input type="radio" name="q4iii" value="NG"></td></tr>
+          </tbody>
+        </table>
+<div class="inline-solution" id="solution-q4" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">4</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q5" data-q="5">
+        <div class="question-label">5. Name three major threats that reduce wild puffin populations (paragraph 4)</div>
+        <input type="text" class="text-input wide" name="q5" placeholder="Your answer">
+<div class="inline-solution" id="solution-q5" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">5</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q6" data-q="6">
+        <div class="question-label">6. How long do parent puffins take turns sitting on their single egg before it hatches (paragraph 3)?</div>
+        <input type="text" class="text-input wide" name="q6" placeholder="Your answer">
+<div class="inline-solution" id="solution-q6" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">6</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q7" data-q="7">
+        <div class="question-label">7. Find one word in paragraph 6 meaning ordinary untrained people who help wildlife research</div>
+        <input type="text" class="text-input" name="q7" placeholder="Your answer">
+<div class="inline-solution" id="solution-q7" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">7</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q8" data-q="8">
+        <div class="question-label">8. Complete the summary with ONE word taken from the passage (4 marks)</div>
+        <div class="flow-chart">
+          <p>(i) strict fishing <input type="text" class="text-input short" name="q8i" placeholder="Your answer"></p>
+          <p>(ii) share population data with marine <input type="text" class="text-input short" name="q8ii" placeholder="Your answer"></p>
+          <p>(iii) unbalanced northern ocean <input type="text" class="text-input short" name="q8iii" placeholder="Your answer"></p>
+          <p>(iv) restores healthy marine food <input type="text" class="text-input short" name="q8iv" placeholder="Your answer"></p>
+        </div>
+<div class="inline-solution" id="solution-q8" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">8</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q9" data-q="9">
+        <div class="question-label">9. What three official conservation rules support wild puffin recovery (paragraph 5)?</div>
+        <input type="text" class="text-input wide" name="q9" placeholder="Your answer">
+<div class="inline-solution" id="solution-q9" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">9</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q10" data-q="10">
+        <div class="question-label">10. Give one difference and one similarity between adult puffins and newly hatched puffin chicks (2 marks)</div>
+        <p>(i) Difference: <input type="text" class="text-input wide" name="q10i" placeholder="Your answer"></p>
+        <p>(ii) Similarity: <input type="text" class="text-input wide" name="q10ii" placeholder="Your answer"></p>
+<div class="inline-solution" id="solution-q10" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">10</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q11" data-q="11">
+        <div class="question-label">11. How deep can puffins dive underwater to hunt for small fish (paragraph 2)?</div>
+        <input type="text" class="text-input wide" name="q11" placeholder="Your answer">
+<div class="inline-solution" id="solution-q11" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">11</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q12" data-q="12">
+        <div class="question-label">12. What three volunteer activities help protect and study puffins (paragraphs 5 & 6)?</div>
+        <input type="text" class="text-input wide" name="q12" placeholder="Your answer">
+<div class="inline-solution" id="solution-q12" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">12</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q13" data-q="13">
+        <div class="question-label">13. What do shrinking puffin populations tell marine scientists about ocean conditions (paragraph 7)?</div>
+        <input type="text" class="text-input wide" name="q13" placeholder="Your answer">
+<div class="inline-solution" id="solution-q13" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">13</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q14" data-q="14">
+        <div class="question-label">14. What is the writer's overall attitude toward puffin marine conservation?</div>
+        <div class="options">
+          <label><input type="radio" name="q14" value="A"> A. Completely pessimistic</label>
+          <label><input type="radio" name="q14" value="B"> B. Generally hopeful</label>
+          <label><input type="radio" name="q14" value="C"> C. Fully neutral</label>
+          <label><input type="radio" name="q14" value="D"> D. Deeply doubtful</label>
+        </div>
+<div class="inline-solution" id="solution-q14" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">14</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <div class="question-block" id="q15" data-q="15">
+        <div class="question-label">15. What does the title "Puffins – Sea Parrots of Northern Ocean Cliffs" imply about puffins' appearance and living place?</div>
+        <input type="text" class="text-input wide" name="q15" placeholder="Your answer">
+<div class="inline-solution" id="solution-q15" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">15</span> Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">See solution.html for full answers.</div>
+      <p class="explanation-zh">請參考 solution.html 查看完整答案及解釋。</p>
+  </div>
+</div>
+      </div>
+      <h4 class="end-marker">— End of the Test —</h4>
+      <p class="submit-hint">Please Submit to view your score, solution and explanations.</p>
+    </section>
+  </div>
+  <footer class="bottom-bar">
+    <div class="palette-section">
+      <span class="palette-label">Question Palette</span>
+      <div class="question-palette" id="questionPalette"></div>
+      <div class="palette-legend"><span class="legend-dot"></span> answered</div>
+    </div>
+    <div class="timer-section" id="timer">00:00</div>
+    <div class="action-buttons">
+      <button class="btn btn-submit" id="btnSubmit">✓ Submit</button>
+      <button class="btn btn-review" id="btnReview">⊞ Review</button>
+      <a class="btn btn-solution" href="solution.html">🔑 Solution</a>
+      <button class="btn btn-reset" id="btnReset">↺ Reset</button>
+    </div>
+  </footer>
+  <div class="modal-overlay" id="submitModal">
+    <div class="modal">
+      <h3>Are you sure you want to submit?</h3>
+      <p id="submitModalText">You have answered <strong id="answeredCount">0</strong> of 15 questions.</p>
+      <div class="modal-actions">
+        <button class="btn btn-reset" id="btnCancelSubmit">Cancel</button>
+        <button class="btn btn-submit" id="btnConfirmSubmit">Submit and view Answers</button>
+      </div>
+    </div>
+  </div>
+  <div class="modal-overlay" id="scoreModal">
+    <div class="modal">
+      <h3>Your Results</h3>
+      <div class="score-display">
+        <div class="score-number" id="scoreNumber">0/15</div>
+        <div class="score-label" id="scorePercent">0% correct</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-review" id="btnCloseScore">Review Answers</button>
+        <a class="btn btn-solution" href="solution.html">View Full Solution</a>
+      </div>
+    </div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

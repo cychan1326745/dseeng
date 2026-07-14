@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<script>
+let isSpeaking = false;
+let speechEnabled = true;
+
+function loadSpeechSetting() {
+  const saved = localStorage.getItem('dse-speech-enabled');
+  if (saved !== null) {
+    speechEnabled = saved === 'true';
+  }
+  updateSpeechButton();
+}
+
+function updateSpeechButton() {
+  const btn = document.getElementById('btnToggleSpeech');
+  if (btn) {
+    btn.textContent = speechEnabled ? 'Speech: ON' : 'Speech: OFF';
+    btn.style.background = speechEnabled ? 'rgba(40, 167, 69, 0.3)' : 'rgba(220, 53, 69, 0.3)';
+  }
+}
+
+function toggleSpeech() {
+  speechEnabled = !speechEnabled;
+  localStorage.setItem('dse-speech-enabled', speechEnabled);
+  updateSpeechButton();
+  if (isSpeaking) {
+    speechSynthesis.cancel();
+    isSpeaking = false;
+  }
+}
+
+function readWord(text){
+  if(!speechEnabled) return;
+  if(isSpeaking) speechSynthesis.cancel();
+  let utter = new SpeechSynthesisUtterance(text);
+  utter.lang = "en-US";
+  utter.rate = 0.9;
+  isSpeaking = true;
+  utter.onend = ()=> isSpeaking = false;
+  speechSynthesis.speak(utter);
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  loadSpeechSetting();
+  const btn = document.getElementById('btnToggleSpeech');
+  if (btn) btn.addEventListener('click', toggleSpeech);
+
+  const passage = document.getElementById('passagePanel');
+  if (!passage) return;
+
+  passage.addEventListener('click', function(e){
+    if(!speechEnabled) return;
+    if (e.target.closest('a, button, input, label, select, textarea')) return;
+
+    const range = document.caretRangeFromPoint(e.clientX, e.clientY);
+    if (!range) return;
+    const node = range.startContainer;
+    if (node.nodeType !== Node.TEXT_NODE) return;
+    const offset = range.startOffset;
+    const text = node.textContent;
+
+    let start = offset;
+    let end = offset;
+    while (start > 0 && /[a-zA-Z\u00C0-\u024F'ʼ-]/.test(text[start - 1])) start--;
+    while (end < text.length && /[a-zA-Z\u00C0-\u024F'ʼ-]/.test(text[end])) end++;
+    if (start === end) return;
+
+    const word = text.slice(start, end);
+    if (/^\d+$/.test(word)) return;
+
+    readWord(word);
+
+    const wordRange = document.createRange();
+    wordRange.setStart(node, start);
+    wordRange.setEnd(node, end);
+    const highlight = document.createElement('mark');
+    highlight.style.cssText = 'background:#ffd54f;border-radius:3px;transition:background .3s';
+    try {
+      wordRange.surroundContents(highlight);
+      setTimeout(() => {
+        const parent = highlight.parentNode;
+        if (parent) {
+          while (highlight.firstChild) parent.insertBefore(highlight.firstChild, highlight);
+          parent.removeChild(highlight);
+          parent.normalize();
+        }
+      }, 500);
+    } catch(_) {}
+  });
+});
+</script>
+
+<style>
+#passagePanel .paragraph { cursor: default; }
+#passagePanel .paragraph * { cursor: pointer; }
+</style>
+
+<meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wildlife of the Galápagos Islands - DSE 2012 Part A</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-brand"><span>DSE</span> 2012 Part A Reading Practice</div>
+    <nav class="header-nav">
+      <a href="index.html" class="active">Reading</a>
+      <a href="solution.html">Solution</a>
+    </nav>
+    <div class="header-tools">
+      <button type="button" id="btnToggleSpeech">Speech: ON</button>
+      <button type="button" id="btnLargerText">Larger Text</button>
+      <button type="button" onclick="window.print()">Print</button>
+    </div>
+  </header>
+
+  <div class="main-container" id="mainContainer">
+    <section class="panel passage-panel" id="passagePanel">
+      <h2 class="passage-title">Wildlife of the Galápagos Islands</h2>
+      <p class="passage-subtitle">Text 1 — Nat Geo Kids Adapted B2 Reading</p>
+      <div class="passage-illustration">🐢 🌊 🦎</div>
+
+      <div style="text-align: center; margin: 15px 0; display: flex;">
+        <button id="btnToggleKelly" style="flex: 1; padding: 8px 12px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; margin: 0 5px;">
+          Kelly: OFF
+        </button>
+        <button id="btnToggleJenny" style="flex: 1; padding: 8px 12px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; margin: 0 5px;">
+          Jenny: OFF
+        </button>
+        <button id="btnToggleNash" style="flex: 1; padding: 8px 12px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; margin: 0 5px;">
+          Nash: OFF
+        </button>
+      </div>
+
+<script>
+// Article Vocabulary Highlight Toggle - Multiple vocabulary banks
+const VOCAB_CONFIG = {
+  kelly: {
+    btnId: 'btnToggleKelly',
+    file: '../008_Kelly_Hermes/kellywordbank/kellywordbank-single.md',
+    color: 'rgba(52, 152, 219, 0.3)',
+    on: false
+  },
+  jenny: {
+    btnId: 'btnToggleJenny',
+    file: '../008_Kelly_Hermes/kellywordbank/jennywordbank-single.md',
+    color: 'rgba(155, 89, 182, 0.3)',
+    on: false
+  },
+  nash: {
+    btnId: 'btnToggleNash',
+    file: '../008_Kelly_Hermes/kellywordbank/nashwordbank-single.md',
+    color: 'rgba(231, 76, 60, 0.3)',
+    on: false
+  }
+};
+
+let vocabLoaded = { kelly: false, jenny: false, nash: false };
+let vocabWords = { kelly: [], jenny: [], nash: [] };
+
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+async function loadVocab(bank) {
+  try {
+    const config = VOCAB_CONFIG[bank];
+    const response = await fetch(`${config.file}?cache-bust=${new Date().getTime()}`);
+    const text = await response.text();
+    const lines = text.split('\n');
+    const words = [];
+    lines.forEach(line => {
+      const match = line.match(/^###\s+([^(]+)/);
+      if (match) {
+        const word = match[1].trim();
+        if (word) words.push(word);
+      }
+    });
+    words.sort((a, b) => b.length - a.length);
+    vocabWords[bank] = words;
+    vocabLoaded[bank] = true;
+  } catch (err) {
+    vocabWords[bank] = [];
+    vocabLoaded[bank] = true;
+  }
+}
+
+function turnOffAllExcept(exceptBank) {
+  Object.keys(VOCAB_CONFIG).forEach(bank => {
+    if (bank !== exceptBank && VOCAB_CONFIG[bank].on) {
+      VOCAB_CONFIG[bank].on = false;
+      const btn = document.getElementById(VOCAB_CONFIG[bank].btnId);
+      btn.style.background = '#f39c12';
+      btn.textContent = `${bank.charAt(0).toUpperCase() + bank.slice(1)}: OFF`;
+      removeVocabHighlight(bank);
+    }
+  });
+}
+
+function toggleVocabHighlight(bank) {
+  const config = VOCAB_CONFIG[bank];
+  config.on = !config.on;
+  const btn = document.getElementById(config.btnId);
+  if (config.on) {
+    turnOffAllExcept(bank);
+    btn.textContent = `${bank.charAt(0).toUpperCase() + bank.slice(1)}: ON`;
+    btn.style.background = '#27ae60';
+    applyVocabHighlight(bank);
+  } else {
+    btn.textContent = `${bank.charAt(0).toUpperCase() + bank.slice(1)}: OFF`;
+    btn.style.background = '#f39c12';
+    removeVocabHighlight(bank);
+  }
+}
+
+function applyVocabHighlight(bank) {
+  if (!vocabLoaded[bank]) {
+    setTimeout(() => { if (VOCAB_CONFIG[bank].on) applyVocabHighlight(bank); }, 200);
+    return;
+  }
+  if (vocabWords[bank].length === 0) return;
+  const config = VOCAB_CONFIG[bank];
+  const paragraphs = document.querySelectorAll('#passagePanel p.paragraph');
+  paragraphs.forEach(para => {
+    let html = para.innerHTML;
+    html = html.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g, '$1');
+    vocabWords[bank].forEach(word => {
+      const escaped = escapeRegExp(word);
+      const regex = new RegExp(`\\b${escaped}\\b`, 'gi');
+      html = html.replace(regex, `<mark style="background: ${config.color};">$&</mark>`);
+    });
+    para.innerHTML = html;
+  });
+}
+
+function removeVocabHighlight(bank) {
+  const paragraphs = document.querySelectorAll('#passagePanel p.paragraph');
+  paragraphs.forEach(para => {
+    let html = para.innerHTML;
+    html = html.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g, '$1');
+    para.innerHTML = html;
+  });
+}
+
+Object.keys(VOCAB_CONFIG).forEach(bank => {
+  loadVocab(bank);
+  const btn = document.getElementById(VOCAB_CONFIG[bank].btnId);
+  if (btn) {
+    btn.addEventListener('click', () => toggleVocabHighlight(bank));
+  }
+});
+</script>
+      <p class="paragraph" data-para="1">
+        <span class="paragraph-num">[1]</span>
+        The Galápagos Islands lie around 1,000 kilometres off the west coast of Ecuador in the Pacific Ocean. This remote archipelago is famous for its unique wild animals that cannot be found anywhere else on Earth. Because the islands are so far from the mainland, most species evolved separately, developing special traits to survive rocky shores, hot dry land and cold ocean currents. Scientists and wildlife lovers travel globally to visit this natural treasure, which is protected as a UNESCO World Heritage Site.
+      </p>
+      <p class="paragraph" data-para="2">
+        <span class="paragraph-num">[2]</span>
+        Galápagos sea lions are one of the most common animals here. They are related to California sea lions and share dog-like barks to greet visitors. Adult sea lions can swim up to 15 kilometres out to hunt fish. Baby pups gather in shallow water nurseries to play and learn swimming skills. If annoying flies disturb their afternoon rest, tiny lava lizards run over to eat the insects, creating a helpful natural partnership.
+      </p>
+      <p class="paragraph" data-para="3">
+        <span class="paragraph-num">[3]</span>
+        Blue-footed boobies are the most well-known birds native to these islands. Their strange name comes from the Spanish word "bobo", meaning fool or clown, due to their funny mating dances. When diving for food, they plunge from heights of 100 metres and hit the water at nearly 100 kilometres per hour. Males whistle to communicate while females make deep honking sounds. Over half of the global blue-footed booby population lives only in the Galápagos.
+      </p>
+      <p class="paragraph" data-para="4">
+        <span class="paragraph-num">[4]</span>
+        Giant tortoises are the archipelago's iconic land creatures. Different island groups host separate tortoise species with differently shaped shells. These slow reptiles can live for more than 100 years and survive months without food or water by storing liquid inside their bodies. In the past, sailors captured thousands of tortoises to carry as fresh meat on long voyages, causing huge population losses. Strict international hunting bans have helped their numbers recover slowly.
+      </p>
+      <p class="paragraph" data-para="5">
+        <span class="paragraph-num">[5]</span>
+        Human tourism creates both advantages and risks for the Galápagos ecosystem. On the positive side, eco-tourism brings money to local communities, which funds wildlife protection patrols and park rangers. However, uncontrolled visitor numbers bring hidden dangers: waste plastic pollutes coastlines, foreign animals like cats and rats eat native bird eggs, and too many footsteps damage fragile plant roots on volcanic soil.
+      </p>
+      <p class="paragraph" data-para="6">
+        <span class="paragraph-num">[6]</span>
+        Strict park rules limit tourist activity to solve these threats. All visitors must join official guided tours and cannot walk alone off marked paths. Single-use plastic bags and bottles are completely forbidden on every island. Tour boats also carry waste storage tanks so no rubbish is thrown into the sea during trips.
+      </p>
+      <p class="paragraph" data-para="7">
+        <span class="paragraph-num">[7]</span>
+        Ordinary young people can support Galápagos conservation without travelling there. Learn about unique island wildlife, avoid buying souvenirs made from wild animal shells or bones, and donate to official wildlife charities that fund anti-poaching work. Protecting the Galápagos means saving thousands of one-of-a-kind species that exist nowhere else on our planet.
+      </p>
+
+    </section>
+
+    <div class="divider" id="divider" title="Drag to resize"></div>
+
+    <section class="panel questions-panel" id="questionsPanel">
+      <p class="instruction">Read Text 1 and answer questions 1–15. (20 marks)</p>
+
+      <div class="question-block" id="q1" data-q="1">
+        <div class="question-label">1. According to paragraph 1, why do Galápagos animals have special unique features?</div>
+        <input type="text" class="text-input wide" name="q1" placeholder="Your answer">
+<div class="inline-solution" id="solution-q1" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">1</span> Short Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Suggested answer: The islands are extremely far from the mainland, so species evolved separately and developed special survival traits.</div>
+      <p class="explanation">Paragraph 1 explains that because the islands are so far from the mainland, most species evolved separately, developing special traits to survive the local environment.</p>
+      <p class="explanation-zh">加拉帕戈斯群島遠離大陸，物種獨立演化，發展出特殊生存特徵以適應當地環境。</p>
+      <div class="passage-ref">[1] Because the islands are so far from the mainland, most species evolved separately, developing special traits to survive rocky shores, hot dry land and cold ocean currents.</div>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q2" data-q="2">
+        <div class="question-label">2. Choose the word closest in meaning to "archipelago" (line 1)</div>
+        <div class="options">
+          <label><input type="radio" name="q2" value="A"> A. single mountain</label>
+          <label><input type="radio" name="q2" value="B"> B. group of ocean islands</label>
+          <label><input type="radio" name="q2" value="C"> C. freshwater lake</label>
+          <label><input type="radio" name="q2" value="D"> D. desert plain</label>
+        </div>
+<div class="inline-solution" id="solution-q2" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">2</span> Multiple Choice <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Answer: B — group of ocean islands</div>
+      <p class="explanation">"Archipelago" refers to a group of islands. The Galápagos Islands are described as a "remote archipelago".</p>
+      <p class="explanation-zh">"Archipelago" 指群島。</p>
+      <div class="passage-ref">[1] This remote archipelago is famous for its unique wild animals...</div>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q3" data-q="3">
+        <div class="question-label">3. What natural partnership exists between lava lizards and sea lions (paragraph 2)?</div>
+        <input type="text" class="text-input wide" name="q3" placeholder="Your answer">
+<div class="inline-solution" id="solution-q3" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">3</span> Short Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Suggested answer: Lava lizards eat annoying flies that disturb resting sea lions.</div>
+      <p class="explanation">Paragraph 2 states that when flies disturb sea lions' afternoon rest, tiny lava lizards run over to eat the insects.</p>
+      <p class="explanation-zh">當蒼蠅打擾海獅休息時，熔岩蜥蜴會跑來吃掉這些昆蟲。</p>
+      <div class="passage-ref">[2] If annoying flies disturb their afternoon rest, tiny lava lizards run over to eat the insects, creating a helpful natural partnership.</div>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q4" data-q="4">
+        <div class="question-label">4. Decide True / False / Not Given (3 marks)</div>
+        <table class="tf-table">
+          <thead><tr><th>Statement</th><th>T</th><th>F</th><th>NG</th></tr></thead>
+          <tbody>
+            <tr><td>(i) Blue-footed boobies get their name from their bright blue feet.</td><td><input type="radio" name="q4i" value="T"></td><td><input type="radio" name="q4i" value="F"></td><td><input type="radio" name="q4i" value="NG"></td></tr>
+            <tr><td>(ii) Galápagos giant tortoises cannot live without regular daily water.</td><td><input type="radio" name="q4ii" value="T"></td><td><input type="radio" name="q4ii" value="F"></td><td><input type="radio" name="q4ii" value="NG"></td></tr>
+            <tr><td>(iii) Tourists can freely walk anywhere across the volcanic islands.</td><td><input type="radio" name="q4iii" value="T"></td><td><input type="radio" name="q4iii" value="F"></td><td><input type="radio" name="q4iii" value="NG"></td></tr>
+          </tbody>
+        </table>
+<div class="inline-solution" id="solution-q4" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">4</span> True / False / Not Given <span class="marks-badge">3 marks</span></h3>
+      <div class="answer-text">(i) Not Given &nbsp; (ii) False &nbsp; (iii) False</div>
+      <p class="explanation">(i) <strong>Not Given</strong> — The passage says the name comes from the Spanish word "bobo" (fool/clown).<br>(ii) <strong>False</strong> — Paragraph 4 says tortoises "can survive months without food or water."<br>(iii) <strong>False</strong> — Paragraph 6 says visitors "cannot walk alone off marked paths."</p>
+      <p class="explanation-zh">(i) 未提及 (ii) 假——可數月無水生存 (iii) 假——遊客不可獨自離開標記路徑。</p>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q5" data-q="5">
+        <div class="question-label">5. Name two threats human tourism brings to the Galápagos (paragraph 5)</div>
+        <input type="text" class="text-input wide" name="q5" placeholder="Your answer">
+<div class="inline-solution" id="solution-q5" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">5</span> Short Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Suggested answer: Plastic coastal pollution; invasive foreign animals eat native bird eggs</div>
+      <p class="explanation">Paragraph 5 lists: waste plastic pollutes coastlines, foreign animals like cats and rats eat native bird eggs.</p>
+      <p class="explanation-zh">第5段列出：塑膠垃圾污染海岸線、外來動物吃本地鳥蛋。</p>
+      <div class="passage-ref">[5] ...waste plastic pollutes coastlines, foreign animals like cats and rats eat native bird eggs...</div>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q6" data-q="6">
+        <div class="question-label">6. What old human activity nearly wiped out giant tortoise populations?</div>
+        <input type="text" class="text-input wide" name="q6" placeholder="Your answer">
+<div class="inline-solution" id="solution-q6" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">6</span> Short Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Suggested answer: Sailors captured thousands of tortoises for meat on long sea journeys.</div>
+      <p class="explanation">Paragraph 4 states that in the past, sailors captured thousands of tortoises to carry as fresh meat on long voyages.</p>
+      <p class="explanation-zh">過去水手捕捉數千隻陸龜作為長途航行的新鮮肉食。</p>
+      <div class="passage-ref">[4] In the past, sailors captured thousands of tortoises to carry as fresh meat on long voyages, causing huge population losses.</div>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q7" data-q="7">
+        <div class="question-label">7. Find one word in paragraph 6 meaning people who watch and protect wild areas</div>
+        <input type="text" class="text-input" name="q7" placeholder="Your answer">
+<div class="inline-solution" id="solution-q7" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">7</span> Find Word <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Answer: rangers</div>
+      <p class="explanation">Paragraph 5 mentions "park rangers" — people who watch and protect wild areas.</p>
+      <p class="explanation-zh">第5段提到 "park rangers"（公園管理員）。</p>
+      <div class="passage-ref">[5] ...eco-tourism brings money to local communities, which funds wildlife protection patrols and park rangers.</div>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q8" data-q="8">
+        <div class="question-label">8. Complete the summary with ONE word taken from the passage (4 marks)</div>
+        <div class="flow-chart">
+          <p>The remote Galápagos Islands hold exclusive wildlife such as sea lions and blue-footed boobies. Giant tortoises live over a century but were hunted by old sailors. Eco-tourism funds protection yet brings plastic waste and foreign animal (i) <input type="text" class="text-input short" name="q8i" placeholder="Your answer">.</p>
+          <p>Park rules ban single-use plastic and require guided (ii) <input type="text" class="text-input short" name="q8ii" placeholder="Your answer">.</p>
+          <p>Teenagers can reject animal souvenirs and donate to anti-poaching (iii) <input type="text" class="text-input short" name="q8iii" placeholder="Your answer"> to safeguard these irreplaceable natural (iv) <input type="text" class="text-input short" name="q8iv" placeholder="Your answer">.</p>
+        </div>
+<div class="inline-solution" id="solution-q8" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">8</span> Summary — ONE word each <span class="marks-badge">4 marks</span></h3>
+      <div class="answer-text">(i) invaders / animals &nbsp; (ii) tours &nbsp; (iii) charities &nbsp; (iv) species</div>
+      <p class="explanation">(i) "foreign animals" = invaders/animals — para 5<br>(ii) "guided tours" — para 6<br>(iii) "wildlife charities" — para 7<br>(iv) "natural species" — para 7</p>
+      <p class="explanation-zh">各詞均須出自文中。</p>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q9" data-q="9">
+        <div class="question-label">9. Name three strict visitor rules set by Galápagos national parks (paragraph 6)</div>
+        <input type="text" class="text-input wide" name="q9" placeholder="Your answer">
+<div class="inline-solution" id="solution-q9" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">9</span> Short Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Suggested answer: Visitors must take official guided tours; no solo walking off marked paths; all single-use plastic items are banned.</div>
+      <p class="explanation">Paragraph 6 lists three strict rules.</p>
+      <p class="explanation-zh">第6段列出三項嚴格規則。</p>
+      <div class="passage-ref">[6] All visitors must join official guided tours and cannot walk alone off marked paths. Single-use plastic bags and bottles are completely forbidden on every island.</div>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q10" data-q="10">
+        <div class="question-label">10. Give one difference and one similarity between male and female blue-footed boobies (2 marks)</div>
+        <p>(i) Difference: <input type="text" class="text-input wide" name="q10i" placeholder="Your answer"></p>
+        <p>(ii) Similarity: <input type="text" class="text-input wide" name="q10ii" placeholder="Your answer"></p>
+<div class="inline-solution" id="solution-q10" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">10</span> Difference &amp; Similarity <span class="marks-badge">2 marks</span></h3>
+      <div class="answer-text">(i) Difference: Male boobies whistle, while female boobies make honking noises.<br>(ii) Similarity: Both dive at high speed to catch fish as food.</div>
+      <p class="explanation">Paragraph 3: "Males whistle to communicate while females make deep honking sounds." Both dive for food.</p>
+      <p class="explanation-zh">第3段：雄性吹口哨，雌性發出低沉鳴叫。兩者都會俯衝捕魚。</p>
+      <div class="passage-ref">[3] Males whistle to communicate while females make deep honking sounds. When diving for food, they plunge from heights of 100 metres...</div>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q11" data-q="11">
+        <div class="question-label">11. What two benefits does eco-tourism bring to local island communities (paragraph 5)?</div>
+        <input type="text" class="text-input wide" name="q11" placeholder="Your answer">
+<div class="inline-solution" id="solution-q11" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">11</span> Short Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Suggested answer: It creates local income and provides money for wildlife protection patrols.</div>
+      <p class="explanation">Paragraph 5: "eco-tourism brings money to local communities, which funds wildlife protection patrols and park rangers."</p>
+      <p class="explanation-zh">生態旅遊為當地社區帶來收入，並為野生動物保護巡邏提供資金。</p>
+      <div class="passage-ref">[5] On the positive side, eco-tourism brings money to local communities, which funds wildlife protection patrols and park rangers.</div>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q12" data-q="12">
+        <div class="question-label">12. What three actions can students take to protect Galápagos wildlife without visiting (paragraph 7)?</div>
+        <input type="text" class="text-input wide" name="q12" placeholder="Your answer">
+<div class="inline-solution" id="solution-q12" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">12</span> Short Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Suggested answer: Learn about island wildlife; refuse animal shell/bone souvenirs; donate to anti-poaching wildlife groups.</div>
+      <p class="explanation">Paragraph 7 lists three actions.</p>
+      <p class="explanation-zh">第7段列出三個行動。</p>
+      <div class="passage-ref">[7] Learn about unique island wildlife, avoid buying souvenirs made from wild animal shells or bones, and donate to official wildlife charities that fund anti-poaching work.</div>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q13" data-q="13">
+        <div class="question-label">13. What makes each island's giant tortoise group different from others?</div>
+        <input type="text" class="text-input wide" name="q13" placeholder="Your answer">
+<div class="inline-solution" id="solution-q13" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">13</span> Short Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Suggested answer: Tortoise groups on different islands have shells of distinct shapes.</div>
+      <p class="explanation">Paragraph 4: "Different island groups host separate tortoise species with differently shaped shells."</p>
+      <p class="explanation-zh">不同島嶼的陸龜擁有不同形狀的殼。</p>
+      <div class="passage-ref">[4] Different island groups host separate tortoise species with differently shaped shells.</div>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q14" data-q="14">
+        <div class="question-label">14. What is the writer's overall attitude toward Galápagos wildlife conservation?</div>
+        <div class="options">
+          <label><input type="radio" name="q14" value="A"> A. Fully pessimistic</label>
+          <label><input type="radio" name="q14" value="B"> B. Generally hopeful</label>
+          <label><input type="radio" name="q14" value="C"> C. Completely neutral</label>
+          <label><input type="radio" name="q14" value="D"> D. Deeply doubtful</label>
+        </div>
+<div class="inline-solution" id="solution-q14" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">14</span> Multiple Choice <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Answer: B — Generally hopeful</div>
+      <p class="explanation">The writer acknowledges threats but also highlights positive measures. The overall tone is hopeful.</p>
+      <p class="explanation-zh">作者承認威脅但也強調正面措施，整體態度樂觀。</p>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q15" data-q="15">
+        <div class="question-label">15. What does the title "Wildlife of the Galápagos Islands" imply about the archipelago's natural value?</div>
+        <input type="text" class="text-input wide" name="q15" placeholder="Your answer">
+<div class="inline-solution" id="solution-q15" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">15</span> Short Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Suggested answer: The Galápagos Islands host many one-of-a-kind animal species that cannot be found anywhere else worldwide.</div>
+      <p class="explanation">The title focuses on "wildlife" as the main subject, implying the islands' greatest value lies in their unique animals.</p>
+      <p class="explanation-zh">標題以「野生動物」為主題，暗示群島的最大價值在於其獨一無二的物種。</p>
+      <div class="passage-ref">[1] This remote archipelago is famous for its unique wild animals that cannot be found anywhere else on Earth.</div>
+  </div>
+</div>
+      </div>
+
+      <h4 class="end-marker">— End of the Test —</h4>
+      <p class="submit-hint">Please Submit to view your score, solution and explanations.</p>
+    </section>
+  </div>
+
+  <footer class="bottom-bar">
+    <div class="palette-section">
+      <span class="palette-label">Question Palette</span>
+      <div class="question-palette" id="questionPalette"></div>
+      <div class="palette-legend">
+        <span class="legend-dot"></span> answered
+      </div>
+    </div>
+    <div class="timer-section" id="timer">00:00</div>
+    <div class="action-buttons">
+      <button class="btn btn-submit" id="btnSubmit">✓ Submit</button>
+      <button class="btn btn-review" id="btnReview">⊞ Review</button>
+      <a class="btn btn-solution" href="solution.html">🔑 Solution</a>
+      <button class="btn btn-reset" id="btnReset">↺ Reset</button>
+    </div>
+  </footer>
+
+  <div class="modal-overlay" id="submitModal">
+    <div class="modal">
+      <h3>Are you sure you want to submit?</h3>
+      <p id="submitModalText">You have answered <strong id="answeredCount">0</strong> of 15 questions.</p>
+      <div class="modal-actions">
+        <button class="btn btn-reset" id="btnCancelSubmit">Cancel</button>
+        <button class="btn btn-submit" id="btnConfirmSubmit">Submit and view Answers</button>
+      </div>
+    </div>
+  </div>
+  <div class="modal-overlay" id="scoreModal">
+    <div class="modal">
+      <h3>Your Results</h3>
+      <div class="score-display">
+        <div class="score-number" id="scoreNumber">0/15</div>
+        <div class="score-label" id="scorePercent">0% correct</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-review" id="btnCloseScore">Review Answers</button>
+        <a class="btn btn-solution" href="solution.html">View Full Solution</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
