@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<script>
+let isSpeaking = false;
+let speechEnabled = true;
+
+function loadSpeechSetting() {
+  const saved = localStorage.getItem('dse-speech-enabled');
+  if (saved !== null) {
+    speechEnabled = saved === 'true';
+  }
+  updateSpeechButton();
+}
+
+function updateSpeechButton() {
+  const btn = document.getElementById('btnToggleSpeech');
+  if (btn) {
+    btn.textContent = speechEnabled ? 'Speech: ON' : 'Speech: OFF';
+    btn.style.background = speechEnabled ? 'rgba(40, 167, 69, 0.3)' : 'rgba(220, 53, 69, 0.3)';
+  }
+}
+
+function toggleSpeech() {
+  speechEnabled = !speechEnabled;
+  localStorage.setItem('dse-speech-enabled', speechEnabled);
+  updateSpeechButton();
+  if (isSpeaking) {
+    speechSynthesis.cancel();
+    isSpeaking = false;
+  }
+}
+
+function readWord(text){
+  if(!speechEnabled) return;
+  if(isSpeaking) speechSynthesis.cancel();
+  let utter = new SpeechSynthesisUtterance(text);
+  utter.lang = "en-US";
+  utter.rate = 0.9;
+  isSpeaking = true;
+  utter.onend = ()=> isSpeaking = false;
+  speechSynthesis.speak(utter);
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  loadSpeechSetting();
+  const btn = document.getElementById('btnToggleSpeech');
+  if (btn) btn.addEventListener('click', toggleSpeech);
+
+  const passage = document.getElementById('passagePanel');
+  if (!passage) return;
+
+  passage.addEventListener('click', function(e){
+    if(!speechEnabled) return;
+    if (e.target.closest('a, button, input, label, select, textarea')) return;
+
+    const range = document.caretRangeFromPoint(e.clientX, e.clientY);
+    if (!range) return;
+    const node = range.startContainer;
+    if (node.nodeType !== Node.TEXT_NODE) return;
+    const offset = range.startOffset;
+    const text = node.textContent;
+
+    let start = offset;
+    let end = offset;
+    while (start > 0 && /[a-zA-Z\u00C0-\u024F'ʼ-]/.test(text[start - 1])) start--;
+    while (end < text.length && /[a-zA-Z\u00C0-\u024F'ʼ-]/.test(text[end])) end++;
+    if (start === end) return;
+
+    const word = text.slice(start, end);
+    if (/^\d+$/.test(word)) return;
+
+    readWord(word);
+
+    const wordRange = document.createRange();
+    wordRange.setStart(node, start);
+    wordRange.setEnd(node, end);
+    const highlight = document.createElement('mark');
+    highlight.style.cssText = 'background:#ffd54f;border-radius:3px;transition:background .3s';
+    try {
+      wordRange.surroundContents(highlight);
+      setTimeout(() => {
+        const parent = highlight.parentNode;
+        if (parent) {
+          while (highlight.firstChild) parent.insertBefore(highlight.firstChild, highlight);
+          parent.removeChild(highlight);
+          parent.normalize();
+        }
+      }, 500);
+    } catch(_) {}
+  });
+});
+</script>
+
+<style>
+#passagePanel .paragraph { cursor: default; }
+#passagePanel .paragraph * { cursor: pointer; }
+</style>
+
+<meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Save Our Polar Arctic Habitats - DSE 2012 Part A</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-brand"><span>DSE</span> 2012 Part A Reading Practice</div>
+    <nav class="header-nav">
+      <a href="index.html" class="active">Reading</a>
+      <a href="solution.html">Solution</a>
+    </nav>
+    <div class="header-tools">
+      <button type="button" id="btnToggleSpeech">Speech: ON</button>
+      <button type="button" id="btnLargerText">Larger Text</button>
+      <button type="button" onclick="window.print()">Print</button>
+    </div>
+  </header>
+
+  <div class="main-container" id="mainContainer">
+    <section class="panel passage-panel" id="passagePanel">
+      <h2 class="passage-title">Save Our Polar Arctic Habitats</h2>
+      <p class="passage-subtitle">Text 2 — Nat Geo Kids Adapted B2 Reading</p>
+      <div class="passage-illustration">🐻‍❄️ ❄️ 🧊</div>
+
+      <div style="text-align: center; margin: 15px 0; display: flex;">
+        <button id="btnToggleKelly" style="flex: 1; padding: 8px 12px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; margin: 0 5px;">
+          Kelly: OFF
+        </button>
+        <button id="btnToggleJenny" style="flex: 1; padding: 8px 12px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; margin: 0 5px;">
+          Jenny: OFF
+        </button>
+        <button id="btnToggleNash" style="flex: 1; padding: 8px 12px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; margin: 0 5px;">
+          Nash: OFF
+        </button>
+      </div>
+
+<script>
+const VOCAB_CONFIG = {
+  kelly: { btnId: 'btnToggleKelly', file: '../../kellywordbank-single.md', color: 'rgba(52, 152, 219, 0.3)', on: false },
+  jenny: { btnId: 'btnToggleJenny', file: '../../jennywordbank-single.md', color: 'rgba(155, 89, 182, 0.3)', on: false },
+  nash: { btnId: 'btnToggleNash', file: '../../nashwordbank-single.md', color: 'rgba(230, 126, 34, 0.3)', on: false }
+};
+let vocabLoaded = { kelly: false, jenny: false, nash: false };
+let vocabWords = { kelly: [], jenny: [], nash: [] };
+function escapeRegExp(string) { return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+async function loadVocab(bank) {
+  try {
+    const config = VOCAB_CONFIG[bank];
+    const response = await fetch(`${config.file}?cache-bust=${new Date().getTime()}`);
+    const text = await response.text();
+    const words = [];
+    text.split('\n').forEach(line => {
+      const match = line.match(/^###\s+([^(]+)/);
+      if (match) { const w = match[1].trim(); if (w) words.push(w); }
+    });
+    words.sort((a, b) => b.length - a.length);
+    vocabWords[bank] = words; vocabLoaded[bank] = true;
+  } catch(err) { vocabWords[bank] = []; vocabLoaded[bank] = true; }
+}
+function turnOffAllExcept(exceptBank) {
+  Object.keys(VOCAB_CONFIG).forEach(bank => {
+    if (bank !== exceptBank && VOCAB_CONFIG[bank].on) {
+      VOCAB_CONFIG[bank].on = false;
+      const btn = document.getElementById(VOCAB_CONFIG[bank].btnId);
+      btn.style.background = '#f39c12';
+      btn.textContent = bank.charAt(0).toUpperCase() + bank.slice(1) + ': OFF';
+      removeVocabHighlight(bank);
+    }
+  });
+}
+function toggleVocabHighlight(bank) {
+  const config = VOCAB_CONFIG[bank];
+  config.on = !config.on;
+  const btn = document.getElementById(config.btnId);
+  if (config.on) {
+    turnOffAllExcept(bank);
+    btn.textContent = bank.charAt(0).toUpperCase() + bank.slice(1) + ': ON';
+    btn.style.background = '#27ae60';
+    applyVocabHighlight(bank);
+  } else {
+    btn.textContent = bank.charAt(0).toUpperCase() + bank.slice(1) + ': OFF';
+    btn.style.background = '#f39c12';
+    removeVocabHighlight(bank);
+  }
+}
+function applyVocabHighlight(bank) {
+  if (!vocabLoaded[bank]) { setTimeout(() => { if (VOCAB_CONFIG[bank].on) applyVocabHighlight(bank); }, 200); return; }
+  if (vocabWords[bank].length === 0) return;
+  const config = VOCAB_CONFIG[bank];
+  document.querySelectorAll('#passagePanel p.paragraph').forEach(para => {
+    let html = para.innerHTML.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g, '$1');
+    vocabWords[bank].forEach(word => {
+      const escaped = escapeRegExp(word);
+      html = html.replace(new RegExp(`\\b${escaped}\\b`, 'gi'), `<mark style="background: ${config.color};">$&</mark>`);
+    });
+    para.innerHTML = html;
+  });
+}
+function removeVocabHighlight(bank) {
+  document.querySelectorAll('#passagePanel p.paragraph').forEach(para => {
+    para.innerHTML = para.innerHTML.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g, '$1');
+  });
+}
+Object.keys(VOCAB_CONFIG).forEach(bank => { loadVocab(bank); const btn = document.getElementById(VOCAB_CONFIG[bank].btnId); if (btn) btn.addEventListener('click', () => toggleVocabHighlight(bank)); });
+</script>
+      <p class="paragraph" data-para="1">
+        <span class="paragraph-num">[1]</span>
+        The Arctic region covers the top of our planet, made up of frozen ocean sea ice and cold surrounding land. This icy wilderness is home to countless special animals that rely entirely on stable ice to live, hunt and raise their young. Polar bears, narwhals, arctic foxes and snow hares all have unique physical adaptations to survive freezing temperatures below minus thirty degrees Celsius. However, global climate change steadily melts sea ice each year, destroying the foundation of the Arctic food chain.
+      </p>
+      <p class="paragraph" data-para="2">
+        <span class="paragraph-num">[2]</span>
+        Polar bears are classified as marine mammals, because they spend most of their lives travelling across floating sea ice. Their thick layer of fat and water-repellent double fur lock in body heat, while wide black ears disperse extra warmth into cold air. Polar bears travel dozens of kilometres swimming to reach new ice platforms where they hunt seals, their main source of food. When ice melts early in spring, bears get trapped on land with no way to find prey and slowly starve.
+      </p>
+      <p class="paragraph" data-para="3">
+        <span class="paragraph-num">[3]</span>
+        Narwhals are nicknamed the unicorns of the sea due to the long spiral ivory tusk grown by male individuals. This tusk can stretch over three metres long and scientists believe males use it to compete for female narwhals or sense changes in ocean water. These pale porpoises travel in groups of twenty or more, diving deep beneath ice sheets to catch fish and squid. Melting ice reduces their hidden feeding spaces and exposes them to more hunting threats.
+      </p>
+      <p class="paragraph" data-para="4">
+        <span class="paragraph-num">[4]</span>
+        Arctic foxes and snow hares change their fur colour with the seasons for natural camouflage. In winter their coats turn pure white to blend into snow; when summer arrives, fur shifts to brown and grey to match bare tundra ground. Foxes follow polar bears to feed on leftover seal meat scraps, forming a quiet dependent relationship between species. Without stable ice and seasonal snow cover, their camouflage trick stops working and they become easy targets for larger predators.
+      </p>
+      <p class="paragraph" data-para="5">
+        <span class="paragraph-num">[5]</span>
+        Two major human activities speed up Arctic ice loss. Burning fossil fuels for electricity, transport and factory work releases massive carbon dioxide that traps heat in Earth's atmosphere. Secondly, industrial oil and gas drilling in the Arctic damages ice surfaces and creates toxic spills that poison all marine life. Wildlife researchers report steady population drops for nearly all Arctic species over the past fifty years.
+      </p>
+      <p class="paragraph" data-para="6">
+        <span class="paragraph-num">[6]</span>
+        Global governments have created joint protection plans to slow Arctic warming. Many nations signed agreements to limit fossil fuel production near polar zones and ban unregulated Arctic oil drilling. Scientists also carry out long-term ice observation missions to track melting rates and share data worldwide.
+      </p>
+      <p class="paragraph" data-para="7">
+        <span class="paragraph-num">[7]</span>
+        Young people can join small daily actions to cut carbon emissions and protect the Arctic. Reduce electricity waste at home, choose walking or cycling over private car rides, and support brands that use 100% renewable wind or solar power. Every small cut in greenhouse gas output slows ice melt and buys more time for Arctic wild animals to adapt.
+      </p>
+
+    </section>
+
+    <div class="divider" id="divider" title="Drag to resize"></div>
+
+    <section class="panel questions-panel" id="questionsPanel">
+      <p class="instruction">Read Text 2 and answer questions 1–15. (20 marks)</p>
+
+      <div class="question-block" id="q1" data-q="1">
+        <div class="question-label">1. According to paragraph 1, what do all Arctic animals depend on for survival?</div>
+        <input type="text" class="text-input wide" name="q1" placeholder="Your answer">
+<div class="inline-solution" id="solution-q1" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">1</span> Short Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Suggested answer: Stable frozen sea ice to hunt, live and raise their young.</div>
+      <p class="explanation">Paragraph 1 states Arctic animals "rely entirely on stable ice to live, hunt and raise their young."</p>
+      <p class="explanation-zh">北極動物完全依賴穩定的海冰來生存、捕獵和養育後代。</p>
+      <div class="passage-ref">[1] ...rely entirely on stable ice to live, hunt and raise their young.</div>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q2" data-q="2">
+        <div class="question-label">2. Choose the word closest in meaning to "adaptations" (line 4)</div>
+        <div class="options">
+          <label><input type="radio" name="q2" value="A"> A. harmful illnesses</label>
+          <label><input type="radio" name="q2" value="B"> B. special body features for survival</label>
+          <label><input type="radio" name="q2" value="C"> C. migration routes</label>
+          <label><input type="radio" name="q2" value="D"> D. human protection rules</label>
+        </div>
+<div class="inline-solution" id="solution-q2" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">2</span> Multiple Choice <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Answer: B</div>
+      <p class="explanation">"Adaptations" refers to physical features that help animals survive in extreme cold.</p>
+      <p class="explanation-zh">"Adaptations" 指幫助動物在極寒環境中生存的特殊身體特徵。</p>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q3" data-q="3">
+        <div class="question-label">3. Why are polar bears officially called marine mammals?</div>
+        <input type="text" class="text-input wide" name="q3" placeholder="Your answer">
+<div class="inline-solution" id="solution-q3" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">3</span> Short Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Suggested answer: They spend almost their whole lives travelling and hunting on floating Arctic sea ice.</div>
+      <p class="explanation">Paragraph 2: "because they spend most of their lives travelling across floating sea ice."</p>
+      <p class="explanation-zh">北極熊大部分時間在浮冰上生活和捕獵。</p>
+      <div class="passage-ref">[2] Polar bears are classified as marine mammals, because they spend most of their lives travelling across floating sea ice.</div>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q4" data-q="4">
+        <div class="question-label">4. Decide True / False / Not Given (3 marks)</div>
+        <table class="tf-table">
+          <thead><tr><th>Statement</th><th>T</th><th>F</th><th>NG</th></tr></thead>
+          <tbody>
+            <tr><td>(i) Narwhal tusks only grow on female sea unicorns.</td><td><input type="radio" name="q4i" value="T"></td><td><input type="radio" name="q4i" value="F"></td><td><input type="radio" name="q4i" value="NG"></td></tr>
+            <tr><td>(ii) Arctic fox fur changes colour between summer and winter.</td><td><input type="radio" name="q4ii" value="T"></td><td><input type="radio" name="q4ii" value="F"></td><td><input type="radio" name="q4ii" value="NG"></td></tr>
+            <tr><td>(iii) Oil spills do not harm Arctic fish and sea mammals.</td><td><input type="radio" name="q4iii" value="T"></td><td><input type="radio" name="q4iii" value="F"></td><td><input type="radio" name="q4iii" value="NG"></td></tr>
+          </tbody>
+        </table>
+<div class="inline-solution" id="solution-q4" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">4</span> True / False / Not Given <span class="marks-badge">3 marks</span></h3>
+      <div class="answer-text">(i) False &nbsp; (ii) True &nbsp; (iii) False</div>
+      <p class="explanation">(i) Tusks are "grown by male individuals" (para 3). (ii) "change their fur colour with the seasons" (para 4). (iii) Oil spills "poison all marine life" (para 5).</p>
+      <p class="explanation-zh">(i) 假——只有雄性才有長牙 (ii) 真——毛色隨季節變化 (iii) 假——油污毒害所有海洋生物。</p>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q5" data-q="5">
+        <div class="question-label">5. Name two human activities that speed up Arctic sea ice melting (paragraph 5)</div>
+        <input type="text" class="text-input wide" name="q5" placeholder="Your answer">
+<div class="inline-solution" id="solution-q5" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">5</span> Short Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Suggested answer: Burning fossil fuels for energy and transport; industrial Arctic oil/gas drilling</div>
+      <p class="explanation">Paragraph 5 lists two major human activities.</p>
+      <p class="explanation-zh">第5段列出兩項人類活動：燃燒化石燃料和工業石油/天然氣鑽探。</p>
+      <div class="passage-ref">[5] Burning fossil fuels... industrial oil and gas drilling in the Arctic damages ice surfaces and creates toxic spills.</div>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q6" data-q="6">
+        <div class="question-label">6. What do narwhals use their long spiral tusks for (paragraph 3)?</div>
+        <input type="text" class="text-input wide" name="q6" placeholder="Your answer">
+<div class="inline-solution" id="solution-q6" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">6</span> Short Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Suggested answer: To compete against other male narwhals and detect changes in ocean water</div>
+      <p class="explanation">Paragraph 3: "to compete for female narwhals or sense changes in ocean water."</p>
+      <p class="explanation-zh">用來競爭雌性或感知海水變化。</p>
+      <div class="passage-ref">[3] ...males use it to compete for female narwhals or sense changes in ocean water.</div>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q7" data-q="7">
+        <div class="question-label">7. Find one word in paragraph 4 meaning natural disguise that hides animals</div>
+        <input type="text" class="text-input" name="q7" placeholder="Your answer">
+<div class="inline-solution" id="solution-q7" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">7</span> Find Word <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Answer: camouflage</div>
+      <p class="explanation">Paragraph 4: "change their fur colour with the seasons for natural camouflage."</p>
+      <p class="explanation-zh">第4段提到北極狐和雪兔隨季節改變毛色以達到偽裝效果。</p>
+      <div class="passage-ref">[4] ...change their fur colour with the seasons for natural camouflage.</div>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q8" data-q="8">
+        <div class="question-label">8. Complete the summary with ONE word taken from the passage (4 marks)</div>
+        <div class="flow-chart">
+          <p>The Arctic's sea ice supports unique wildlife including polar bears and narwhals. Polar bears rely on ice to hunt seals, while arctic foxes use seasonal fur (i) <input type="text" class="text-input short" name="q8i" placeholder="Your answer"> to avoid predators.</p>
+          <p>Fossil fuel burning and Arctic oil drilling melt ice and poison sea life. International agreements limit polar (ii) <input type="text" class="text-input short" name="q8ii" placeholder="Your answer"> work and track ice loss.</p>
+          <p>Teenagers can cut home power waste and pick renewable energy to lower greenhouse (iii) <input type="text" class="text-input short" name="q8iii" placeholder="Your answer"> and save polar animal living (iv) <input type="text" class="text-input short" name="q8iv" placeholder="Your answer">.</p>
+        </div>
+<div class="inline-solution" id="solution-q8" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">8</span> Summary — ONE word each <span class="marks-badge">4 marks</span></h3>
+      <div class="answer-text">(i) camouflage &nbsp; (ii) drilling &nbsp; (iii) emissions &nbsp; (iv) habitats</div>
+      <p class="explanation">(i) para 4 (ii) para 5 (iii) para 7 (iv) para 7</p>
+      <p class="explanation-zh">各詞均須出自文中。</p>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q9" data-q="9">
+        <div class="question-label">9. What two global official measures protect the Arctic (paragraph 6)?</div>
+        <input type="text" class="text-input wide" name="q9" placeholder="Your answer">
+<div class="inline-solution" id="solution-q9" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">9</span> Short Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Suggested answer: International treaties limit polar fossil fuel extraction; scientists run ice observation research projects.</div>
+      <p class="explanation">Paragraph 6 lists: signed agreements and ice observation missions.</p>
+      <p class="explanation-zh">第6段列出：各國簽署協議和科學家進行冰層觀測。</p>
+      <div class="passage-ref">[6] Many nations signed agreements... Scientists also carry out long-term ice observation missions.</div>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q10" data-q="10">
+        <div class="question-label">10. Give one difference and one similarity between polar bears and arctic foxes (2 marks)</div>
+        <p>(i) Difference: <input type="text" class="text-input wide" name="q10i" placeholder="Your answer"></p>
+        <p>(ii) Similarity: <input type="text" class="text-input wide" name="q10ii" placeholder="Your answer"></p>
+<div class="inline-solution" id="solution-q10" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">10</span> Difference &amp; Similarity <span class="marks-badge">2 marks</span></h3>
+      <div class="answer-text">(i) Difference: Polar bears hunt seals as main food; foxes eat leftover meat from bear kills.<br>(ii) Similarity: Both grow thick fur to survive extreme Arctic cold.</div>
+      <p class="explanation">Difference from paras 2 & 4. Similarity: both have thick fur.</p>
+      <p class="explanation-zh">差異：北極熊主動捕獵，北極狐吃剩肉。相似：兩者都有厚毛皮。</p>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q11" data-q="11">
+        <div class="question-label">11. What terrible result happens to polar bears if spring ice melts too early (paragraph 2)?</div>
+        <input type="text" class="text-input wide" name="q11" placeholder="Your answer">
+<div class="inline-solution" id="solution-q11" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">11</span> Short Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Suggested answer: Bears become trapped on land without access to food and slowly starve.</div>
+      <p class="explanation">Paragraph 2: "bears get trapped on land with no way to find prey and slowly starve."</p>
+      <p class="explanation-zh">北極熊被困在陸地上無法捕獵，慢慢餓死。</p>
+      <div class="passage-ref">[2] ...bears get trapped on land with no way to find prey and slowly starve.</div>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q12" data-q="12">
+        <div class="question-label">12. What three eco-friendly daily habits help cut carbon emissions (paragraph 7)?</div>
+        <input type="text" class="text-input wide" name="q12" placeholder="Your answer">
+<div class="inline-solution" id="solution-q12" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">12</span> Short Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Suggested answer: Cut household electricity waste; walk/cycle instead of driving cars; choose wind/solar powered brands.</div>
+      <p class="explanation">Paragraph 7 lists three habits.</p>
+      <p class="explanation-zh">第7段列出三項習慣。</p>
+      <div class="passage-ref">[7] Reduce electricity waste at home, choose walking or cycling over private car rides, and support brands that use 100% renewable wind or solar power.</div>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q13" data-q="13">
+        <div class="question-label">13. How do arctic foxes survive by following polar bears?</div>
+        <input type="text" class="text-input wide" name="q13" placeholder="Your answer">
+<div class="inline-solution" id="solution-q13" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">13</span> Short Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Suggested answer: They eat leftover seal meat scraps left by polar bears after hunting.</div>
+      <p class="explanation">Paragraph 4: "Foxes follow polar bears to feed on leftover seal meat scraps."</p>
+      <p class="explanation-zh">北極狐吃北極熊剩下的海豹肉碎。</p>
+      <div class="passage-ref">[4] Foxes follow polar bears to feed on leftover seal meat scraps...</div>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q14" data-q="14">
+        <div class="question-label">14. What is the writer's overall attitude toward Arctic environmental protection?</div>
+        <div class="options">
+          <label><input type="radio" name="q14" value="A"> A. Completely hopeless</label>
+          <label><input type="radio" name="q14" value="B"> B. Generally hopeful</label>
+          <label><input type="radio" name="q14" value="C"> C. Fully neutral</label>
+          <label><input type="radio" name="q14" value="D"> D. Deeply doubtful</label>
+        </div>
+<div class="inline-solution" id="solution-q14" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">14</span> Multiple Choice <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Answer: B — Generally hopeful</div>
+      <p class="explanation">The writer acknowledges threats but also presents solutions. The tone is concerned but hopeful.</p>
+      <p class="explanation-zh">作者承認威脅但也提出解決方案，語氣關切但抱有希望。</p>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q15" data-q="15">
+        <div class="question-label">15. What does the title "Save Our Polar Arctic Habitats" imply about the Arctic ice ecosystem?</div>
+        <input type="text" class="text-input wide" name="q15" placeholder="Your answer">
+<div class="inline-solution" id="solution-q15" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">15</span> Short Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Suggested answer: The Arctic frozen ice environment is rapidly disappearing and all polar wildlife faces survival risks.</div>
+      <p class="explanation">The title uses "Save Our" which implies urgency.</p>
+      <p class="explanation-zh">標題使用「Save Our」暗示北極棲息地正面臨危險。</p>
+  </div>
+</div>
+      </div>
+
+      <h4 class="end-marker">— End of the Test —</h4>
+      <p class="submit-hint">Please Submit to view your score, solution and explanations.</p>
+    </section>
+  </div>
+
+  <footer class="bottom-bar">
+    <div class="palette-section">
+      <span class="palette-label">Question Palette</span>
+      <div class="question-palette" id="questionPalette"></div>
+      <div class="palette-legend"><span class="legend-dot"></span> answered</div>
+    </div>
+    <div class="timer-section" id="timer">00:00</div>
+    <div class="action-buttons">
+      <button class="btn btn-submit" id="btnSubmit">✓ Submit</button>
+      <button class="btn btn-review" id="btnReview">⊞ Review</button>
+      <a class="btn btn-solution" href="solution.html">🔑 Solution</a>
+      <button class="btn btn-reset" id="btnReset">↺ Reset</button>
+    </div>
+  </footer>
+
+  <div class="modal-overlay" id="submitModal">
+    <div class="modal">
+      <h3>Are you sure you want to submit?</h3>
+      <p id="submitModalText">You have answered <strong id="answeredCount">0</strong> of 15 questions.</p>
+      <div class="modal-actions">
+        <button class="btn btn-reset" id="btnCancelSubmit">Cancel</button>
+        <button class="btn btn-submit" id="btnConfirmSubmit">Submit and view Answers</button>
+      </div>
+    </div>
+  </div>
+  <div class="modal-overlay" id="scoreModal">
+    <div class="modal">
+      <h3>Your Results</h3>
+      <div class="score-display">
+        <div class="score-number" id="scoreNumber">0/15</div>
+        <div class="score-label" id="scorePercent">0% correct</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-review" id="btnCloseScore">Review Answers</button>
+        <a class="btn btn-solution" href="solution.html">View Full Solution</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
