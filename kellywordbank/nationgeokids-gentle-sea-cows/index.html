@@ -48,7 +48,7 @@ try{wr.surroundContents(h);setTimeout(()=>{const pa=h.parentNode;if(pa){while(h.
 <button id="btnToggleNash" style="flex:1;padding:8px 12px;background:#f39c12;color:white;border:none;border-radius:4px;cursor:pointer;font-size:15px;margin:0 5px;">Nash: OFF</button>
 </div>
 <script>
-const VC={kelly:{b:'btnToggleKelly',f:'../008_Kelly_Hermes/kellywordbank/kellywordbank-single.md',c:'rgba(52,152,219,0.3)',o:false},jenny:{b:'btnToggleJenny',f:'../008_Kelly_Hermes/kellywordbank/jennywordbank-single.md',c:'rgba(155,89,182,0.3)',o:false},nash:{b:'btnToggleNash',f:'../008_Kelly_Hermes/kellywordbank/nashwordbank-single.md',c:'rgba(231,76,60,0.3)',o:false}};
+const VC={kelly:{b:'btnToggleKelly',f:'../../kellywordbank-single.md',c:'rgba(52,152,219,0.3)',o:false},jenny:{b:'btnToggleJenny',f:'../../jennywordbank-single.md',c:'rgba(155,89,182,0.3)',o:false},nash:{b:'btnToggleNash',f:'../../nashwordbank-single.md',c:'rgba(231,76,60,0.3)',o:false}};
 let vl={kelly:false,jenny:false,nash:false},vw={kelly:[],jenny:[],nash:[]};
 function esc(s){return s.replace(/[.*+?${}()|[\]\\]/g,'\\$&');}
 async function lv(b){try{const r=await fetch(VC[b].f+'?cb='+Date.now());const t=await r.text();const w=[];t.split('\n').forEach(l=>{const m=l.match(/^###\s+([^(]+)/);if(m){const wd=m[1].trim();if(wd)w.push(wd);}});w.sort((a,b)=>b.length-a.length);vw[b]=w;vl[b]=true;}catch(e){vw[b]=[];vl[b]=true;}}
