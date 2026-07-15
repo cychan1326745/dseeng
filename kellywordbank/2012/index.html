@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head> 
+
+<script>
+let isSpeaking = false;
+let speechEnabled = true; // 默認開啟
+
+function loadSpeechSetting() {
+  const saved = localStorage.getItem('dse-speech-enabled');
+  if (saved !== null) {
+    speechEnabled = saved === 'true';
+  }
+  updateSpeechButton();
+}
+
+function updateSpeechButton() {
+  const btn = document.getElementById('btnToggleSpeech');
+  if (btn) {
+    btn.textContent = speechEnabled ? 'Speech: ON' : 'Speech: OFF';
+    btn.style.background = speechEnabled ? 'rgba(40, 167, 69, 0.3)' : 'rgba(220, 53, 69, 0.3)';
+  }
+}
+
+function toggleSpeech() {
+  speechEnabled = !speechEnabled;
+  localStorage.setItem('dse-speech-enabled', speechEnabled);
+  updateSpeechButton();
+  if (isSpeaking) {
+    speechSynthesis.cancel();
+    isSpeaking = false;
+  }
+}
+
+function readWord(text){
+  if(!speechEnabled) return; // 關閉狀態不發音
+  if(isSpeaking) speechSynthesis.cancel();
+  let utter = new SpeechSynthesisUtterance(text);
+  utter.lang = "en-US";
+  utter.rate = 0.9;
+  isSpeaking = true;
+  utter.onend = ()=> isSpeaking = false;
+  speechSynthesis.speak(utter);
+}
+
+// ── Click-to-read: 撳邊個英文字就讀邊個 ──
+document.addEventListener('DOMContentLoaded', function(){
+  loadSpeechSetting();
+  const btn = document.getElementById('btnToggleSpeech');
+  if (btn) btn.addEventListener('click', toggleSpeech);
+
+  const passage = document.getElementById('passagePanel');
+  if (!passage) return;
+
+  // 用 caretRangeFromPoint 拎 click 位置嘅英文字
+  passage.addEventListener('click', function(e){
+    if(!speechEnabled) return; // 關閉狀態完全不處理，方便選文字
+    // 唔干擾撳落 link / button / input
+    if (e.target.closest('a, button, input, label, select, textarea')) return;
+
+    const range = document.caretRangeFromPoint(e.clientX, e.clientY);
+    if (!range) return;
+    const node = range.startContainer;
+    if (node.nodeType !== Node.TEXT_NODE) return;
+    const offset = range.startOffset;
+    const text = node.textContent;
+
+    // 搵字嘅起始同結束（連 apostrophe 同 hyphen）
+    let start = offset;
+    let end = offset;
+    while (start > 0 && /[a-zA-Z\u00C0-\u024F'ʼ-]/.test(text[start - 1])) start--;
+    while (end < text.length && /[a-zA-Z\u00C0-\u024F'ʼ-]/.test(text[end])) end++;
+    if (start === end) return;
+
+    const word = text.slice(start, end);
+    // 過濾純數字
+    if (/^\d+$/.test(word)) return;
+
+    readWord(word);
+
+    // ── 視覺回饋：短暫 highlight ──
+    // 用 range select 個字
+    const wordRange = document.createRange();
+    wordRange.setStart(node, start);
+    wordRange.setEnd(node, end);
+    const highlight = document.createElement('mark');
+    highlight.style.cssText = 'background:#ffd54f;border-radius:3px;transition:background .3s';
+    try {
+      wordRange.surroundContents(highlight);
+      setTimeout(() => {
+        const parent = highlight.parentNode;
+        if (parent) {
+          while (highlight.firstChild) parent.insertBefore(highlight.firstChild, highlight);
+          parent.removeChild(highlight);
+          parent.normalize();
+        }
+      }, 500);
+    } catch(_) {
+      // 跨 element boundary 就跳過 highlight
+    }
+  });
+});
+</script>
+ 
+<style>
+/* 游標提示：passage 入面嘅文字係㩒得嘅 */
+#passagePanel .paragraph {
+  cursor: default;
+}
+#passagePanel .paragraph * {
+  cursor: pointer;
+}
+</style>
+
+<meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GAME BOYS GET UNPLUGGED - DSE 2012 Part A</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-brand"><span>DSE</span> 2012 Part A Reading Practice</div>
+    <nav class="header-nav">
+      <a href="index.html" class="active">Reading</a>
+      <a href="solution.html">Solution</a>
+    </nav>
+    <div class="header-tools">
+      <button type="button" id="btnToggleSpeech">Speech: ON</button>
+      <button type="button" id="btnLargerText">Larger Text</button>
+      <button type="button" onclick="window.print()">Print</button>
+    </div>
+  </header>
+
+  <div class="main-container" id="mainContainer">
+    <section class="panel passage-panel" id="passagePanel">
+      <h2 class="passage-title">GAME BOYS GET UNPLUGGED</h2>
+      <p class="passage-subtitle">Text 1 — HKDSE 2012 Paper 1 Part A</p>
+      <div class="passage-illustration">🎲 ♟️ ☕</div>
+
+      <div style="text-align: center; margin: 15px 0; display: flex;">
+        <button id="btnToggleKelly" style="flex: 1; padding: 8px 12px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; margin: 0 5px;">
+          Kelly: OFF
+        </button>
+        <button id="btnToggleJenny" style="flex: 1; padding: 8px 12px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; margin: 0 5px;">
+          Jenny: OFF
+        </button>
+        <button id="btnToggleNash" style="flex: 1; padding: 8px 12px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; margin: 0 5px;">
+          Nash: OFF
+        </button>
+      </div>
+
+<script>
+// Article Vocabulary Highlight Toggle - Multiple vocabulary banks
+// Three independent banks with mutually exclusive toggle, different colors
+
+const VOCAB_CONFIG = {
+  kelly: {
+    btnId: 'btnToggleKelly',
+    file: '../../kellywordbank-single.md',
+    color: 'rgba(52, 152, 219, 0.3)', // blue
+    on: false
+  },
+  jenny: {
+    btnId: 'btnToggleJenny',
+    file: '../../jennywordbank-single.md',
+    color: 'rgba(155, 89, 182, 0.3)', // purple
+    on: false
+  },
+  nash: {
+    btnId: 'btnToggleNash',
+    file: '../../nashwordbank-single.md',
+    color: 'rgba(230, 126, 34, 0.3)', // red
+    on: false
+  }
+};
+
+let vocabLoaded = {
+  kelly: false,
+  jenny: false,
+  nash: false
+};
+let vocabWords = {
+  kelly: [],
+  jenny: [],
+  nash: []
+};
+
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Load vocabulary for a specific bank
+async function loadVocab(bank) {
+  try {
+    const config = VOCAB_CONFIG[bank];
+    const response = await fetch(`${config.file}?cache-bust=${new Date().getTime()}`);
+    const text = await response.text();
+    const lines = text.split('\n');
+    const words = [];
+
+    lines.forEach(line => {
+      const match = line.match(/^###\s+([^(]+)/);
+      if (match) {
+        const word = match[1].trim();
+        if (word) words.push(word);
+      }
+    });
+
+    // Sort by length descending - longer phrases match first
+    words.sort((a, b) => b.length - a.length);
+    vocabWords[bank] = words;
+    vocabLoaded[bank] = true;
+    console.log(`Loaded ${vocabWords[bank].length} vocabulary words for ${bank}`);
+  } catch (err) {
+    console.error(`Failed to load vocabulary bank ${bank}:`, err);
+    vocabWords[bank] = [];
+    vocabLoaded[bank] = true;
+  }
+}
+
+// Turn off all other banks when one is turned on
+function turnOffAllExcept(exceptBank) {
+  Object.keys(VOCAB_CONFIG).forEach(bank => {
+    if (bank !== exceptBank && VOCAB_CONFIG[bank].on) {
+      VOCAB_CONFIG[bank].on = false;
+      const btn = document.getElementById(VOCAB_CONFIG[bank].btnId);
+      btn.style.background = '#f39c12';
+      btn.textContent = `${bank.charAt(0).toUpperCase() + bank.slice(1)}: OFF`;
+      removeVocabHighlight(bank);
+    }
+  });
+}
+
+function toggleVocabHighlight(bank) {
+  const config = VOCAB_CONFIG[bank];
+  config.on = !config.on;
+  const btn = document.getElementById(config.btnId);
+
+  if (config.on) {
+    // Turn off all others
+    turnOffAllExcept(bank);
+    btn.textContent = `${bank.charAt(0).toUpperCase() + bank.slice(1)}: ON`;
+    btn.style.background = '#27ae60';
+    applyVocabHighlight(bank);
+  } else {
+    btn.textContent = `${bank.charAt(0).toUpperCase() + bank.slice(1)}: OFF`;
+    btn.style.background = '#f39c12';
+    removeVocabHighlight(bank);
+  }
+}
+
+function applyVocabHighlight(bank) {
+  if (!vocabLoaded[bank]) {
+    setTimeout(() => {
+      if (VOCAB_CONFIG[bank].on) applyVocabHighlight(bank);
+    }, 200);
+    return;
+  }
+
+  if (vocabWords[bank].length === 0) {
+    console.log(`No vocabulary words loaded for ${bank}`);
+    return;
+  }
+
+  const config = VOCAB_CONFIG[bank];
+  const paragraphs = document.querySelectorAll('#passagePanel p.paragraph');
+  
+  console.log(`${bank}: found ${paragraphs.length} paragraphs, ${vocabWords[bank].length} words`);
+
+  paragraphs.forEach(para => {
+    let html = para.innerHTML;
+
+    // First remove any existing highlights
+    html = html.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g, '$1');
+
+    // Apply highlights for this vocab bank
+    vocabWords[bank].forEach(word => {
+      const escaped = escapeRegExp(word);
+      const regex = new RegExp(`\\b${escaped}\\b`, 'gi');
+      html = html.replace(regex, `<mark style="background: ${config.color};">$&</mark>`);
+    });
+
+    para.innerHTML = html;
+  });
+}
+
+function removeVocabHighlight(bank) {
+  const paragraphs = document.querySelectorAll('#passagePanel p.paragraph');
+  paragraphs.forEach(para => {
+    let html = para.innerHTML;
+    html = html.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g, '$1');
+    para.innerHTML = html;
+  });
+}
+
+// Initialize - load all vocabularies
+Object.keys(VOCAB_CONFIG).forEach(bank => {
+  loadVocab(bank);
+  const btn = document.getElementById(VOCAB_CONFIG[bank].btnId);
+  if (btn) {
+    btn.addEventListener('click', () => toggleVocabHighlight(bank));
+  }
+});
+</script>      <p class="paragraph" data-para="1">
+        <span class="paragraph-num">[1]</span>
+        In what many people will greet with a huge sigh of relief, a cafe at the Crystal Design Centre is low-tech, switched off, unplugged. Patrons don’t sit at computer terminals and race virtual hotrods – they sit at tables and play board games.
+      </p>
+
+      <p class="paragraph" data-para="2">
+        <span class="paragraph-num">[2]</span>
+        Board games. You know – cardboard and little pieces of plastic you move around, maybe a pair of dice too. How about a guessing game with picture cards?
+      </p>
+
+      <p class="paragraph" data-para="3">
+        <span class="paragraph-num">[3]</span>
+        What is the world coming to? (Or going back to?)
+      </p>
+
+      <p class="paragraph" data-para="4">
+        <span class="paragraph-num">[4]</span>
+        Pat Pornpiranon and Dee Sattarujawong opened Polar Board Games & Cafe one month ago to slow down the pace of life a little bit. They rescued some games from the dusty top of the wardrobe and found a few new ones, and now they’ve got customers enjoying their refreshments while chatting over their board moves.
+      </p>
+
+      <p class="paragraph" data-para="5">
+        <span class="paragraph-num">[5]</span>
+        Face to face, no less.
+      </p>
+
+      <p class="paragraph" data-para="6">
+        <span class="paragraph-num">[6]</span>
+        It’s a suitably friendly and homey place – comfy chairs, wood floor. One wall has a painting of the busy pathways found in the Kids of Carcassonne game, which is popular here too. Shelves are stacked with other choices of pastimes.
+      </p>
+
+      <p class="paragraph" data-para="7">
+        <span class="paragraph-num">[7]</span>
+        Cafes specialising in parlour games have caught on in South Korea and China. Sometimes there’s a small admission fee that covers snacks, several hours of gaming and help from the staff.
+      </p>
+
+      <p class="paragraph" data-para="8">
+        <span class="paragraph-num">[8]</span>
+        The drinks at Polar Cafe cost around Bt80 (approx HK$20), and for that price you get to try out any game for an hour. Buy another drink and play for another hour. There are about 40 games to choose from at this point, most of them imported from Germany and the US. There’s little foreign text to slow you down, and anyway you get Thai instructions and the staff can help with the rules.
+      </p>
+
+      <p class="paragraph" data-para="9">
+        <span class="paragraph-num">[9]</span>
+        ‘I played nothing but Monopoly, Uno and Snakes & Ladders when I was a child,’ says Pat, a Thai University business-management graduate. ‘There weren’t that many games available in Thailand, but when I studied in the US, I found a lot of interesting board games that were more challenging than anything on the computer.’
+      </p>
+
+      <p class="paragraph" data-para="10">
+        <span class="paragraph-num">[10]</span>
+        ‘Germany is the pioneer when it comes to new and interesting board games,’ says Dee. ‘It has a prestigious award for creativity called the Spiel Des Jahres.’
+      </p>
+
+      <p class="paragraph" data-para="11">
+        <span class="paragraph-num">[11]</span>
+        If you like a game so much you want to take it home, the prices range from Bt500 to Bt3,000 (HK$130-720). They’re great for parties, lazy afternoons or dreary family get-togethers where no one can think of what else to do except eat. It might also boost your strategic talents and your kids’ maths scores.
+      </p>
+
+      <p class="paragraph" data-para="12">
+        <span class="paragraph-num">[12]</span>
+        Pat and Dee also run a Chinese-language school called Learning East and use board games as teaching tools.
+      </p>
+
+      <p class="paragraph" data-para="13">
+        <span class="paragraph-num">[13]</span>
+        ‘Kids of Carcassonne,’ explains Pat, ‘is a great game for little children. You place tiles to form paths and then try to close them off with wooden tokens. The player with the most tokens when all the tiles are used wins. Kids learn to watch the tiles carefully and think twice before every move. It’s good for teaching problem solving.’
+      </p>
+
+      <p class="paragraph" data-para="14">
+        <span class="paragraph-num">[14]</span>
+        Customer Benson Tanattanachot, 29, says he became utterly bored with computer games. ‘There’s a lot more satisfaction in playing against human opponents,’ he says. ‘I prefer a game you can enjoy with friends and family. And in Thailand you don’t usually see the wide selection of games that you get here.’
+      </p>
+
+      <p class="paragraph" data-para="15">
+        <span class="paragraph-num">[15]</span>
+        Benson and a chum got so immersed in Carcassonne that they decided to buy it. ‘It’s fun, and the playing cards are beautifully illustrated,’ he says. ‘It promotes sharp wit and logic, skills which I can use in my marketing job.’
+      </p>
+
+      <p class="paragraph" data-para="16">
+        <span class="paragraph-num">[16]</span>
+        Another cafe patron, Aey, says she was never big on games but she’s really taken by the fun she’s found here, and the intriguing effects on the brain. ‘Thai children should get to play games like this to learn about teamwork and society,’ says the 30-something working woman. ‘Kids today have their computer games and console games, but they play alone. For board games you have to have a circle of friends. My friends and I love playing Railways to the World.’
+      </p>
+
+      <p class="paragraph" data-para="17">
+        <span class="paragraph-num">[17]</span>
+        In Railways to the World you build railroads to deliver goods to cities. There is no board, so it’s different every time you play.
+      </p>
+
+      <p class="paragraph" data-para="18">
+        <span class="paragraph-num">[18]</span>
+        Pat points out that, while the chief appeal of parlour games is in the pleasant socialising – which usually trumps the drive to win – you can learn a lot about people by watching how they play, especially with games like Dixit, which won the Spiel Des Jahres last year.
+      </p>
+
+      <p class="paragraph" data-para="19">
+        <span class="paragraph-num">[19]</span>
+        In Dixit, players receive cards with illustrations and take turns giving clues about them to the others. The other players choose the card in their own hands that they think best matches your clue. The trick is in choosing the perfect clue to share, not too specific or too vague.
+      </p>
+
+      <p class="paragraph" data-para="20">
+        <span class="paragraph-num">[20]</span>
+        ‘No matter what language you speak, you can play Dixit,’ says Dee, ‘and the more you play, the more you learn about the other players’ perspectives on life. It can also improve children’s vocabulary, especially when they play with their parents, and stretches their minds to think abstractly.’
+      </p>
+
+      <p class="paragraph" data-para="21">
+        <span class="paragraph-num">[21]</span>
+        All very nice, but come on, girls – seriously – have you seen the latest iPad and Xbox Kinect? How can you compete with that?
+      </p>
+
+      <p class="paragraph" data-para="22">
+        <span class="paragraph-num">[22]</span>
+        ‘Parents want pastimes that will keep their children away from the TV and computer,’ says Pat. ‘They’re trying to get back into more interactive things now. The way a child behaves reflects how his parents treat him. Activities like this that get families together can only be a good thing.’
+      </p>
+
+      <p class="paragraph" data-para="23">
+        <span class="paragraph-num">[23]</span>
+        Polar Board Games & Cafe is in Phase 2 of the Crystal Design Centre on Ram Indra Road and is open weekdays from 1pm to 9pm and weekends from 11am to 10pm. Find out more at (083) 133 0743 or www.polarplaygames.com.
+      </p>
+
+    </section>
+
+    <div class="divider" id="divider" title="Drag to resize"></div>
+
+    <section class="panel questions-panel" id="questionsPanel">
+      <p class="instruction">Read Text 1 and answer questions 1–13. (47 marks)</p>
+
+      <!-- Q1 -->
+      <div class="question-block" id="q1" data-q="1">
+        <div class="question-label">1. Look at the following expressions from the text and match them with either the Polar Cafe or Internet Cafes. Put a tick (✓) in the correct column. (4 marks) Expressions                Polar Cafe      Internet Cafes switched off race virtual hotrods play alone unplugged</div>
+        <input type="text" class="text-input wide" name="q1" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q1" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q2 -->
+      <div class="question-block" id="q2" data-q="2">
+        <div class="question-label">2. Why does the author write that many people will greet the cafe with ‘a huge sigh of relief’ (lines 1-2)?</div>
+        <div class="options">
+          <label><input type="radio" name="q2" value="A">A. People love board games.</label>
+          <label><input type="radio" name="q2" value="B">B. People love going to cafes.</label>
+          <label><input type="radio" name="q2" value="C">C. The cafe doesn’t have computers.</label>
+          <label><input type="radio" name="q2" value="D">D. The cafe is a very friendly and homey place.</label>
+        </div>
+
+<div class="inline-solution" id="solution-q2" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q3 -->
+      <div class="question-block" id="q3" data-q="3">
+        <div class="question-label">3. The main purpose of paragraph 2 is to…</div>
+        <div class="options">
+          <label><input type="radio" name="q3" value="A">A. provide a definition of board games.</label>
+          <label><input type="radio" name="q3" value="B">B. introduce the main idea of the article.</label>
+          <label><input type="radio" name="q3" value="C">C. connect the ideas in paragraphs 1 and 3.</label>
+          <label><input type="radio" name="q3" value="D">D. grab the reader’s attention.</label>
+        </div>
+
+<div class="inline-solution" id="solution-q3" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q4 -->
+      <div class="question-block" id="q4" data-q="4">
+        <div class="question-label">4. In paragraph 3, ‘going back to’ refers to</div>
+        <input type="text" class="text-input wide" name="q4" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q4" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q5 -->
+      <div class="question-block" id="q5" data-q="5">
+        <div class="question-label">5. When did the cafe open?</div>
+        <input type="text" class="text-input wide" name="q5" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q5" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q6 -->
+      <div class="question-block" id="q6" data-q="6">
+        <div class="question-label">6. What was Pat’s and Dee’s life like before they opened the cafe?</div>
+        <input type="text" class="text-input wide" name="q6" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q6" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q7 -->
+      <div class="question-block" id="q7" data-q="7">
+        <div class="question-label">7. Cafes specialising in board games are popular in…</div>
+        <div class="options">
+          <label><input type="radio" name="q7" value="A">A. Germany and the USA.</label>
+          <label><input type="radio" name="q7" value="B">B. China and South Korea.</label>
+          <label><input type="radio" name="q7" value="C">C. Germany, the USA, China and South Korea.</label>
+          <label><input type="radio" name="q7" value="D">D. Germany, the USA, China, South Korea and Thailand.</label>
+        </div>
+
+<div class="inline-solution" id="solution-q7" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q8 -->
+      <div class="question-block" id="q8" data-q="8">
+        <div class="question-label">8. Decide whether the following statements are True, False, or the information is Not Given in paragraphs 8-9. Put a tick (✓) in the appropriate column. (4 marks) Statement                                                                 True    False   NG Customers can play board games for two hours if they buy two drinks. You need good English to play games imported from Germany or the US. Pat never played Monopoly, Uno or Snakes & Ladders as a child. Pat thinks computer games are not as challenging as some board games.</div>
+        <input type="text" class="text-input wide" name="q8" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q8" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q9 -->
+      <div class="question-block" id="q9" data-q="9">
+        <div class="question-label">9. Find a word in paragraph 10 that means ‘originality’.</div>
+        <input type="text" class="text-input wide" name="q9" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q9" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q10 -->
+      <div class="question-block" id="q10" data-q="10">
+        <div class="question-label">10. What does ‘It’ (line 52) refer to?</div>
+        <input type="text" class="text-input wide" name="q10" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q10" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q11 -->
+      <div class="question-block" id="q11" data-q="11">
+        <div class="question-label">11. What is the meaning of ‘dreary’ (line 57)?</div>
+        <div class="options">
+          <label><input type="radio" name="q11" value="A">A. fun</label>
+          <label><input type="radio" name="q11" value="B">B. lazy</label>
+          <label><input type="radio" name="q11" value="C">C. happy</label>
+          <label><input type="radio" name="q11" value="D">D. boring</label>
+        </div>
+
+<div class="inline-solution" id="solution-q11" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q12 -->
+      <div class="question-block" id="q12" data-q="12">
+        <div class="question-label">12. According to information given in paragraphs 12-17, what do each of the following people say can be learnt from playing board games? (3 marks) Pat ______________________________________________________________________ Benson __________________________________________________________________ Aey _____________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q12" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q12" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q13 -->
+      <div class="question-block" id="q13" data-q="13">
+        <div class="question-label">13. Match the following pictures with the name of the game that can be played at the cafe. Write the name under the picture. One game is NOT given in the text. Write (NG) under the picture. (4 marks) Picture 1 (Dixit illustration cards): ____________ Picture 2 (Chess/checker board): NG Picture 3 (Carcassonne tile grid): ____________ Picture 4 (Train railway art: Railways to the World): ____________ ------------------------------------------------------------------------------------------------</div>
+        <input type="text" class="text-input wide" name="q13" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q13" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+    </section>
+  </div>
+
+  <footer class="bottom-bar">
+    <div class="palette-section">
+      <span class="palette-label">Question Palette</span>
+      <div class="question-palette" id="questionPalette"></div>
+      <div class="palette-legend">
+        <span class="legend-dot"></span> answered
+      </div>
+    </div>
+    <div class="timer-section" id="timer">00:00</div>
+    <div class="action-buttons">
+      <button class="btn btn-submit" id="btnSubmit">✓ Submit</button>
+      <button class="btn btn-review" id="btnReview">⊞ Review</button>
+      <a class="btn btn-solution" href="solution.html">🔑 Solution</a>
+      <button class="btn btn-reset" id="btnReset">↺ Reset</button>
+    </div>
+  </footer>
+
+  <!-- Submit modal -->
+  <div class="modal-overlay" id="submitModal">
+    <div class="modal">
+      <h3>Are you sure you want to submit?</h3>
+      <p id="submitModalText">You have answered <strong id="answeredCount">0</strong> of 22 questions.</p>
+      <div class="modal-actions">
+        <button class="btn btn-reset" id="btnCancelSubmit">Cancel</button>
+        <button class="btn btn-submit" id="btnConfirmSubmit">Submit and view Answers</button>
+      </div>
+    </div>
+  </div>
+  <!-- Score modal -->
+  <div class="modal-overlay" id="scoreModal">
+    <div class="modal">
+      <h3>Your Results</h3>
+      <div class="score-display">
+        <div class="score-number" id="scoreNumber">0/22</div>
+        <div class="score-label" id="scorePercent">0% correct</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-review" id="btnCloseScore">Review Answers</button>
+        <a class="btn btn-solution" href="solution.html">View Full Solution</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+
+  <script>
+  // Article Vocabulary Highlight Toggle
+  let vocabHighlightOn = false;
+  let vocabWords = [];
+  let vocabLoaded = false;
+
+  function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  // Load vocabulary from external markdown
+  async function loadVocab() {
+    try {
+      const response = await fetch(`../kellywordbank-single.md?cache-bust=${new Date().getTime()}`);
+      const text = await response.text();
+      const lines = text.split('\n');
+      const words = [];
+      
+      // Extract words from lines starting with ###
+      lines.forEach(line => {
+        const match = line.match(/^###\s+([^(]+)/);
+        if (match) {
+          const word = match[1].trim();
+          if (word) words.push(word);
+        }
+      });
+      
+      // Sort by length descending - longer phrases match first
+      words.sort((a, b) => b.length - a.length);
+      vocabWords = words;
+      vocabLoaded = true;
+      console.log(`Loaded ${vocabWords.length} vocabulary words for highlighting`);
+    } catch (err) {
+      console.error('Failed to load vocabulary bank:', err);
+      vocabWords = [];
+      vocabLoaded = true;
+    }
+  }
+
+  function toggleVocabHighlight() {
+    vocabHighlightOn = !vocabHighlightOn;
+    const btn = document.getElementById('btnToggleVocabHighlight');
+    
+    if (vocabHighlightOn) {
+      btn.textContent = '詞彙高亮: ON';
+      btn.style.background = '#27ae60';
+      applyVocabHighlight();
+    } else {
+      btn.textContent = '詞彙高亮: OFF';
+      btn.style.background = '#f39c12';
+      removeVocabHighlight();
+    }
+  }
+
+  function applyVocabHighlight() {
+    if (!vocabLoaded) {
+      // Wait for vocab to load before applying
+      setTimeout(() => {
+        if (vocabHighlightOn) applyVocabHighlight();
+      }, 200);
+      return;
+    }
+    
+    if (vocabWords.length === 0) {
+      console.log('No vocabulary words loaded');
+      return;
+    }
+
+    // Get all paragraphs in passage
+    const paragraphs = document.querySelectorAll('#passagePanel p.paragraph');
+    
+    paragraphs.forEach(para => {
+      let html = para.innerHTML;
+      
+      // First remove any existing highlights
+      html = html.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g, '$1');
+      
+      // Apply highlights to all vocab words
+      vocabWords.forEach(word => {
+        const escaped = escapeRegExp(word);
+        // Match whole word, case-insensitive
+        const regex = new RegExp(`\\b${escaped}\\b`, 'gi');
+        html = html.replace(regex, `<mark style="background: rgba(52, 152, 219, 0.3);">$&</mark>`);
+      });
+      
+      para.innerHTML = html;
+    });
+  }
+
+  function removeVocabHighlight() {
+    const paragraphs = document.querySelectorAll('#passagePanel p.paragraph');
+    paragraphs.forEach(para => {
+      let html = para.innerHTML;
+      html = html.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g, '$1');
+      para.innerHTML = html;
+    });
+  }
+
+  // Initialize immediately - script is at bottom, DOM already loaded
+  loadVocab();
+  const btn = document.getElementById('btnToggleVocabHighlight');
+  if (btn) {
+    btn.addEventListener('click', toggleVocabHighlight);
+  }
+  </script>
+
+</body>
+</html>
