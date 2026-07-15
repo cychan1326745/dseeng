@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head> 
+
+<script>
+let isSpeaking = false;
+let speechEnabled = true;
+
+function loadSpeechSetting() {
+  const saved = localStorage.getItem('dse-speech-enabled');
+  if (saved !== null) {
+    speechEnabled = saved === 'true';
+  }
+  updateSpeechButton();
+}
+
+function updateSpeechButton() {
+  const btn = document.getElementById('btnToggleSpeech');
+  if (btn) {
+    btn.textContent = speechEnabled ? 'Speech: ON' : 'Speech: OFF';
+    btn.style.background = speechEnabled ? 'rgba(40, 167, 69, 0.3)' : 'rgba(220, 53, 69, 0.3)';
+  }
+}
+
+function toggleSpeech() {
+  speechEnabled = !speechEnabled;
+  localStorage.setItem('dse-speech-enabled', speechEnabled);
+  updateSpeechButton();
+  if (isSpeaking) {
+    speechSynthesis.cancel();
+    isSpeaking = false;
+  }
+}
+
+function readWord(text){
+  if(!speechEnabled) return;
+  if(isSpeaking) speechSynthesis.cancel();
+  let utter = new SpeechSynthesisUtterance(text);
+  utter.lang = "en-US";
+  utter.rate = 0.9;
+  isSpeaking = true;
+  utter.onend = ()=> isSpeaking = false;
+  speechSynthesis.speak(utter);
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  loadSpeechSetting();
+  const btn = document.getElementById('btnToggleSpeech');
+  if (btn) btn.addEventListener('click', toggleSpeech);
+
+  const passage = document.getElementById('passagePanel');
+  if (!passage) return;
+
+  passage.addEventListener('click', function(e){
+    if(!speechEnabled) return;
+    if (e.target.closest('a, button, input, label, select, textarea')) return;
+
+    const range = document.caretRangeFromPoint(e.clientX, e.clientY);
+    if (!range) return;
+    const node = range.startContainer;
+    if (node.nodeType !== Node.TEXT_NODE) return;
+    const offset = range.startOffset;
+    const text = node.textContent;
+
+    let start = offset;
+    let end = offset;
+    while (start > 0 && /[a-zA-Z\u00C0-\u024F'ʼ-]/.test(text[start - 1])) start--;
+    while (end < text.length && /[a-zA-Z\u00C0-\u024F'ʼ-]/.test(text[end])) end++;
+    if (start === end) return;
+
+    const word = text.slice(start, end);
+    if (/^\d+$/.test(word)) return;
+
+    readWord(word);
+
+    const wordRange = document.createRange();
+    wordRange.setStart(node, start);
+    wordRange.setEnd(node, end);
+    const highlight = document.createElement('mark');
+    highlight.style.cssText = 'background:#ffd54f;border-radius:3px;transition:background .3s';
+    try {
+      wordRange.surroundContents(highlight);
+      setTimeout(() => {
+        const parent = highlight.parentNode;
+        if (parent) {
+          while (highlight.firstChild) parent.insertBefore(highlight.firstChild, highlight);
+          parent.removeChild(highlight);
+          parent.normalize();
+        }
+      }, 500);
+    } catch(_) {
+    }
+  });
+});
+</script>
+
+<style>
+#passagePanel .paragraph {
+  cursor: default;
+}
+#passagePanel .paragraph * {
+  cursor: pointer;
+}
+</style>
+
+<meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Study Buddy Challenger: Chinese dinosaur had a taste for birds, scientists say - DSE Reading Practice</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-brand"><span>DSE</span> Reading Practice</div>
+    <nav class="header-nav">
+      <a href="index.html" class="active">Reading</a>
+      <a href="solution.html">Solution</a>
+    </nav>
+    <div class="header-tools">
+      <button type="button" id="btnToggleSpeech">Speech: ON</button>
+      <button type="button" id="btnLargerText">Larger Text</button>
+      <button type="button" onclick="window.print()">Print</button>
+    </div>
+  </header>
+
+  <div class="main-container" id="mainContainer">
+    <section class="panel passage-panel" id="passagePanel">
+      <h2 class="passage-title">Study Buddy Challenger: Chinese dinosaur had a taste for birds, scientists say</h2>
+      <p class="passage-subtitle">DSE Reading Comprehension Practice</p>
+      <div class="passage-illustration">📖 ✏️</div>
+
+      <div style="text-align: center; margin: 15px 0; display: flex;">
+        <button id="btnToggleKelly" style="flex: 1; padding: 8px 12px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; margin: 0 5px;">
+          Kelly: OFF
+        </button>
+        <button id="btnToggleJenny" style="flex: 1; padding: 8px 12px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; margin: 0 5px;">
+          Jenny: OFF
+        </button>
+        <button id="btnToggleNash" style="flex: 1; padding: 8px 12px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; margin: 0 5px;">
+          Nash: OFF
+        </button>
+      </div>
+
+<script>
+const VOCAB_CONFIG = {
+  kelly: {
+    btnId: 'btnToggleKelly',
+    file: '../../kellywordbank-single.md',
+    color: 'rgba(52, 152, 219, 0.3)',
+    on: false
+  },
+  jenny: {
+    btnId: 'btnToggleJenny',
+    file: '../../jennywordbank-single.md',
+    color: 'rgba(155, 89, 182, 0.3)',
+    on: false
+  },
+  nash: {
+    btnId: 'btnToggleNash',
+    file: '../../nashwordbank-single.md',
+    color: 'rgba(230, 126, 34, 0.3)',
+    on: false
+  }
+};
+
+let vocabLoaded = { kelly: false, jenny: false, nash: false };
+let vocabWords = { kelly: [], jenny: [], nash: [] };
+
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+async function loadVocab(bank) {
+  try {
+    const config = VOCAB_CONFIG[bank];
+    const response = await fetch(`${config.file}?cache-bust=${new Date().getTime()}`);
+    const text = await response.text();
+    const lines = text.split('\n');
+    const words = [];
+    lines.forEach(line => {
+      const match = line.match(/^###\s+([^(]+)/);
+      if (match) {
+        const word = match[1].trim();
+        if (word) words.push(word);
+      }
+    });
+    words.sort((a, b) => b.length - a.length);
+    vocabWords[bank] = words;
+    vocabLoaded[bank] = true;
+  } catch (err) {
+    vocabWords[bank] = [];
+    vocabLoaded[bank] = true;
+  }
+}
+
+function turnOffAllExcept(exceptBank) {
+  Object.keys(VOCAB_CONFIG).forEach(bank => {
+    if (bank !== exceptBank && VOCAB_CONFIG[bank].on) {
+      VOCAB_CONFIG[bank].on = false;
+      const btn = document.getElementById(VOCAB_CONFIG[bank].btnId);
+      btn.style.background = '#f39c12';
+      btn.textContent = `${bank.charAt(0).toUpperCase() + bank.slice(1)}: OFF`;
+      removeVocabHighlight(bank);
+    }
+  });
+}
+
+function toggleVocabHighlight(bank) {
+  const config = VOCAB_CONFIG[bank];
+  config.on = !config.on;
+  const btn = document.getElementById(config.btnId);
+  if (config.on) {
+    turnOffAllExcept(bank);
+    btn.textContent = `${bank.charAt(0).toUpperCase() + bank.slice(1)}: ON`;
+    btn.style.background = '#27ae60';
+    applyVocabHighlight(bank);
+  } else {
+    btn.textContent = `${bank.charAt(0).toUpperCase() + bank.slice(1)}: OFF`;
+    btn.style.background = '#f39c12';
+    removeVocabHighlight(bank);
+  }
+}
+
+function applyVocabHighlight(bank) {
+  if (!vocabLoaded[bank]) {
+    setTimeout(() => { if (VOCAB_CONFIG[bank].on) applyVocabHighlight(bank); }, 200);
+    return;
+  }
+  if (vocabWords[bank].length === 0) return;
+  const config = VOCAB_CONFIG[bank];
+  const paragraphs = document.querySelectorAll('#passagePanel p.paragraph');
+  paragraphs.forEach(para => {
+    let html = para.innerHTML;
+    html = html.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g, '$1');
+    vocabWords[bank].forEach(word => {
+      const escaped = escapeRegExp(word);
+      const regex = new RegExp(`\\b${escaped}\\b`, 'gi');
+      html = html.replace(regex, `<mark style="background: ${config.color};">$&</mark>`);
+    });
+    para.innerHTML = html;
+  });
+}
+
+function removeVocabHighlight(bank) {
+  const paragraphs = document.querySelectorAll('#passagePanel p.paragraph');
+  paragraphs.forEach(para => {
+    let html = para.innerHTML;
+    html = html.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g, '$1');
+    para.innerHTML = html;
+  });
+}
+
+Object.keys(VOCAB_CONFIG).forEach(bank => {
+  loadVocab(bank);
+  const btn = document.getElementById(VOCAB_CONFIG[bank].btnId);
+  if (btn) btn.addEventListener('click', () => toggleVocabHighlight(bank));
+});
+</script>
+      <p class="paragraph" data-para="1">
+        <span class="paragraph-num">[1]</span>
+        About 120 million years ago, in what is now northwestern China, many kinds of birds flocked to a lakeside ecosystem. This dense avian population would have offered a buffet for a small and opportunistic carnivorous dinosaur. Researchers have now discovered fossils of a dinosaur that seems to fit the bill.
+      </p>
+
+      <p class="paragraph" data-para="2">
+        <span class="paragraph-num">[2]</span>
+        Scientists said they had unearthed bones of a Cretaceous Period dinosaur about the size of a barn owl that was closely related to the Velociraptor. The dinosaur, named Jianchangmaensis, was probably covered with feathers and lived on the ground and in trees. It may also have been able to glide like a flying squirrel during ambush attacks on prey, they said.
+      </p>
+
+      <p class="paragraph" data-para="3">
+        <span class="paragraph-num">[3]</span>
+        "Jian would look like a small Velociraptor – the real Velociraptor, not the scaly thing in Jurassic Park – but with long feathers on both the forelimbs and hindlimbs instead of just the former," said palaeontologist Matt Lamanna of Carnegie Museum of Natural History in Pittsburgh, one of the leaders of the study published in the journal Annals of Carnegie Museum.
+      </p>
+
+      <p class="paragraph" data-para="4">
+        <span class="paragraph-num">[4]</span>
+        Jian's bones were found in an area of China's Gansu Province known for its wealth of nicely preserved bird remains. Some of these fossils were broken bones crushed into pellets that resemble those coughed up by present-day owls after they have eaten prey like mice. The researchers suspect that Jian did something similar after eating birds. "Jian is of the correct size and suspected ecology to have been the 'pellet maker,'" Lamanna said.
+      </p>
+
+      <p class="paragraph" data-para="5">
+        <span class="paragraph-num">[5]</span>
+        Jian, named after a flying creature in Chinese mythology, is known from five shoulder and arm bones that are sufficiently different from Microraptor, a close relative that lived in China at roughly the same time. While the remains of Jian are too incomplete to show its broader anatomy, the researchers believe it resembled Microraptor, which had feather-covered arms and legs that gave the appearance of four wings.
+      </p>
+
+      <p class="paragraph" data-para="6">
+        <span class="paragraph-num">[6]</span>
+        All meat-eating dinosaurs belong to a group called theropods. Not all were enormous like Tyrannosaurus or Spinosaurus. There were many smaller ones that may have played the same ecological role as a weasel or wolverine today. Birds evolved from small feathered dinosaurs during the Jurassic Period.
+      </p>
+
+      <p class="paragraph" data-para="7">
+        <span class="paragraph-num">[7]</span>
+        The earliest-known bird, Archaeopteryx, dates to about 150 million years ago. There would have been plenty of birds around to keep Jian well fed, including the pigeon-sized semi-aquatic Gansus, which likely had webbed feet and, like Archaeopteryx, possessed a mouthful of teeth. Some of the other birds known from this ecosystem are Feitianius, Changmaornis, Avimaia, Novavis and Meemannavis.
+      </p>
+
+      <p class="paragraph" data-para="8">
+        <span class="paragraph-num">[8]</span>
+        "Jian was probably an ambush predator, stalking and pouncing on distracted birds that were working on finding their own meals," said palaeontologist Jingmai O'Connor of the Field Museum in Chicago, also one of the study leaders. "We know Microraptor was an opportunistic predator that fed on birds as well as lizards, mammals and even fish. Jian was likely the same, eating whatever it could catch. Dense bird populations may also have been seasonal, forcing Jian to have a diverse diet," O'Connor said.
+      </p>
+
+
+    </section>
+
+    <div class="divider" id="divider" title="Drag to resize"></div>
+
+    <section class="panel questions-panel" id="questionsPanel">
+      <p class="instruction">Read the passage and answer questions 1–15.</p>
+
+      <!-- Q1 -->
+      <div class="question-block" id="q1" data-q="1">
+        <div class="question-label">1. . Where were the fossils of the dinosaur Jian discovered? (1 mark) ________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q1" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q1" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">In northwestern China / Gansu Province.</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q2 -->
+      <div class="question-block" id="q2" data-q="2">
+        <div class="question-label">2. . Choose the word closest in contextual meaning to "opportunistic" (line 1, paragraph 1).</div>
+        <div class="options">
+          <label><input type="radio" name="q2" value="A">A. aggressive</label>
+          <label><input type="radio" name="q2" value="B">B. selective</label>
+          <label><input type="radio" name="q2" value="C">C. adaptable</label>
+          <label><input type="radio" name="q2" value="D">D. dangerous</label>
+        </div>
+
+<div class="inline-solution" id="solution-q2" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">C (adaptable)</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q3 -->
+      <div class="question-block" id="q3" data-q="3">
+        <div class="question-label">3. . What does the word "former" (paragraph 3, line 2) refer to? (1 mark) ________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q3" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q3" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">The forelimbs (the front limbs, as opposed to the hindlimbs).</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q4 -->
+      <div class="question-block" id="q4" data-q="4">
+        <div class="question-label">4. . Decide whether the following statements are True, False, or Not Given according to the passage. (3 marks)</div>
+        <table class="tf-table">
+          <thead><tr><th>Statement</th><th>T</th><th>F</th><th>NG</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>Jianchangmaensis was about the same size as a barn owl.</td>
+              <td><input type="radio" name="q4_a" value="T"></td>
+              <td><input type="radio" name="q4_a" value="F"></td>
+              <td><input type="radio" name="q4_a" value="NG"></td>
+            </tr>
+            <tr>
+              <td>Jian's fossils included a complete skeleton.</td>
+              <td><input type="radio" name="q4_b" value="T"></td>
+              <td><input type="radio" name="q4_b" value="F"></td>
+              <td><input type="radio" name="q4_b" value="NG"></td>
+            </tr>
+            <tr>
+              <td>The earliest-known bird, Archaeopteryx, lived about 120 million years ago.</td>
+              <td><input type="radio" name="q4_c" value="T"></td>
+              <td><input type="radio" name="q4_c" value="F"></td>
+              <td><input type="radio" name="q4_c" value="NG"></td>
+            </tr>
+            <tr>
+              <td>○       ○       ○</td>
+              <td><input type="radio" name="q4_d" value="T"></td>
+              <td><input type="radio" name="q4_d" value="F"></td>
+              <td><input type="radio" name="q4_d" value="NG"></td>
+            </tr>
+            <tr>
+              <td>○       ○       ○</td>
+              <td><input type="radio" name="q4_e" value="T"></td>
+              <td><input type="radio" name="q4_e" value="F"></td>
+              <td><input type="radio" name="q4_e" value="NG"></td>
+            </tr>
+            <tr>
+              <td>○       ○       ○</td>
+              <td><input type="radio" name="q4_f" value="T"></td>
+              <td><input type="radio" name="q4_f" value="F"></td>
+              <td><input type="radio" name="q4_f" value="NG"></td>
+            </tr>
+          </tbody>
+        </table>
+
+<div class="inline-solution" id="solution-q4" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">i) True ii) False iii) False</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q5 -->
+      <div class="question-block" id="q5" data-q="5">
+        <div class="question-label">5. . List TWO physical features of the dinosaur Jian mentioned in the passage. (2 marks) ________________________________________________________________________ ________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q5" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q5" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">Any two: (i) covered with feathers, (ii) about the size of a barn owl, (iii) had long feathers on both forelimbs and hindlimbs, (iv) could glide like a flying squirrel.</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q6 -->
+      <div class="question-block" id="q6" data-q="6">
+        <div class="question-label">6. . In your own words, explain what the phrase "fit the bill" (paragraph 1) means in the context of the passage. (1 mark) ________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q6" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q6" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">"Fit the bill" means to be suitable or exactly right for a particular situation. In this context, it means the dinosaur was the right kind of predator to eat the many birds in the area.</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q7 -->
+      <div class="question-block" id="q7" data-q="7">
+        <div class="question-label">7. . Complete the summary below using ONE word from the passage for each blank. (4 marks)  Jian was a small carnivorous dinosaur from the (i) ________ Period. It was covered with (ii) ________ and could probably glide. Its bones were found in Gansu Province, an area known for well-preserved (iii) ________ remains. Jian was likely an (iv) ________ predator that ate birds and other small animals.</div>
+        <input type="text" class="text-input wide" name="q7" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q7" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">(i) Cretaceous (ii) feathers (iii) bird (iv) ambush</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q8 -->
+      <div class="question-block" id="q8" data-q="8">
+        <div class="question-label">8. . Why do researchers believe Jian may have been the "pellet maker"? Give TWO reasons from the passage. (2 marks) ________________________________________________________________________ ________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q8" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q8" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">(i) Jian's bones were found in an area with broken bird bones crushed into pellets. (ii) Jian was the correct size and had the right ecology to have been the pellet maker.</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q9 -->
+      <div class="question-block" id="q9" data-q="9">
+        <div class="question-label">9. . Explain what a "theropod" is, according to the passage. (1 mark) ________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q9" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q9" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">A theropod is a group of meat-eating dinosaurs.</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q10 -->
+      <div class="question-block" id="q10" data-q="10">
+        <div class="question-label">10. . State ONE difference and ONE similarity between Jian and Microraptor. (2 marks)  Difference: ________________________________________________________________ Similarity: ________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q10" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q10" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">Difference: Jian's shoulder and arm bones are sufficiently different from Microraptor's. / Jian is known from five bones while Microraptor is more completely known. Similarity: Both had feather-covered arms and legs that gave the appearance of four wings. / Both were opportunistic predators.</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q11 -->
+      <div class="question-block" id="q11" data-q="11">
+        <div class="question-label">11. . According to palaeontologist Jingmai O'Connor, what concern did she raise about Jian's food supply? (1 mark) ________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q11" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q11" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">She was concerned that dense bird populations may have been seasonal, forcing Jian to have a diverse diet.</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q12 -->
+      <div class="question-block" id="q12" data-q="12">
+        <div class="question-label">12. . List TWO types of prey that Microraptor (and likely Jian) ate, according to the passage. (1 mark) ________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q12" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q12" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">Birds and lizards (also accepted: mammals, fish).</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q13 -->
+      <div class="question-block" id="q13" data-q="13">
+        <div class="question-label">13. . Define what an "ambush predator" is, based on the passage. (1 mark) ________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q13" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q13" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">An ambush predator is an animal that stalks and pounces on distracted prey by surprise.</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q14 -->
+      <div class="question-block" id="q14" data-q="14">
+        <div class="question-label">14. . What is the author's overall attitude towards the discovery of Jian? (1 mark)</div>
+        <div class="options">
+          <label><input type="radio" name="q14" value="A">A. Fully critical</label>
+          <label><input type="radio" name="q14" value="B">B. Generally supportive</label>
+          <label><input type="radio" name="q14" value="C">C. Completely neutral</label>
+          <label><input type="radio" name="q14" value="D">D. Deeply doubtful</label>
+        </div>
+
+<div class="inline-solution" id="solution-q14" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">B (Generally supportive)</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q15 -->
+      <div class="question-block" id="q15" data-q="15">
+        <div class="question-label">15. . What does the title "Chinese dinosaur had a taste for birds" suggest about Jian's diet? (1 mark) ________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q15" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q15" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">The title suggests that Jian's diet consisted mainly of birds, implying that it hunted and ate them regularly.</div>
+</article>
+</div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="bottom-bar">
+    <div class="palette-section">
+      <span class="palette-label">Question Palette</span>
+      <div class="question-palette" id="questionPalette"></div>
+      <div class="palette-legend">
+        <span class="legend-dot"></span> answered
+      </div>
+    </div>
+    <div class="timer-section" id="timer">00:00</div>
+    <div class="action-buttons">
+      <button class="btn btn-submit" id="btnSubmit">✓ Submit</button>
+      <button class="btn btn-review" id="btnReview">⊞ Review</button>
+      <a class="btn btn-solution" href="solution.html">🔑 Solution</a>
+      <button class="btn btn-reset" id="btnReset">↺ Reset</button>
+    </div>
+  </footer>
+
+  <!-- Submit modal -->
+  <div class="modal-overlay" id="submitModal">
+    <div class="modal">
+      <h3>Are you sure you want to submit?</h3>
+      <p id="submitModalText">You have answered <strong id="answeredCount">0</strong> of 15 questions.</p>
+      <div class="modal-actions">
+        <button class="btn btn-reset" id="btnCancelSubmit">Cancel</button>
+        <button class="btn btn-submit" id="btnConfirmSubmit">Submit and view Answers</button>
+      </div>
+    </div>
+  </div>
+  <!-- Score modal -->
+  <div class="modal-overlay" id="scoreModal">
+    <div class="modal">
+      <h3>Your Results</h3>
+      <div class="score-display">
+        <div class="score-number" id="scoreNumber">0/15</div>
+        <div class="score-label" id="scorePercent">0% correct</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-review" id="btnCloseScore">Review Answers</button>
+        <a class="btn btn-solution" href="solution.html">View Full Solution</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

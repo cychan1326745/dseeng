@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<script>
+let isSpeaking = false;
+let speechEnabled = true;
+
+function loadSpeechSetting() {
+  const saved = localStorage.getItem('dse-speech-enabled');
+  if (saved !== null) {
+    speechEnabled = saved === 'true';
+  }
+  updateSpeechButton();
+}
+
+function updateSpeechButton() {
+  const btn = document.getElementById('btnToggleSpeech');
+  if (btn) {
+    btn.textContent = speechEnabled ? 'Speech: ON' : 'Speech: OFF';
+    btn.style.background = speechEnabled ? 'rgba(40, 167, 69, 0.3)' : 'rgba(220, 53, 69, 0.3)';
+  }
+}
+
+function toggleSpeech() {
+  speechEnabled = !speechEnabled;
+  localStorage.setItem('dse-speech-enabled', speechEnabled);
+  updateSpeechButton();
+  if (isSpeaking) {
+    speechSynthesis.cancel();
+    isSpeaking = false;
+  }
+}
+
+function readWord(text){
+  if(!speechEnabled) return;
+  if(isSpeaking) speechSynthesis.cancel();
+  let utter = new SpeechSynthesisUtterance(text);
+  utter.lang = "en-US";
+  utter.rate = 0.9;
+  isSpeaking = true;
+  utter.onend = ()=> isSpeaking = false;
+  speechSynthesis.speak(utter);
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  loadSpeechSetting();
+  const btn = document.getElementById('btnToggleSpeech');
+  if (btn) btn.addEventListener('click', toggleSpeech);
+
+  const passage = document.getElementById('passagePanel');
+  if (!passage) return;
+
+  passage.addEventListener('click', function(e){
+    if(!speechEnabled) return;
+    if (e.target.closest('a, button, input, label, select, textarea')) return;
+
+    const range = document.caretRangeFromPoint(e.clientX, e.clientY);
+    if (!range) return;
+    const node = range.startContainer;
+    if (node.nodeType !== Node.TEXT_NODE) return;
+    const offset = range.startOffset;
+    const text = node.textContent;
+
+    let start = offset;
+    let end = offset;
+    while (start > 0 && /[a-zA-Z\u00C0-\u024F'ʼ-]/.test(text[start - 1])) start--;
+    while (end < text.length && /[a-zA-Z\u00C0-\u024F'ʼ-]/.test(text[end])) end++;
+    if (start === end) return;
+
+    const word = text.slice(start, end);
+    if (/^\d+$/.test(word)) return;
+
+    readWord(word);
+
+    const wordRange = document.createRange();
+    wordRange.setStart(node, start);
+    wordRange.setEnd(node, end);
+    const highlight = document.createElement('mark');
+    highlight.style.cssText = 'background:#ffd54f;border-radius:3px;transition:background .3s';
+    try {
+      wordRange.surroundContents(highlight);
+      setTimeout(() => {
+        const parent = highlight.parentNode;
+        if (parent) {
+          while (highlight.firstChild) parent.insertBefore(highlight.firstChild, highlight);
+          parent.removeChild(highlight);
+          parent.normalize();
+        }
+      }, 500);
+    } catch(_) {}
+  });
+});
+</script>
+
+<style>
+#passagePanel .paragraph { cursor: default; }
+#passagePanel .paragraph * { cursor: pointer; }
+</style>
+
+<meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Small Teen Actions To Protect Our Planet - DSE 2012 Part A</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-brand"><span>DSE</span> 2012 Part A Reading Practice</div>
+    <nav class="header-nav">
+      <a href="index.html" class="active">Reading</a>
+      <a href="solution.html">Solution</a>
+    </nav>
+    <div class="header-tools">
+      <button type="button" id="btnToggleSpeech">Speech: ON</button>
+      <button type="button" id="btnLargerText">Larger Text</button>
+      <button type="button" onclick="window.print()">Print</button>
+    </div>
+  </header>
+
+  <div class="main-container" id="mainContainer">
+    <section class="panel passage-panel" id="passagePanel">
+      <h2 class="passage-title">Small Teen Actions To Protect Our Planet</h2>
+      <p class="passage-subtitle">Text 3 — Nat Geo Kids Adapted B2 Reading</p>
+      <div class="passage-illustration">🌍 ♻️ 🌱</div>
+
+      <div style="text-align: center; margin: 15px 0; display: flex;">
+        <button id="btnToggleKelly" style="flex: 1; padding: 8px 12px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; margin: 0 5px;">
+          Kelly: OFF
+        </button>
+        <button id="btnToggleJenny" style="flex: 1; padding: 8px 12px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; margin: 0 5px;">
+          Jenny: OFF
+        </button>
+        <button id="btnToggleNash" style="flex: 1; padding: 8px 12px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; margin: 0 5px;">
+          Nash: OFF
+        </button>
+      </div>
+
+<script>
+const VOCAB_CONFIG = {
+  kelly: { btnId: 'btnToggleKelly', file: '../../kellywordbank-single.md', color: 'rgba(52, 152, 219, 0.3)', on: false },
+  jenny: { btnId: 'btnToggleJenny', file: '../../jennywordbank-single.md', color: 'rgba(155, 89, 182, 0.3)', on: false },
+  nash: { btnId: 'btnToggleNash', file: '../../nashwordbank-single.md', color: 'rgba(230, 126, 34, 0.3)', on: false }
+};
+let vocabLoaded = { kelly: false, jenny: false, nash: false };
+let vocabWords = { kelly: [], jenny: [], nash: [] };
+function escapeRegExp(string) { return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+async function loadVocab(bank) {
+  try {
+    const config = VOCAB_CONFIG[bank];
+    const response = await fetch(`${config.file}?cache-bust=${new Date().getTime()}`);
+    const text = await response.text();
+    const words = [];
+    text.split('\n').forEach(line => {
+      const match = line.match(/^###\s+([^(]+)/);
+      if (match) { const w = match[1].trim(); if (w) words.push(w); }
+    });
+    words.sort((a, b) => b.length - a.length);
+    vocabWords[bank] = words; vocabLoaded[bank] = true;
+  } catch(err) { vocabWords[bank] = []; vocabLoaded[bank] = true; }
+}
+function turnOffAllExcept(exceptBank) {
+  Object.keys(VOCAB_CONFIG).forEach(bank => {
+    if (bank !== exceptBank && VOCAB_CONFIG[bank].on) {
+      VOCAB_CONFIG[bank].on = false;
+      const btn = document.getElementById(VOCAB_CONFIG[bank].btnId);
+      btn.style.background = '#f39c12';
+      btn.textContent = bank.charAt(0).toUpperCase() + bank.slice(1) + ': OFF';
+      removeVocabHighlight(bank);
+    }
+  });
+}
+function toggleVocabHighlight(bank) {
+  const config = VOCAB_CONFIG[bank];
+  config.on = !config.on;
+  const btn = document.getElementById(config.btnId);
+  if (config.on) {
+    turnOffAllExcept(bank);
+    btn.textContent = bank.charAt(0).toUpperCase() + bank.slice(1) + ': ON';
+    btn.style.background = '#27ae60';
+    applyVocabHighlight(bank);
+  } else {
+    btn.textContent = bank.charAt(0).toUpperCase() + bank.slice(1) + ': OFF';
+    btn.style.background = '#f39c12';
+    removeVocabHighlight(bank);
+  }
+}
+function applyVocabHighlight(bank) {
+  if (!vocabLoaded[bank]) { setTimeout(() => { if (VOCAB_CONFIG[bank].on) applyVocabHighlight(bank); }, 200); return; }
+  if (vocabWords[bank].length === 0) return;
+  const config = VOCAB_CONFIG[bank];
+  document.querySelectorAll('#passagePanel p.paragraph').forEach(para => {
+    let html = para.innerHTML.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g, '$1');
+    vocabWords[bank].forEach(word => {
+      const escaped = escapeRegExp(word);
+      html = html.replace(new RegExp(`\\b${escaped}\\b`, 'gi'), `<mark style="background: ${config.color};">$&</mark>`);
+    });
+    para.innerHTML = html;
+  });
+}
+function removeVocabHighlight(bank) {
+  document.querySelectorAll('#passagePanel p.paragraph').forEach(para => {
+    para.innerHTML = para.innerHTML.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g, '$1');
+  });
+}
+Object.keys(VOCAB_CONFIG).forEach(bank => { loadVocab(bank); const btn = document.getElementById(VOCAB_CONFIG[bank].btnId); if (btn) btn.addEventListener('click', () => toggleVocabHighlight(bank)); });
+</script>
+      <p class="paragraph" data-para="1">
+        <span class="paragraph-num">[1]</span>
+        Many teenagers think single personal choices cannot fix global environmental crises such as climate change, plastic pollution and wildlife loss. They believe only governments and large companies hold enough power to make real change. However, environmental scientists prove thousands of repeated small daily actions from young people add up to huge positive influence on Earth's future. Every student can join simple eco habits without spending extra money or sacrificing study time.
+      </p>
+      <p class="paragraph" data-para="2">
+        <span class="paragraph-num">[2]</span>
+        The first easy area to adjust is home energy use. Household electrical devices left on standby mode secretly consume constant electricity; experts name these wasteful machines "vampire loads". Students can switch all chargers, game consoles and heaters off fully from wall sockets when not needed. On sunny days, hang washed clothes outside to air-dry instead of running power-hungry electric tumble dryers. These tiny moves greatly cut household carbon output each month.
+      </p>
+      <p class="paragraph" data-para="3">
+        <span class="paragraph-num">[3]</span>
+        Water waste is another common unseen problem in family homes. Long showers and running taps while brushing teeth waste millions of litres of clean fresh water every year across cities. Young people can limit showers to four minutes maximum and turn off taps completely during tooth cleaning. Schools can also install low-flow water taps in washrooms to reduce overall campus water consumption for all students and staff.
+      </p>
+      <p class="paragraph" data-para="4">
+        <span class="paragraph-num">[4]</span>
+        Transport choices create big carbon footprints for ordinary families. Private petrol cars release high volumes of greenhouse gas every trip. Teenagers can choose walking, cycling or public buses and MTR trains for short and medium-distance journeys. When families must take long car trips, organise carpool groups with classmates to cut the number of separate vehicles on roads.
+      </p>
+      <p class="paragraph" data-para="5">
+        <span class="paragraph-num">[5]</span>
+        Reducing single-use plastic is the third key eco habit. Disposable water bottles, snack wrappers and shopping bags all take hundreds of years to break down once discarded. Students can carry reusable metal bottles and cloth bags every day, and select unpackaged fresh fruit and vegetables from markets instead of pre-wrapped processed snacks. Joining weekend beach or park clean-up volunteer groups also removes tons of plastic rubbish from natural habitats.
+      </p>
+      <p class="paragraph" data-para="6">
+        <span class="paragraph-num">[6]</span>
+        Teenagers can also spread environmental knowledge to create wider change. Share eco tips with family members and classmates during daily chats, give short student presentations in general studies lessons, or support youth environmental clubs at school. More people learning simple green habits multiplies the positive environmental effect rapidly.
+      </p>
+      <p class="paragraph" data-para="7">
+        <span class="paragraph-num">[7]</span>
+        Global climate issues seem overwhelming at first glance, but youth power is far stronger than many imagine. A large group of teenagers all practising small sustainable daily routines together can slow pollution and global heating, protecting forests, oceans and wild animals for future generations.
+      </p>
+
+    </section>
+
+    <div class="divider" id="divider" title="Drag to resize"></div>
+
+    <section class="panel questions-panel" id="questionsPanel">
+      <p class="instruction">Read Text 3 and answer questions 1–15. (20 marks)</p>
+
+      <div class="question-block" id="q1" data-q="1">
+        <div class="question-label">1. What mistaken idea do many teenagers hold about individual environmental actions (paragraph 1)?</div>
+        <input type="text" class="text-input wide" name="q1" placeholder="Your answer">
+<div class="inline-solution" id="solution-q1" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">1</span> Short Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Suggested answer: They believe individual small daily actions cannot solve large global environmental problems.</div>
+      <p class="explanation">Paragraph 1 states teenagers think "single personal choices cannot fix global environmental crises."</p>
+      <p class="explanation-zh">青少年認為個人小行動無法解決全球環境危機。</p>
+      <div class="passage-ref">[1] Many teenagers think single personal choices cannot fix global environmental crises...</div>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q2" data-q="2">
+        <div class="question-label">2. Choose the word closest in meaning to "vampire loads" (line 6)</div>
+        <div class="options">
+          <label><input type="radio" name="q2" value="A"> A. energy-wasting standby electrical machines</label>
+          <label><input type="radio" name="q2" value="B"> B. old broken game consoles</label>
+          <label><input type="radio" name="q2" value="C"> C. solar power equipment</label>
+          <label><input type="radio" name="q2" value="D"> D. outdoor drying racks</label>
+        </div>
+<div class="inline-solution" id="solution-q2" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">2</span> Multiple Choice <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Answer: A</div>
+      <p class="explanation">"Vampire loads" refers to electrical devices that secretly consume electricity on standby mode.</p>
+      <p class="explanation-zh">「Vampire loads」指待機模式下持續耗電的電器。</p>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q3" data-q="3">
+        <div class="question-label">3. What two home energy-saving habits are suggested in paragraph 2?</div>
+        <input type="text" class="text-input wide" name="q3" placeholder="Your answer">
+<div class="inline-solution" id="solution-q3" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">3</span> Short Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Suggested answer: Switch off unused electrical devices fully; hang clothes outdoors to dry without dryers.</div>
+      <p class="explanation">Paragraph 2 suggests: switch devices off from wall sockets and air-dry clothes.</p>
+      <p class="explanation-zh">第2段建議：完全關掉電器；室外晾衣代替乾衣機。</p>
+      <div class="passage-ref">[2] Students can switch all chargers... off fully from wall sockets... hang washed clothes outside to air-dry...</div>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q4" data-q="4">
+        <div class="question-label">4. Decide True / False / Not Given (3 marks)</div>
+        <table class="tf-table">
+          <thead><tr><th>Statement</th><th>T</th><th>F</th><th>NG</th></tr></thead>
+          <tbody>
+            <tr><td>(i) Short four-minute showers waste more clean water than long baths.</td><td><input type="radio" name="q4i" value="T"></td><td><input type="radio" name="q4i" value="F"></td><td><input type="radio" name="q4i" value="NG"></td></tr>
+            <tr><td>(ii) Carpooling reduces the total number of cars travelling on roads.</td><td><input type="radio" name="q4ii" value="T"></td><td><input type="radio" name="q4ii" value="F"></td><td><input type="radio" name="q4ii" value="NG"></td></tr>
+            <tr><td>(iii) Plastic items break down within one year after being thrown away.</td><td><input type="radio" name="q4iii" value="T"></td><td><input type="radio" name="q4iii" value="F"></td><td><input type="radio" name="q4iii" value="NG"></td></tr>
+          </tbody>
+        </table>
+<div class="inline-solution" id="solution-q4" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">4</span> True / False / Not Given <span class="marks-badge">3 marks</span></h3>
+      <div class="answer-text">(i) Not Given &nbsp; (ii) True &nbsp; (iii) False</div>
+      <p class="explanation">(i) No comparison of showers vs baths. (ii) Carpooling "cut the number of separate vehicles." (iii) Plastic takes "hundreds of years."</p>
+      <p class="explanation-zh">(i) 未提及 (ii) 真 (iii) 假——塑膠需要數百年才能分解。</p>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q5" data-q="5">
+        <div class="question-label">5. Name three single-use plastic items mentioned in paragraph 5</div>
+        <input type="text" class="text-input wide" name="q5" placeholder="Your answer">
+<div class="inline-solution" id="solution-q5" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">5</span> Short Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Suggested answer: Disposable water bottles, plastic snack wrappers, single-use shopping bags</div>
+      <p class="explanation">Paragraph 5 lists these three items.</p>
+      <p class="explanation-zh">第5段列舉：即棄水樽、零食包裝袋、購物膠袋。</p>
+      <div class="passage-ref">[5] Disposable water bottles, snack wrappers and shopping bags...</div>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q6" data-q="6">
+        <div class="question-label">6. What school equipment can cut campus water waste (paragraph 3)?</div>
+        <input type="text" class="text-input" name="q6" placeholder="Your answer">
+<div class="inline-solution" id="solution-q6" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">6</span> Short Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Suggested answer: Low-flow water taps in school washrooms</div>
+      <p class="explanation">Paragraph 3: "install low-flow water taps in washrooms."</p>
+      <p class="explanation-zh">安裝低流量水龍頭。</p>
+      <div class="passage-ref">[3] Schools can also install low-flow water taps in washrooms...</div>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q7" data-q="7">
+        <div class="question-label">7. Find one word in paragraph 5 meaning items that can be used repeatedly instead of thrown away</div>
+        <input type="text" class="text-input" name="q7" placeholder="Your answer">
+<div class="inline-solution" id="solution-q7" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">7</span> Find Word <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Answer: reusable</div>
+      <p class="explanation">Paragraph 5: "carry reusable metal bottles and cloth bags."</p>
+      <p class="explanation-zh">"Reusable" 指可重複使用。</p>
+      <div class="passage-ref">[5] Students can carry reusable metal bottles and cloth bags every day...</div>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q8" data-q="8">
+        <div class="question-label">8. Complete the summary with ONE word taken from the passage (4 marks)</div>
+        <div class="flow-chart">
+          <p>Many teens underestimate small eco actions, yet daily energy, water and transport choices add up to big carbon cuts. Turn off standby "vampire" appliances and air-dry laundry to lower home (i) <input type="text" class="text-input short" name="q8i" placeholder="Your answer">.</p>
+          <p>Walk, cycle or carpool to shrink travel footprints. Carry reusable containers and join rubbish (ii) <input type="text" class="text-input short" name="q8ii" placeholder="Your answer"> groups to beat plastic waste.</p>
+          <p>Sharing green knowledge multiplies environmental (iii) <input type="text" class="text-input short" name="q8iii" placeholder="Your answer">, and teen collective habits slow global (iv) <input type="text" class="text-input short" name="q8iv" placeholder="Your answer">.</p>
+        </div>
+<div class="inline-solution" id="solution-q8" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">8</span> Summary — ONE word each <span class="marks-badge">4 marks</span></h3>
+      <div class="answer-text">(i) carbon emissions &nbsp; (ii) clean-up &nbsp; (iii) effects &nbsp; (iv) heating</div>
+      <p class="explanation">(i) para 2 (ii) para 5 (iii) para 6 (iv) para 7</p>
+      <p class="explanation-zh">各詞均須出自文中。</p>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q9" data-q="9">
+        <div class="question-label">9. What three low-carbon travel options for students are listed in paragraph 4?</div>
+        <input type="text" class="text-input wide" name="q9" placeholder="Your answer">
+<div class="inline-solution" id="solution-q9" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">9</span> Short Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Suggested answer: Walking, riding bicycles, taking public transport (buses / MTR)</div>
+      <p class="explanation">Paragraph 4 lists these options.</p>
+      <p class="explanation-zh">第4段列出：步行、騎單車、乘搭公共巴士或港鐵。</p>
+      <div class="passage-ref">[4] Teenagers can choose walking, cycling or public buses and MTR trains...</div>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q10" data-q="10">
+        <div class="question-label">10. Give one difference and one similarity between reusable cloth bags and disposable plastic bags (2 marks)</div>
+        <p>(i) Difference: <input type="text" class="text-input wide" name="q10i" placeholder="Your answer"></p>
+        <p>(ii) Similarity: <input type="text" class="text-input wide" name="q10ii" placeholder="Your answer"></p>
+<div class="inline-solution" id="solution-q10" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">10</span> Difference &amp; Similarity <span class="marks-badge">2 marks</span></h3>
+      <div class="answer-text">(i) Difference: Cloth bags can be reused many times; plastic bags are single-use waste.<br>(ii) Similarity: Both are used to carry shopping goods.</div>
+      <p class="explanation">Difference from para 5. Similarity: both carry items.</p>
+      <p class="explanation-zh">差異：布袋可重複使用，膠袋即棄。相似：兩者都用來攜帶物品。</p>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q11" data-q="11">
+        <div class="question-label">11. What three ways can teens spread environmental awareness to more people (paragraph 6)?</div>
+        <input type="text" class="text-input wide" name="q11" placeholder="Your answer">
+<div class="inline-solution" id="solution-q11" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">11</span> Short Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Suggested answer: Talk about eco tips with family and peers; give class environmental presentations; join school green clubs.</div>
+      <p class="explanation">Paragraph 6 lists three ways.</p>
+      <p class="explanation-zh">第6段列出三種方式。</p>
+      <div class="passage-ref">[6] Share eco tips with family members and classmates... give short student presentations... support youth environmental clubs at school.</div>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q12" data-q="12">
+        <div class="question-label">12. What food shopping choice cuts plastic packaging waste (paragraph 5)?</div>
+        <input type="text" class="text-input wide" name="q12" placeholder="Your answer">
+<div class="inline-solution" id="solution-q12" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">12</span> Short Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Suggested answer: Buy unpackaged fresh fruit and vegetables instead of wrapped processed snacks.</div>
+      <p class="explanation">Paragraph 5: "select unpackaged fresh fruit and vegetables."</p>
+      <p class="explanation-zh">選擇無包裝的新鮮蔬果。</p>
+      <div class="passage-ref">[5] ...select unpackaged fresh fruit and vegetables from markets instead of pre-wrapped processed snacks.</div>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q13" data-q="13">
+        <div class="question-label">13. Why are standby electrical devices called "vampire loads"?</div>
+        <input type="text" class="text-input wide" name="q13" placeholder="Your answer">
+<div class="inline-solution" id="solution-q13" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">13</span> Short Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Suggested answer: They secretly waste electricity constantly even when people think they are turned off.</div>
+      <p class="explanation">Paragraph 2: "secretly consume constant electricity" like vampires.</p>
+      <p class="explanation-zh">待機模式下的電器像吸血鬼一樣暗中持續耗電。</p>
+      <div class="passage-ref">[2] Household electrical devices left on standby mode secretly consume constant electricity...</div>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q14" data-q="14">
+        <div class="question-label">14. What is the writer's overall attitude toward teenagers' environmental power?</div>
+        <div class="options">
+          <label><input type="radio" name="q14" value="A"> A. Fully pessimistic</label>
+          <label><input type="radio" name="q14" value="B"> B. Generally hopeful</label>
+          <label><input type="radio" name="q14" value="C"> C. Completely neutral</label>
+          <label><input type="radio" name="q14" value="D"> D. Deeply doubtful</label>
+        </div>
+<div class="inline-solution" id="solution-q14" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">14</span> Multiple Choice <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Answer: B — Generally hopeful</div>
+      <p class="explanation">The writer strongly believes in youth power: "youth power is far stronger than many imagine."</p>
+      <p class="explanation-zh">作者堅信青年力量，語氣鼓勵且樂觀。</p>
+      <div class="passage-ref">[7] ...youth power is far stronger than many imagine.</div>
+  </div>
+</div>
+      </div>
+
+      <div class="question-block" id="q15" data-q="15">
+        <div class="question-label">15. What does the title "Small Teen Actions To Protect Our Planet" imply about climate solutions?</div>
+        <input type="text" class="text-input wide" name="q15" placeholder="Your answer">
+<div class="inline-solution" id="solution-q15" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">15</span> Short Answer <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Suggested answer: Big global environmental problems can be improved by lots of small daily sustainable choices made by young people.</div>
+      <p class="explanation">The title emphasises "Small" and "Teen" — small actions by young people can make a difference.</p>
+      <p class="explanation-zh">標題強調小行動和青少年也能帶來改變。</p>
+  </div>
+</div>
+      </div>
+
+      <h4 class="end-marker">— End of the Test —</h4>
+      <p class="submit-hint">Please Submit to view your score, solution and explanations.</p>
+    </section>
+  </div>
+
+  <footer class="bottom-bar">
+    <div class="palette-section">
+      <span class="palette-label">Question Palette</span>
+      <div class="question-palette" id="questionPalette"></div>
+      <div class="palette-legend"><span class="legend-dot"></span> answered</div>
+    </div>
+    <div class="timer-section" id="timer">00:00</div>
+    <div class="action-buttons">
+      <button class="btn btn-submit" id="btnSubmit">✓ Submit</button>
+      <button class="btn btn-review" id="btnReview">⊞ Review</button>
+      <a class="btn btn-solution" href="solution.html">🔑 Solution</a>
+      <button class="btn btn-reset" id="btnReset">↺ Reset</button>
+    </div>
+  </footer>
+
+  <div class="modal-overlay" id="submitModal">
+    <div class="modal">
+      <h3>Are you sure you want to submit?</h3>
+      <p id="submitModalText">You have answered <strong id="answeredCount">0</strong> of 15 questions.</p>
+      <div class="modal-actions">
+        <button class="btn btn-reset" id="btnCancelSubmit">Cancel</button>
+        <button class="btn btn-submit" id="btnConfirmSubmit">Submit and view Answers</button>
+      </div>
+    </div>
+  </div>
+  <div class="modal-overlay" id="scoreModal">
+    <div class="modal">
+      <h3>Your Results</h3>
+      <div class="score-display">
+        <div class="score-number" id="scoreNumber">0/15</div>
+        <div class="score-label" id="scorePercent">0% correct</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-review" id="btnCloseScore">Review Answers</button>
+        <a class="btn btn-solution" href="solution.html">View Full Solution</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
