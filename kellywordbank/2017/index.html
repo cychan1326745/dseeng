@@ -137,102 +137,173 @@ document.addEventListener('DOMContentLoaded', function(){
       <p class="passage-subtitle">Text 1 — HKDSE English Language Paper 1 (Reading) Part A</p>
       <div class="passage-illustration">♻️ 🌎 🗑️</div>
 
-      <div style="margin-top: 12px; text-align: center;">
-        <button id="toggleVocabHighlight" style="background: #f39c12; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 1em;">kelly生字庫: OFF</button>
+      <div style="text-align: center; margin: 15px 0; display: flex;">
+        <button id="btnToggleKelly" style="flex: 1; padding: 8px 12px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; margin: 0 5px;">
+          Kelly: OFF
+        </button>
+        <button id="btnToggleJenny" style="flex: 1; padding: 8px 12px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; margin: 0 5px;">
+          Jenny: OFF
+        </button>
+        <button id="btnToggleNash" style="flex: 1; padding: 8px 12px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; margin: 0 5px;">
+          Nash: OFF
+        </button>
       </div>
-      <script>
-      let vocabHighlightOn = false;
-      let vocabWords = [];
 
-      // Auto-load vocabulary from kellywordbank-single.md on page load
-      async function loadVocab() {
-          try {
-              // Add cache-bust every time to get latest version
-              const vocabUrl = '../kellywordbank-single.md?cache-bust=' + new Date().getTime();
-              const response = await fetch(vocabUrl);
-              const text = await response.text();
-              // Extract all words from lines starting with ###
-              const lines = text.split('\n');
-              vocabWords = lines
-                  .filter(line => line.startsWith('### '))
-                  .map(line => {
-                      // Extract the word part: "### word  (pos)... → "word"
-                      const match = line.match(/^###\s+([^(]+)/);
-                      return match ? match[1].trim() : null;
-                  })
-                  .filter(word => word !== null)
-                  // Sort by length descending so longer phrases match first
-                  .sort((a, b) => b.length - a.length);
-              console.log('Loaded vocab:', vocabWords.length + ' words from kellywordbank-single.md', vocabWords);
-          } catch (err) {
-              console.error('Failed to load vocabulary:', err);
-              // Fallback with at least the current words
-              vocabWords = ["protecting","destined"];
-              vocabWords.sort((a, b) => b.length - a.length);
-              console.log('Using fallback vocab:', vocabWords.length + ' words', vocabWords);
-          }
-      }
+<script>
+// Article Vocabulary Highlight Toggle - Multiple vocabulary banks
+// Three independent banks with mutually exclusive toggle, different colors
 
-      async function toggleVocabHighlight() {
-          vocabHighlightOn = !vocabHighlightOn;
-          const btn = document.getElementById('toggleVocabHighlight');
-          if (vocabHighlightOn) {
-              // Wait for vocab to finish loading if not loaded yet
-              if (vocabWords.length === 0) {
-                  btn.textContent = 'Loading vocab...';
-                  await loadVocab();
-              }
-              btn.textContent = 'kelly生字庫: ON';
-              btn.style.background = '#27ae60';
-              applyVocabHighlight();
-          } else {
-              btn.textContent = 'kelly生字庫: OFF';
-              btn.style.background = '#f39c12';
-              removeVocabHighlight();
-          }
-      }
-      
-      function applyVocabHighlight() {
-          // First clear existing highlights from the whole paragraph HTML, then re-apply
-          const paragraphs = document.querySelectorAll('#passagePanel p.paragraph');
-          paragraphs.forEach(function(para) {
-              // Get current HTML and strip all existing marks
-              let html = para.innerHTML;
-              // Remove all <mark> tags but keep content
-              html = html.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g, '$1');
-              
-              // Add highlights for all vocabulary words
-              vocabWords.forEach(function(word) {
-                  const regex = new RegExp('\\b' + escapeRegExp(word) + '\\b', 'gi');
-                  html = html.replace(regex, '<mark style="background: rgba(52, 152, 219, 0.3);">$&</mark>');
-              });
-              
-              para.innerHTML = html;
-          });
-      }
-      
-      function removeVocabHighlight() {
-          const marks = document.querySelectorAll('#passagePanel mark');
-          marks.forEach(function(mark) {
-              // Unwrap: move children out
-              const parent = mark.parentNode;
-              while (mark.firstChild) {
-                  parent.insertBefore(mark.firstChild, mark);
-              }
-              parent.removeChild(mark);
-              parent.normalize();
-          });
-      }
-      
-      function escapeRegExp(string) {
-          return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      }
-      
-      // Load vocab when page starts
-      loadVocab();
-      document.getElementById('toggleVocabHighlight').addEventListener('click', toggleVocabHighlight);
-      </script>
+const VOCAB_CONFIG = {
+  kelly: {
+    btnId: 'btnToggleKelly',
+    file: '../kellywordbank-single.md',
+    color: 'rgba(52, 152, 219, 0.3)', // blue
+    on: false
+  },
+  jenny: {
+    btnId: 'btnToggleJenny',
+    file: '../jennywordbank-single.md',
+    color: 'rgba(155, 89, 182, 0.3)', // purple
+    on: false
+  },
+  nash: {
+    btnId: 'btnToggleNash',
+    file: '../nashwordbank-single.md',
+    color: 'rgba(231, 76, 60, 0.3)', // red
+    on: false
+  }
+};
 
+let vocabLoaded = {
+  kelly: false,
+  jenny: false,
+  nash: false
+};
+let vocabWords = {
+  kelly: [],
+  jenny: [],
+  nash: []
+};
+
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Load vocabulary for a specific bank
+async function loadVocab(bank) {
+  try {
+    const config = VOCAB_CONFIG[bank];
+    const response = await fetch(`${config.file}?cache-bust=${new Date().getTime()}`);
+    const text = await response.text();
+    const lines = text.split('\n');
+    const words = [];
+
+    lines.forEach(line => {
+      const match = line.match(/^###\s+([^(]+)/);
+      if (match) {
+        const word = match[1].trim();
+        if (word) words.push(word);
+      }
+    });
+
+    // Sort by length descending - longer phrases match first
+    words.sort((a, b) => b.length - a.length);
+    vocabWords[bank] = words;
+    vocabLoaded[bank] = true;
+    console.log(`Loaded ${vocabWords[bank].length} vocabulary words for ${bank}`);
+  } catch (err) {
+    console.error(`Failed to load vocabulary bank ${bank}:`, err);
+    vocabWords[bank] = [];
+    vocabLoaded[bank] = true;
+  }
+}
+
+// Turn off all other banks when one is turned on
+function turnOffAllExcept(exceptBank) {
+  Object.keys(VOCAB_CONFIG).forEach(bank => {
+    if (bank !== exceptBank && VOCAB_CONFIG[bank].on) {
+      VOCAB_CONFIG[bank].on = false;
+      const btn = document.getElementById(VOCAB_CONFIG[bank].btnId);
+      btn.style.background = '#f39c12';
+      btn.textContent = `${bank.charAt(0).toUpperCase() + bank.slice(1)}: OFF`;
+      removeVocabHighlight(bank);
+    }
+  });
+}
+
+function toggleVocabHighlight(bank) {
+  const config = VOCAB_CONFIG[bank];
+  config.on = !config.on;
+  const btn = document.getElementById(config.btnId);
+
+  if (config.on) {
+    // Turn off all others
+    turnOffAllExcept(bank);
+    btn.textContent = `${bank.charAt(0).toUpperCase() + bank.slice(1)}: ON`;
+    btn.style.background = '#27ae60';
+    applyVocabHighlight(bank);
+  } else {
+    btn.textContent = `${bank.charAt(0).toUpperCase() + bank.slice(1)}: OFF`;
+    btn.style.background = '#f39c12';
+    removeVocabHighlight(bank);
+  }
+}
+
+function applyVocabHighlight(bank) {
+  if (!vocabLoaded[bank]) {
+    setTimeout(() => {
+      if (VOCAB_CONFIG[bank].on) applyVocabHighlight(bank);
+    }, 200);
+    return;
+  }
+
+  if (vocabWords[bank].length === 0) {
+    console.log(`No vocabulary words loaded for ${bank}`);
+    return;
+  }
+
+  const config = VOCAB_CONFIG[bank];
+  const paragraphs = document.querySelectorAll('#passagePanel p.paragraph');
+  
+  console.log(`${bank}: found ${paragraphs.length} paragraphs, ${vocabWords[bank].length} words`);
+
+  paragraphs.forEach(para => {
+    let html = para.innerHTML;
+
+    // First remove any existing highlights
+    html = html.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g, '$1');
+
+    // Apply highlights for this vocab bank
+    vocabWords[bank].forEach(word => {
+      const escaped = escapeRegExp(word);
+      const regex = new RegExp(`\\b${escaped}\\b`, 'gi');
+      html = html.replace(regex, `<mark style="background: ${config.color};">$&</mark>`);
+    });
+
+    para.innerHTML = html;
+  });
+}
+
+function removeVocabHighlight(bank) {
+  const paragraphs = document.querySelectorAll('#passagePanel p.paragraph');
+  paragraphs.forEach(para => {
+    let html = para.innerHTML;
+    html = html.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g, '$1');
+    para.innerHTML = html;
+  });
+}
+
+// Initialize - load all vocabularies
+Object.keys(VOCAB_CONFIG).forEach(bank => {
+  loadVocab(bank);
+  const btn = document.getElementById(VOCAB_CONFIG[bank].btnId);
+  if (btn) {
+    btn.addEventListener('click', () => toggleVocabHighlight(bank));
+  }
+});
+</script>
+
+      <p class="paragraph" data-para="1">
 
       <p class="paragraph" data-para="1">
         <span class="paragraph-num">[1]</span>

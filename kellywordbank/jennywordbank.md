@@ -3,26 +3,6 @@
 
 ---
 
-### mass-produced  (adj) <-- Added on 2026-07-09
-文章分類：general
-解釋: 批量生產的；大量生產的
-
-**[深度解析 & 語境應用]**
-英文定義: Produced in large quantities by using machinery in a factory.
-重點記憶點: DSE閱讀中工業、製造業話題常考，表示「大量機器批量生產」，對應手工生產 hand-made。快時尚行業就是mass-produced clothes。
-建議用法: 通常放在名詞前面：mass-produced clothes, mass-produced goods.
-
-B1 / B2 (例句):Fast fashion describes cheap, mass-produced clothes that copy the latest runway trends and flood high-street shops every week. (快時尚就是廉價批量生產的衣服，複製最新伸展台潮流，每周湧入高街商店。)
-詞組搭配 (Collocations): mass-produced clothing, mass-produced goods, mass-produced products
-
-同義詞 (Synonyms): mass-market, quantity-produced
-反義詞 (Antonyms): hand-made, custom-made
-
----
-
-
----
-
 ### boost  (v/n) <-- Added on 2026-07-09
 文章分類：general-vocab
 解釋: 促進；提高；推動；增強
@@ -388,5 +368,149 @@ B1 / B2 (例句):The teachers met to discuss the new exam schedule for the comin
 
 同義詞 (Synonyms): debate, talk about, converse
 反義詞 (Antonyms): agree, decide, conclude
+
+---
+
+### irreplaceable  (adj) <-- Added on 2026-07-15
+文章分類：environment
+解釋: 不可替代的；無法替換的
+
+**[深度解析 & 語境應用]**
+英文定義: Too special or unique to be replaced by something else.
+重點記憶點: DSE環境話題常用：irreplaceable species 不可替代的物種，irreplaceable ecosystem 無法取代的生態系統。
+
+B1 / B2 (例句):Many wild pollinators play an irreplaceable role in maintaining natural ecosystems.
+詞組搭配 (Collocations): irreplaceable role, irreplaceable resource, irreplaceable species
+
+同義詞 (Synonyms): unique, unmatched, indispensable
+反義詞 (Antonyms): replaceable, interchangeable
+
+---
+
+### pollinators  (n) <-- Added on 2026-07-15
+文章分類：environment
+解釋: 傳粉者；授粉動物
+
+**[深度解析 & 語境應用]**
+英文定義: Animals that carry pollen from one flower to another, enabling plants to produce seeds.
+重點記憶點: DSE環境/生態話題核心詞，常見例子：bees, butterflies都是pollinators。
+
+B1 / B2 (例句):Declining populations of wild pollinators have become a major global environmental concern.
+詞組搭配 (Collocations): wild pollinators, honeybee pollinators, pollinator decline
+
+同義詞 (Synonyms): -
+反義詞 (Antonyms): -
+
+---
+
+### estimate  (v/n) <-- Added on 2026-07-15
+文章分類：environment
+解釋: 估計；估算；評價
+
+**[深度解析 & 語境應用]**
+英文定義: To roughly calculate the value, size or amount of something; a rough calculation.
+重點記憶點: DSE數據說明常用：It is estimated that... 據估計...。
+
+B1 / B2 (例句):Scientists estimate that over 70% of global food crops depend on pollinators.
+詞組搭配 (Collocations): estimate that, rough estimate, it is estimated that
+
+同義詞 (Synonyms): approximate, guess, calculate
+反義詞 (Antonyms): exact measurement, exact value
+
+---
+
+### structured  (adj) <-- Added on 2026-07-15
+文章分類：environment
+解釋: 結構化的；有組織的；安排有序的
+
+**[深度解析 & 語境應用]**
+英文定義: Organized in a clear pattern or system.
+重點記憶點: 形容社會結構或生物群體：structured colonies 有組織的群體。
+
+B1 / B2 (例句):Honeybees live in highly structured colonies with clear division of labour.
+詞組搭配 (Collocations): structured colonies, highly structured, structured approach
+
+同義詞 (Synonyms): organized, ordered, systematic
+反義詞 (Antonyms): unstructured, disorganized, chaotic
+
+---
+
+### colonies  (n) <-- Added on 2026-07-15
+文章分類：environment
+解釋: 群體；蜂群；菌落
+
+**[深度解析 & 語境應用]**
+英文定義: Groups of animals of the same type that live together.
+重點記憶點: 指蜜蜂等群居動物的群體：bee colonies 蜂群。
+
+B1 / B2 (例句):Many beekeepers have reported losing large numbers of their honeybee colonies in recent years.
+詞組搭配 (Collocations): bee colonies, honeybee colonies, ant colonies
+
+同義詞 (Synonyms): communities, groups, settlements
+反義詞 (Antonyms): -
+
+---
+
+### responsibilities  (n) <-- Added on 2026-07-15
+文章分類：environment
+解釋: 責任；職責；義務
+
+**[深度解析 & 語境應用]**
+英文定義: Things that you are responsible for doing or taking care of.
+重點記憶點: DSE環境話題常考：human responsibilities 人類的責任，protect the environment是我們的responsibilities。
+
+B1 / B2 (例句):Different members of the bee colony have different responsibilities within the group.
+詞組搭配 (Collocations): different responsibilities, share responsibilities, take responsibility
+
+同義詞 (Synonyms): duties, obligations, tasks
+反義詞 (Antonyms): irresponsibility, rights
+
+---
+
+### nectar  (n) <-- Added on 2026-07-15
+文章分類：environment
+解釋: 花蜜
+
+**[深度解析 & 語境應用]**
+英文定義: A sweet liquid produced by flowers that attracts bees and other insects.
+重點記憶點: 生態基礎詞，bees collect nectar to make honey。
+
+B1 / B2 (例句):Bees fly from flower to flower collecting nectar and pollen.
+詞組搭配 (Collocations): flower nectar, collect nectar
+
+同義詞 (Synonyms): -
+反義詞 (Antonyms): -
+
+---
+
+### ecosystem  (n) <-- Added on 2026-07-15
+文章分類：environment
+解釋: 生態系統
+
+**[深度解析 & 語境應用]**
+英文定義: A community of plants and animals that interact with each other and their environment.
+重點記憶點: DSE環境話題核心詞：balance of the ecosystem 生態平衡。
+
+B1 / B2 (例句):The loss of pollinators can damage the entire ecosystem and reduce biodiversity.
+詞組搭配 (Collocations): natural ecosystem, balance of the ecosystem, damage the ecosystem
+
+同義詞 (Synonyms): -
+反義詞 (Antonyms): -
+
+---
+
+### rapidly  (adv) <-- Added on 2026-07-15
+文章分類：environment
+解釋: 迅速地；快速地；急速地
+
+**[深度解析 & 語境應用]**
+英文定義: Quickly, at a fast rate.
+重點記憶點: DSE描述趨勢常用：increase rapidly 迅速增長，decline rapidly 快速下降。
+
+B1 / B2 (例句):The number of wild pollinators has been declining rapidly in many parts of the world.
+詞組搭配 (Collocations): increase rapidly, decline rapidly, change rapidly
+
+同義詞 (Synonyms): quickly, swiftly, speedily
+反義詞 (Antonyms): slowly, gradually
 
 ---

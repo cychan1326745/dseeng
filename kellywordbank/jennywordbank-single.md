@@ -2,9 +2,6 @@
 > 按標籤分類搜索 · 日期跟蹤積累 · 出處便於還原語境
 
 
-### probably  (adj) <-- Added on 2026-07-09
----
-
 
 ### boost  (v/n) <-- Added on 2026-07-09
 ---
@@ -51,4 +48,22 @@
 ### senior  (adj/n) <-- Added on 2026-07-09
 ---
 ### discuss  (v) <-- Added on 2026-07-09
+---
+### irreplaceable  (adj) <-- Added on 2026-07-15
+---
+### pollinators  (n) <-- Added on 2026-07-15
+---
+### estimate  (v/n) <-- Added on 2026-07-15
+---
+### structured  (adj) <-- Added on 2026-07-15
+---
+### colonies  (n) <-- Added on 2026-07-15
+---
+### responsibilities  (n) <-- Added on 2026-07-15
+---
+### nectar  (n) <-- Added on 2026-07-15
+---
+### ecosystem  (n) <-- Added on 2026-07-15
+---
+### rapidly  (adv) <-- Added on 2026-07-15
 ---
