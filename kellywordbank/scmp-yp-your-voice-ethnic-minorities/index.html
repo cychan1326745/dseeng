@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head> 
+
+<script>
+let isSpeaking = false;
+let speechEnabled = true;
+
+function loadSpeechSetting() {
+  const saved = localStorage.getItem('dse-speech-enabled');
+  if (saved !== null) {
+    speechEnabled = saved === 'true';
+  }
+  updateSpeechButton();
+}
+
+function updateSpeechButton() {
+  const btn = document.getElementById('btnToggleSpeech');
+  if (btn) {
+    btn.textContent = speechEnabled ? 'Speech: ON' : 'Speech: OFF';
+    btn.style.background = speechEnabled ? 'rgba(40, 167, 69, 0.3)' : 'rgba(220, 53, 69, 0.3)';
+  }
+}
+
+function toggleSpeech() {
+  speechEnabled = !speechEnabled;
+  localStorage.setItem('dse-speech-enabled', speechEnabled);
+  updateSpeechButton();
+  if (isSpeaking) {
+    speechSynthesis.cancel();
+    isSpeaking = false;
+  }
+}
+
+function readWord(text){
+  if(!speechEnabled) return;
+  if(isSpeaking) speechSynthesis.cancel();
+  let utter = new SpeechSynthesisUtterance(text);
+  utter.lang = "en-US";
+  utter.rate = 0.9;
+  isSpeaking = true;
+  utter.onend = ()=> isSpeaking = false;
+  speechSynthesis.speak(utter);
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  loadSpeechSetting();
+  const btn = document.getElementById('btnToggleSpeech');
+  if (btn) btn.addEventListener('click', toggleSpeech);
+
+  const passage = document.getElementById('passagePanel');
+  if (!passage) return;
+
+  passage.addEventListener('click', function(e){
+    if(!speechEnabled) return;
+    if (e.target.closest('a, button, input, label, select, textarea')) return;
+
+    const range = document.caretRangeFromPoint(e.clientX, e.clientY);
+    if (!range) return;
+    const node = range.startContainer;
+    if (node.nodeType !== Node.TEXT_NODE) return;
+    const offset = range.startOffset;
+    const text = node.textContent;
+
+    let start = offset;
+    let end = offset;
+    while (start > 0 && /[a-zA-Z\u00C0-\u024F'ʼ-]/.test(text[start - 1])) start--;
+    while (end < text.length && /[a-zA-Z\u00C0-\u024F'ʼ-]/.test(text[end])) end++;
+    if (start === end) return;
+
+    const word = text.slice(start, end);
+    if (/^\d+$/.test(word)) return;
+
+    readWord(word);
+
+    const wordRange = document.createRange();
+    wordRange.setStart(node, start);
+    wordRange.setEnd(node, end);
+    const highlight = document.createElement('mark');
+    highlight.style.cssText = 'background:#ffd54f;border-radius:3px;transition:background .3s';
+    try {
+      wordRange.surroundContents(highlight);
+      setTimeout(() => {
+        const parent = highlight.parentNode;
+        if (parent) {
+          while (highlight.firstChild) parent.insertBefore(highlight.firstChild, highlight);
+          parent.removeChild(highlight);
+          parent.normalize();
+        }
+      }, 500);
+    } catch(_) {
+    }
+  });
+});
+</script>
+
+<style>
+#passagePanel .paragraph {
+  cursor: default;
+}
+#passagePanel .paragraph * {
+  cursor: pointer;
+}
+</style>
+
+<meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Voice: Advocate for the city's ethnic minorities, unlawful arrests by ICE in the US (long letters) - DSE Reading Practice</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-brand"><span>DSE</span> Reading Practice</div>
+    <nav class="header-nav">
+      <a href="index.html" class="active">Reading</a>
+      <a href="solution.html">Solution</a>
+    </nav>
+    <div class="header-tools">
+      <button type="button" id="btnToggleSpeech">Speech: ON</button>
+      <button type="button" id="btnLargerText">Larger Text</button>
+      <button type="button" onclick="window.print()">Print</button>
+    </div>
+  </header>
+
+  <div class="main-container" id="mainContainer">
+    <section class="panel passage-panel" id="passagePanel">
+      <h2 class="passage-title">Your Voice: Advocate for the city's ethnic minorities, unlawful arrests by ICE in the US (long letters)</h2>
+      <p class="passage-subtitle">DSE Reading Comprehension Practice</p>
+      <div class="passage-illustration">📖 ✏️</div>
+
+      <div style="text-align: center; margin: 15px 0; display: flex;">
+        <button id="btnToggleKelly" style="flex: 1; padding: 8px 12px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; margin: 0 5px;">
+          Kelly: OFF
+        </button>
+        <button id="btnToggleJenny" style="flex: 1; padding: 8px 12px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; margin: 0 5px;">
+          Jenny: OFF
+        </button>
+        <button id="btnToggleNash" style="flex: 1; padding: 8px 12px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; margin: 0 5px;">
+          Nash: OFF
+        </button>
+      </div>
+
+<script>
+const VOCAB_CONFIG = {
+  kelly: {
+    btnId: 'btnToggleKelly',
+    file: '../../kellywordbank-single.md',
+    color: 'rgba(52, 152, 219, 0.3)',
+    on: false
+  },
+  jenny: {
+    btnId: 'btnToggleJenny',
+    file: '../../jennywordbank-single.md',
+    color: 'rgba(155, 89, 182, 0.3)',
+    on: false
+  },
+  nash: {
+    btnId: 'btnToggleNash',
+    file: '../../nashwordbank-single.md',
+    color: 'rgba(230, 126, 34, 0.3)',
+    on: false
+  }
+};
+
+let vocabLoaded = { kelly: false, jenny: false, nash: false };
+let vocabWords = { kelly: [], jenny: [], nash: [] };
+
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+async function loadVocab(bank) {
+  try {
+    const config = VOCAB_CONFIG[bank];
+    const response = await fetch(`${config.file}?cache-bust=${new Date().getTime()}`);
+    const text = await response.text();
+    const lines = text.split('\n');
+    const words = [];
+    lines.forEach(line => {
+      const match = line.match(/^###\s+([^(]+)/);
+      if (match) {
+        const word = match[1].trim();
+        if (word) words.push(word);
+      }
+    });
+    words.sort((a, b) => b.length - a.length);
+    vocabWords[bank] = words;
+    vocabLoaded[bank] = true;
+  } catch (err) {
+    vocabWords[bank] = [];
+    vocabLoaded[bank] = true;
+  }
+}
+
+function turnOffAllExcept(exceptBank) {
+  Object.keys(VOCAB_CONFIG).forEach(bank => {
+    if (bank !== exceptBank && VOCAB_CONFIG[bank].on) {
+      VOCAB_CONFIG[bank].on = false;
+      const btn = document.getElementById(VOCAB_CONFIG[bank].btnId);
+      btn.style.background = '#f39c12';
+      btn.textContent = `${bank.charAt(0).toUpperCase() + bank.slice(1)}: OFF`;
+      removeVocabHighlight(bank);
+    }
+  });
+}
+
+function toggleVocabHighlight(bank) {
+  const config = VOCAB_CONFIG[bank];
+  config.on = !config.on;
+  const btn = document.getElementById(config.btnId);
+  if (config.on) {
+    turnOffAllExcept(bank);
+    btn.textContent = `${bank.charAt(0).toUpperCase() + bank.slice(1)}: ON`;
+    btn.style.background = '#27ae60';
+    applyVocabHighlight(bank);
+  } else {
+    btn.textContent = `${bank.charAt(0).toUpperCase() + bank.slice(1)}: OFF`;
+    btn.style.background = '#f39c12';
+    removeVocabHighlight(bank);
+  }
+}
+
+function applyVocabHighlight(bank) {
+  if (!vocabLoaded[bank]) {
+    setTimeout(() => { if (VOCAB_CONFIG[bank].on) applyVocabHighlight(bank); }, 200);
+    return;
+  }
+  if (vocabWords[bank].length === 0) return;
+  const config = VOCAB_CONFIG[bank];
+  const paragraphs = document.querySelectorAll('#passagePanel p.paragraph');
+  paragraphs.forEach(para => {
+    let html = para.innerHTML;
+    html = html.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g, '$1');
+    vocabWords[bank].forEach(word => {
+      const escaped = escapeRegExp(word);
+      const regex = new RegExp(`\\b${escaped}\\b`, 'gi');
+      html = html.replace(regex, `<mark style="background: ${config.color};">$&</mark>`);
+    });
+    para.innerHTML = html;
+  });
+}
+
+function removeVocabHighlight(bank) {
+  const paragraphs = document.querySelectorAll('#passagePanel p.paragraph');
+  paragraphs.forEach(para => {
+    let html = para.innerHTML;
+    html = html.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g, '$1');
+    para.innerHTML = html;
+  });
+}
+
+Object.keys(VOCAB_CONFIG).forEach(bank => {
+  loadVocab(bank);
+  const btn = document.getElementById(VOCAB_CONFIG[bank].btnId);
+  if (btn) btn.addEventListener('click', () => toggleVocabHighlight(bank));
+});
+</script>
+      <p class="paragraph" data-para="1">
+        <span class="paragraph-num">[1]</span>
+        It is unfair that Hong Kong's ethnic minority communities remain marginalised and overwhelmingly take up low-paid, precarious work. This is happening even as the city pursues economic prosperity and pre-pandemic glory.
+      </p>
+
+      <p class="paragraph" data-para="2">
+        <span class="paragraph-num">[2]</span>
+        As an Asian "global city", Hong Kong relies on different ethnic groups. More than 350,000 domestic workers are the backbone of the city's workforce. Other ethnic minority communities – who grew up in Hong Kong or moved here for work – often face limited opportunities and are confined to low paying work.
+      </p>
+
+      <p class="paragraph" data-para="3">
+        <span class="paragraph-num">[3]</span>
+        These individuals, many of whom have South Asian backgrounds, often take on blue-collar jobs such as food delivery or construction work.
+      </p>
+
+      <p class="paragraph" data-para="4">
+        <span class="paragraph-num">[4]</span>
+        A 2022 study by Lingnan University found that 89 per cent of surveyed food delivery workers in Hong Kong belonged to ethnic minority groups. These professions are well known for being extremely precarious, with limited growth opportunities and often insufficient employee support.
+      </p>
+
+      <p class="paragraph" data-para="5">
+        <span class="paragraph-num">[5]</span>
+        Ethnic minority individuals are often unable to take advantage of career growth opportunities available to others in Hong Kong society. They cannot plan adequately for retirement or access healthcare plans.
+      </p>
+
+      <p class="paragraph" data-para="6">
+        <span class="paragraph-num">[6]</span>
+        Furthermore, minorities still face racial discrimination while undertaking their arduous jobs. A report published in Sage Journals highlighted the prevalence of extreme racism against South Asian delivery drivers, "perhaps triggered by a flurry of negative mainstream news reports and social media outbursts targeted at South Asians."
+      </p>
+
+      <p class="paragraph" data-para="7">
+        <span class="paragraph-num">[7]</span>
+        Higher-skilled office professions offer little respite. Ethnic minority individuals often face discriminatory hiring practices or racial microaggressions in white-collar workplaces.
+      </p>
+
+      <p class="paragraph" data-para="8">
+        <span class="paragraph-num">[8]</span>
+        This could be direct racism or systemic racial problems within Hong Kong's hiring practices. For example, language requirements and internal biases can work against minority groups during recruitment.
+      </p>
+
+      <p class="paragraph" data-para="9">
+        <span class="paragraph-num">[9]</span>
+        In one case, the Asia Monitor Resource Centre reported that Rani from Pakistan was initially offered a kindergarten teaching job. But she was not permitted to wear her usual dress, traditional clothing, and was told to wear a skirt instead.
+      </p>
+
+      <p class="paragraph" data-para="10">
+        <span class="paragraph-num">[10]</span>
+        This type of discrimination over ethnic traditions occurs all the time and is often subconscious within Hong Kong society.
+      </p>
+
+      <p class="paragraph" data-para="11">
+        <span class="paragraph-num">[11]</span>
+        The system is designed to work against minority groups in Hong Kong. Over time, it has only become more severe. For instance, in a 2016 report, Oxfam highlighted the stark rate of poverty in Hong Kong among ethnic minority groups and the shocking fact that this issue is becoming intergenerational, with minority children being denied even a chance to learn Cantonese or gain the same access to education as others their age.
+      </p>
+
+      <p class="paragraph" data-para="12">
+        <span class="paragraph-num">[12]</span>
+        A narrative shift must immediately occur in Hong Kong society. Not only is the maligning of ethnic minority groups entirely wrong, but it also represents a problem that affects everyone; the city is at risk of creating a massive underclass saddled with poverty, with limited opportunities for social progression. If Hong Kong continues down this path, a dangerous precedent will be set.
+      </p>
+
+      <p class="paragraph" data-para="13">
+        <span class="paragraph-num">[13]</span>
+        The United States Immigration and Customs Enforcement (ICE) has attracted much condemnation and criticism in recent months.
+      </p>
+
+      <p class="paragraph" data-para="14">
+        <span class="paragraph-num">[14]</span>
+        The agency has three main areas. Enforcement and Removal Operations officers detain and deport those living in the US without legal authorisation – such as by entering the country without permission or overstaying a visa.
+      </p>
+
+      <p class="paragraph" data-para="15">
+        <span class="paragraph-num">[15]</span>
+        Homeland Security Investigations investigates crimes that threaten safety, such as human trafficking and drug dealing. Meanwhile, Management and Administration oversees operations, providing substantial resources.
+      </p>
+
+      <p class="paragraph" data-para="16">
+        <span class="paragraph-num">[16]</span>
+        US President Donald Trump's mass deportation campaign includes putting more than US$160 billion towards strengthening ICE. Arrests and detentions have significantly risen, reaching 100,000 in less than five months into 2025, and still counting.
+      </p>
+
+      <p class="paragraph" data-para="17">
+        <span class="paragraph-num">[17]</span>
+        In comparison, during the previous Biden administration, there were only about 113,431 operations in all of 2024.
+      </p>
+
+      <p class="paragraph" data-para="18">
+        <span class="paragraph-num">[18]</span>
+        ICE touts a seemingly soaring success rate and a picture-perfect front. But around 65 per cent of those detained have no criminal records, and an overwhelming 95 per cent have no violent convictions whatsoever.
+      </p>
+
+      <p class="paragraph" data-para="19">
+        <span class="paragraph-num">[19]</span>
+        For example, George Retes, 25, is a US Army veteran and legal citizen. Despite his proven devotion to the country, he was brutally attacked in his car by ICE agents, pepper-sprayed and detained for three days without further explanation. He was denied contact with his lawyer or family and was forbidden to shower or change, resulting in severe burns.
+      </p>
+
+      <p class="paragraph" data-para="20">
+        <span class="paragraph-num">[20]</span>
+        This is one of many instances of unlawful arrests by ICE.
+      </p>
+
+      <p class="paragraph" data-para="21">
+        <span class="paragraph-num">[21]</span>
+        American citizens and communities have rallied and protested against ICE, arguing that the situation has become extreme and targets marginalised groups without reason. They have also expressed concern about the inhumane treatment faced by immigrants.
+      </p>
+
+      <p class="paragraph" data-para="22">
+        <span class="paragraph-num">[22]</span>
+        Protests have taken place nationwide, in large cities and small towns, and have also been supported by celebrities and lawmakers. Many have slowly escalated into violent clashes, often exacerbated by the National Guard – a state-based military force activated for federal missions – and marine troops who use weapons such as tear gas, rubber bullets and firearms.
+      </p>
+
+      <p class="paragraph" data-para="23">
+        <span class="paragraph-num">[23]</span>
+        I think protesting is reasonable. If ICE has become so extreme that ordinary US citizens are willing to go to great lengths to stop operations, it is evident that something gravely wrong is happening here.
+      </p>
+
+      <p class="paragraph" data-para="24">
+        <span class="paragraph-num">[24]</span>
+        Although some protests have turned violent, I don't think all the blame should be placed on the protesters. Authorities have been involved, witnessed such activity with their own eyes and have still refused to see what is clearly an issue.
+      </p>
+
+
+    </section>
+
+    <div class="divider" id="divider" title="Drag to resize"></div>
+
+    <section class="panel questions-panel" id="questionsPanel">
+      <p class="instruction">Read the passage and answer questions 1–15.</p>
+
+      <!-- Q1 -->
+      <div class="question-block" id="q1" data-q="1">
+        <div class="question-label">1. . According to paragraph 1, what type of work do ethnic minority communities in Hong Kong predominantly take up? (1 mark) ________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q1" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q1" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">Low-paid, precarious work.</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q2 -->
+      <div class="question-block" id="q2" data-q="2">
+        <div class="question-label">2. . Choose the word closest in contextual meaning to "precarious" (paragraph 1, line 2).</div>
+        <div class="options">
+          <label><input type="radio" name="q2" value="A">A. dangerous</label>
+          <label><input type="radio" name="q2" value="B">B. unstable</label>
+          <label><input type="radio" name="q2" value="C">C. demanding</label>
+          <label><input type="radio" name="q2" value="D">D. temporary</label>
+        </div>
+
+<div class="inline-solution" id="solution-q2" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">B (unstable)</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q3 -->
+      <div class="question-block" id="q3" data-q="3">
+        <div class="question-label">3. . What does "this issue" (paragraph 11, line 4) refer to? (1 mark) ________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q3" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q3" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">The stark rate of poverty among ethnic minority groups in Hong Kong becoming intergenerational.</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q4 -->
+      <div class="question-block" id="q4" data-q="4">
+        <div class="question-label">4. . Decide whether the following statements are True, False, or Not Given according to the passage. (3 marks)</div>
+        <table class="tf-table">
+          <thead><tr><th>Statement</th><th>T</th><th>F</th><th>NG</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>According to a Lingnan University study, 89 per cent of food delivery workers in Hong Kong were from ethnic minority groups.</td>
+              <td><input type="radio" name="q4_a" value="T"></td>
+              <td><input type="radio" name="q4_a" value="F"></td>
+              <td><input type="radio" name="q4_a" value="NG"></td>
+            </tr>
+            <tr>
+              <td>Rani from Pakistan was eventually allowed to wear her traditional clothing at work.</td>
+              <td><input type="radio" name="q4_b" value="T"></td>
+              <td><input type="radio" name="q4_b" value="F"></td>
+              <td><input type="radio" name="q4_b" value="NG"></td>
+            </tr>
+            <tr>
+              <td>The number of ICE arrests in 2025 was lower than in 2024.</td>
+              <td><input type="radio" name="q4_c" value="T"></td>
+              <td><input type="radio" name="q4_c" value="F"></td>
+              <td><input type="radio" name="q4_c" value="NG"></td>
+            </tr>
+            <tr>
+              <td>○       ○       ○</td>
+              <td><input type="radio" name="q4_d" value="T"></td>
+              <td><input type="radio" name="q4_d" value="F"></td>
+              <td><input type="radio" name="q4_d" value="NG"></td>
+            </tr>
+            <tr>
+              <td>○       ○       ○</td>
+              <td><input type="radio" name="q4_e" value="T"></td>
+              <td><input type="radio" name="q4_e" value="F"></td>
+              <td><input type="radio" name="q4_e" value="NG"></td>
+            </tr>
+            <tr>
+              <td>○       ○       ○</td>
+              <td><input type="radio" name="q4_f" value="T"></td>
+              <td><input type="radio" name="q4_f" value="F"></td>
+              <td><input type="radio" name="q4_f" value="NG"></td>
+            </tr>
+          </tbody>
+        </table>
+
+<div class="inline-solution" id="solution-q4" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">i) True ii) False iii) False (arrests significantly rose, reaching 100,000 in less than five months of 2025, compared to 113,431 in all of 2024)</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q5 -->
+      <div class="question-block" id="q5" data-q="5">
+        <div class="question-label">5. . List TWO types of discrimination faced by ethnic minorities in Hong Kong's workplaces, according to the passage. (2 marks) ________________________________________________________________________ ________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q5" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q5" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">Any two: (i) racial discrimination / extreme racism, (ii) discriminatory hiring practices, (iii) racial microaggressions, (iv) language requirements and internal biases during recruitment, (v) discrimination over ethnic traditions / clothing.</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q6 -->
+      <div class="question-block" id="q6" data-q="6">
+        <div class="question-label">6. . In your own words, explain what "microaggressions" (paragraph 7) means in the context of the passage. (1 mark) ________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q6" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q6" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">Microaggressions are subtle, indirect, or unintentional acts of discrimination against members of a minority group in everyday workplace interactions.</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q7 -->
+      <div class="question-block" id="q7" data-q="7">
+        <div class="question-label">7. . Complete the summary below using ONE word from the passage for each blank. (4 marks)  Ethnic minorities in Hong Kong often face (i) ________ opportunities and are confined to low-paid work. A 2022 study found that 89 per cent of food (ii) ________ workers were from ethnic minorities. Many also face racial (iii) ________ while doing their jobs. The writer argues that a (iv) ________ shift must occur in Hong Kong society.</div>
+        <input type="text" class="text-input wide" name="q7" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q7" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">(i) limited (ii) delivery (iii) discrimination (iv) narrative</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q8 -->
+      <div class="question-block" id="q8" data-q="8">
+        <div class="question-label">8. . Why does the writer believe the situation for ethnic minorities in Hong Kong is becoming more severe? (1 mark) ________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q8" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q8" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">Because a 2016 Oxfam report showed that poverty among ethnic minorities is becoming intergenerational, with minority children being denied education opportunities.</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q9 -->
+      <div class="question-block" id="q9" data-q="9">
+        <div class="question-label">9. . Explain what the "mass deportation campaign" (paragraph 16) refers to. (1 mark) ________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q9" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q9" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">It refers to US President Donald Trump's campaign to arrest and deport people living in the US without legal authorisation, with over US$160 billion allocated to strengthen ICE.</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q10 -->
+      <div class="question-block" id="q10" data-q="10">
+        <div class="question-label">10. . State ONE difference and ONE similarity between the Trump administration and the Biden administration regarding ICE operations. (2 marks)  Difference: ________________________________________________________________ Similarity: ________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q10" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q10" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">Difference: Under Trump, arrests and detentions significantly rose (100,000 in less than five months of 2025), while under Biden there were about 113,431 operations in all of 2024. Similarity: Both administrations carried out ICE enforcement operations.</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q11 -->
+      <div class="question-block" id="q11" data-q="11">
+        <div class="question-label">11. . According to the passage, what concern did American citizens express about ICE? (1 mark) ________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q11" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q11" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">They were concerned that the situation had become extreme and targeted marginalised groups without reason, and about the inhumane treatment faced by immigrants.</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q12 -->
+      <div class="question-block" id="q12" data-q="12">
+        <div class="question-label">12. . List TWO actions that protesters took against ICE, as mentioned in the passage. (2 marks) ________________________________________________________________________ ________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q12" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q12" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">Any two: (i) rallies and protests nationwide, (ii) protests supported by celebrities and lawmakers, (iii) some protests escalated into violent clashes.</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q13 -->
+      <div class="question-block" id="q13" data-q="13">
+        <div class="question-label">13. . Define what "ICE" (Immigration and Customs Enforcement) does, according to the passage. (1 mark) ________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q13" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q13" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">ICE is a US agency that detains and deports people living in the US without legal authorisation, investigates crimes like human trafficking and drug dealing, and manages administrative operations.</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q14 -->
+      <div class="question-block" id="q14" data-q="14">
+        <div class="question-label">14. . What is the author's overall attitude towards the protests against ICE? (1 mark)</div>
+        <div class="options">
+          <label><input type="radio" name="q14" value="A">A. Fully critical</label>
+          <label><input type="radio" name="q14" value="B">B. Generally supportive</label>
+          <label><input type="radio" name="q14" value="C">C. Completely neutral</label>
+          <label><input type="radio" name="q14" value="D">D. Deeply doubtful</label>
+        </div>
+
+<div class="inline-solution" id="solution-q14" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">B (Generally supportive)</div>
+</article>
+</div>
+      </div>
+
+      <!-- Q15 -->
+      <div class="question-block" id="q15" data-q="15">
+        <div class="question-label">15. . What does the title "Your Voice: Advocate for the city's ethnic minorities, unlawful arrests by ICE in the US" suggest about the article? (1 mark) ________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q15" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q15" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+  <div class="answer-text">The title suggests that the article contains letters advocating for ethnic minorities in Hong Kong and criticising unlawful arrests by ICE in the US, giving a voice to those who are marginalised.</div>
+</article>
+</div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="bottom-bar">
+    <div class="palette-section">
+      <span class="palette-label">Question Palette</span>
+      <div class="question-palette" id="questionPalette"></div>
+      <div class="palette-legend">
+        <span class="legend-dot"></span> answered
+      </div>
+    </div>
+    <div class="timer-section" id="timer">00:00</div>
+    <div class="action-buttons">
+      <button class="btn btn-submit" id="btnSubmit">✓ Submit</button>
+      <button class="btn btn-review" id="btnReview">⊞ Review</button>
+      <a class="btn btn-solution" href="solution.html">🔑 Solution</a>
+      <button class="btn btn-reset" id="btnReset">↺ Reset</button>
+    </div>
+  </footer>
+
+  <!-- Submit modal -->
+  <div class="modal-overlay" id="submitModal">
+    <div class="modal">
+      <h3>Are you sure you want to submit?</h3>
+      <p id="submitModalText">You have answered <strong id="answeredCount">0</strong> of 15 questions.</p>
+      <div class="modal-actions">
+        <button class="btn btn-reset" id="btnCancelSubmit">Cancel</button>
+        <button class="btn btn-submit" id="btnConfirmSubmit">Submit and view Answers</button>
+      </div>
+    </div>
+  </div>
+  <!-- Score modal -->
+  <div class="modal-overlay" id="scoreModal">
+    <div class="modal">
+      <h3>Your Results</h3>
+      <div class="score-display">
+        <div class="score-number" id="scoreNumber">0/15</div>
+        <div class="score-label" id="scorePercent">0% correct</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-review" id="btnCloseScore">Review Answers</button>
+        <a class="btn btn-solution" href="solution.html">View Full Solution</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

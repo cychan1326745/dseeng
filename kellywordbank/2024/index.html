@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head> 
+
+<script>
+let isSpeaking = false;
+let speechEnabled = true; // 默認開啟
+
+function loadSpeechSetting() {
+  const saved = localStorage.getItem('dse-speech-enabled');
+  if (saved !== null) {
+    speechEnabled = saved === 'true';
+  }
+  updateSpeechButton();
+}
+
+function updateSpeechButton() {
+  const btn = document.getElementById('btnToggleSpeech');
+  if (btn) {
+    btn.textContent = speechEnabled ? 'Speech: ON' : 'Speech: OFF';
+    btn.style.background = speechEnabled ? 'rgba(40, 167, 69, 0.3)' : 'rgba(220, 53, 69, 0.3)';
+  }
+}
+
+function toggleSpeech() {
+  speechEnabled = !speechEnabled;
+  localStorage.setItem('dse-speech-enabled', speechEnabled);
+  updateSpeechButton();
+  if (isSpeaking) {
+    speechSynthesis.cancel();
+    isSpeaking = false;
+  }
+}
+
+function readWord(text){
+  if(!speechEnabled) return; // 關閉狀態不發音
+  if(isSpeaking) speechSynthesis.cancel();
+  let utter = new SpeechSynthesisUtterance(text);
+  utter.lang = "en-US";
+  utter.rate = 0.9;
+  isSpeaking = true;
+  utter.onend = ()=> isSpeaking = false;
+  speechSynthesis.speak(utter);
+}
+
+// ── Click-to-read: 撳邊個英文字就讀邊個 ──
+document.addEventListener('DOMContentLoaded', function(){
+  loadSpeechSetting();
+  const btn = document.getElementById('btnToggleSpeech');
+  if (btn) btn.addEventListener('click', toggleSpeech);
+
+  const passage = document.getElementById('passagePanel');
+  if (!passage) return;
+
+  // 用 caretRangeFromPoint 拎 click 位置嘅英文字
+  passage.addEventListener('click', function(e){
+    if(!speechEnabled) return; // 關閉狀態完全不處理，方便選文字
+    // 唔干擾撳落 link / button / input
+    if (e.target.closest('a, button, input, label, select, textarea')) return;
+
+    const range = document.caretRangeFromPoint(e.clientX, e.clientY);
+    if (!range) return;
+    const node = range.startContainer;
+    if (node.nodeType !== Node.TEXT_NODE) return;
+    const offset = range.startOffset;
+    const text = node.textContent;
+
+    // 搵字嘅起始同結束（連 apostrophe 同 hyphen）
+    let start = offset;
+    let end = offset;
+    while (start > 0 && /[a-zA-Z\\u00C0-\\u024F'ʼ-]/.test(text[start - 1])) start--;
+    while (end < text.length && /[a-zA-Z\\u00C0-\\u024F'ʼ-]/.test(text[end])) end++;
+    if (start === end) return;
+
+    const word = text.slice(start, end);
+    // 過濾純數字
+    if (/^\\d+$/.test(word)) return;
+
+    readWord(word);
+
+    // ── 視覺回饋：短暫 highlight ──
+    // 用 range select 個字
+    const wordRange = document.createRange();
+    wordRange.setStart(node, start);
+    wordRange.setEnd(node, end);
+    const highlight = document.createElement('mark');
+    highlight.style.cssText = 'background:#ffd54f;border-radius:3px;transition:background .3s';
+    try {
+      wordRange.surroundContents(highlight);
+      setTimeout(() => {
+        const parent = highlight.parentNode;
+        if (parent) {
+          while (highlight.firstChild) parent.insertBefore(highlight.firstChild, highlight);
+          parent.removeChild(highlight);
+          parent.normalize();
+        }
+      }, 500);
+    } catch(_) {
+      // 跨 element boundary 就跳過 highlight
+    }
+  });
+});
+</script>
+ 
+<style>
+/* 游標提示：passage 入面嘅文字係㩒得嘅 */
+#passagePanel .paragraph {
+  cursor: default;
+}
+#passagePanel .paragraph * {
+  cursor: pointer;
+}
+</style>
+
+<meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Banyan Trees - DSE 2024 Paper 1 Reading Practice A</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-brand"><span>DSE</span> 2024 Paper 1 Reading Practice A</div>
+    <nav class="header-nav">
+      <a href="index.html" class="active">Reading</a>
+      <a href="solution.html">Solution</a>
+    </nav>
+    <div class="header-tools">
+      <button type="button" id="btnToggleSpeech">Speech: ON</button>
+      <button type="button" id="btnLargerText">Larger Text</button>
+      <button type="button" onclick="window.print()">Print</button>
+    </div>
+  </header>
+
+  <div class="main-container" id="mainContainer">
+    <section class="panel passage-panel" id="passagePanel">
+      <h2 class="passage-title">Government defends axing century-old banyans / A Tree Worthy of Worship: Hong Kong’s Banyans</h2>
+      <p class="passage-subtitle">Text 1 & Text 2 — HKDSE English Language Paper 1 (Reading) Part A 2024</p>
+      <div class="passage-illustration">🌳 🇭🇰 🌳</div>
+
+      <h3 style="margin-top: 12px; margin-bottom: 8px;">Text 1 — Government defends axing century-old banyans on safety grounds</h3>
+
+      <p class="paragraph" data-para="1">
+        <span class="paragraph-num">[1]</span>
+        Four trees collapsed in Hong Kong on Monday morning following a night of heavy rain. This comes after the government’s controversial decision to cut down four century-old Chinese banyans after several similar trees fell from stone walls during recent storms.
+      </p>
+      <p class="paragraph" data-para="2">
+        <span class="paragraph-num">[2]</span>
+        The report of the fallen trees comes days after experts expressed anger over the Highways Department’s controversial felling of four century-old banyan trees in Sai Ying Pun, without consulting a panel advising the government on tree management.
+      </p>
+      <p class="paragraph" data-para="3">
+        <span class="paragraph-num">[3]</span>
+        The government cited ‘unforeseen’ circumstances and considerations of public safety, after a giant banyan tree growing out of a masonry wall in Sai Ying Pun collapsed on 22 July. A neighbouring tree was cut down immediately as cracks were found in the wall behind it.
+      </p>
+      <p class="paragraph" data-para="4">
+        <span class="paragraph-num">[4]</span>
+        The Head of the Developments Bureau’s Tree Management Office said the trees in Sai Ying Pun were rooted in old stone masonry walls on a slope of almost 80 degrees.
+      </p>
+      <p class="paragraph" data-para="5">
+        <span class="paragraph-num">[5]</span>
+        Following the collapse on 22 July, the Highways Department’s contractor inspected the remaining trees and carried out major trimming work. But by midweek last week, cracks were found in the wall behind the trees and were seen to have worsened.
+      </p>
+      <p class="paragraph" data-para="6">
+        <span class="paragraph-num">[6]</span>
+        “Since the trees were growing on this wall, we could not evaluate the trees and the wall separately,” said the Head of the Tree Management Office. “We agree with the department that the trees had to be removed immediately. They could have collapsed and pulled the wall with them.”
+      </p>
+
+      <h3 style="margin-top: 20px; margin-bottom: 8px;">Text 2 — A Tree Worthy of Worship: Hong Kong’s Banyans</h3>
+      <p class="paragraph" data-para="1">
+        <span class="paragraph-num">[1]</span>
+        Mr Lam was a teenager when he installed a shrine to the local earth god under a banyan tree in Tai Hang. “That was over 70 years ago,” he says. After World War II, he received permission from the government to transform the shrine into a temple.
+      </p>
+      <p class="paragraph" data-para="2">
+        <span class="paragraph-num">[2]</span>
+        It is no coincidence that Lam’s temple started with a banyan tree. These behemoths are ubiquitous in Hong Kong, growing in parks, street planters and even between the cracks of stone walls. Their imposing presence defines the cityscape. “If Hong Kong was abandoned it would be taken over by banyans in a few hundred years,” says Jim Chi-yung, chair of the University of Hong Kong’s Department of Geography, who is popularly known as the Tree Professor for his arboreal enthusiasm.
+      </p>
+      <p class="paragraph" data-para="3">
+        <span class="paragraph-num">[3]</span>
+        Banyan trees are immediately recognisable for their spindly aerial roots, which cast outwards in search of water and nutrition. When a root finds a suitable source, either in the soil or another tree, it becomes a thick, woody trunk. This is what allows the banyan to grow in varied conditions, which is why they are the most prominent forms of greenery in the hilliest and most densely packed parts of Hong Kong. Jim has counted more than 1,100 trees growing from the sheer surfaces of masonry walls on Hong Kong Island. “They can become 20 metres tall, as big as trees growing out of the ground, except they are growing out from the wall,” he says.
+      </p>
+      <p class="paragraph" data-para="4">
+        <span class="paragraph-num">[4]</span>
+        When I first met Jim, in 2009, he took me to Forbes Street in Kennedy Town, where 22 banyans grow out of the surface of a 12-metre-high stone wall, which was built using a traditional Hakka technique that does not require mortar between stone joints. Seeds carried by the wind or dropped by birds find their way into the cracks. As the tree grows, its roots plunge dozens of metres into the soil behind the wall.
+      </p>
+      <p class="paragraph" data-para="5">
+        <span class="paragraph-num">[5]</span>
+        Jim loves the way the banyans form a lush green canopy across Forbes Street. He sits on a number of government committees, and he told me he once proposed pedestrianising the street to make it a destination for al fresco dining, a place where people could sit and relax under the shade of the banyans. The government’s reception was frosty.
+      </p>
+      <p class="paragraph" data-para="6">
+        <span class="paragraph-num">[6]</span>
+        “See what’s happening here?” he asks, touching a root that had been concreted over to stop it from growing. “The people who do this, they don’t understand trees. They’re defacing heritage. Imagine doing this to an ancient monument.”
+      </p>
+      <p class="paragraph" data-para="7">
+        <span class="paragraph-num">[7]</span>
+        Last summer, after days of heavy rain, a wall tree collapsed onto Bonham Road, which led the Highways Department to surreptitiously chop down four healthy banyans nearby. Their sudden removal was defended by the government as a precautionary measure, but experts like Jim said it was an unnecessary overreaction. It sparked outrage from local residents, who tied balloons and messages of support to the trees’ roots, which still clung to the wall that had supported them for 100 years.
+      </p>
+      <p class="paragraph" data-para="8">
+        <span class="paragraph-num">[8]</span>
+        Respect for banyans runs deep in southern Chinese culture. Banyan trees are considered to have excellent feng shui, symbolising longevity, fecundity and perseverance. They are also believed to be home to earth gods, the indigenous deities that protect each village, and shrines are often built at their base. In many cases, people worship the trees themselves, not just the earth gods. That is the case in Lam Tsuen, where a pair of banyans known as the Wishing Trees have become a tourist attraction. Visitors write their wish on a piece of yellow paper, tie it to an orange and toss it onto one of the trees’ branches. After the weight of all the wishes caused a branch to collapse in 2005, worshippers were instructed to tie their wishes to a plastic tree instead.
+      </p>
+      <p class="paragraph" data-para="9">
+        <span class="paragraph-num">[9]</span>
+        Anthropologist P.Y.L. Ng notes that banyan trees were worshipped because they were often the only surviving trees in a landscape that had been steadily deforested over hundreds of years. “Its wood is gnarled and so cannot be used as timber. It will not flame and so cannot be used for firewood. Its very lack of useful properties ensures its invincibility and survival,” he wrote in a 1983 study of the New Territories.
+      </p>
+      <p class="paragraph" data-para="10">
+        <span class="paragraph-num">[10]</span>
+        The 17th century playwright Li Yu saw the banyan tree as a symbol of love. “Anytime a smaller tree grows before a banyan tree, this banyan will sooner or later lean its body towards the smaller tree. After a time, it wraps its branches around the smaller tree’s body, and the smaller tree gradually falls into the banyan’s embrace. The two trees become one, so that even if you cut them with an axe you would not be able to separate them.”
+      </p>
+      <p class="paragraph" data-para="11">
+        <span class="paragraph-num">[11]</span>
+        Modern Hong Kong has found ways to accommodate banyan trees. To Yuen Street near City University forks around a particularly large banyan, an accommodation also made on Dragon Road near Victoria Park. Nearly two-thirds of the 481 trees on the government’s Register of Old and Valuable Trees are banyans. According to the government, there are 29,000 banyans under maintenance in city parks and streets, though many more exist undocumented in the wild. A total of 3,491 new banyans have been planted in the city since 2011.
+      </p>
+      <p class="paragraph" data-para="12">
+        <span class="paragraph-num">[12]</span>
+        And while the future of many old and prominent banyans is contentious you can count on banyans to find a way to survive even in the most difficult conditions. New sprouts are already growing from the stumps of the severed banyan trees on Bonham Road. There is a reason they are worshipped, after all.
+      </p>
+    </section>
+
+    <div class="divider" id="divider" title="Drag to resize"></div>
+
+    <section class="panel questions-panel" id="questionsPanel">
+      <p class="instruction">Read Text 1 and Text 2 and answer questions 1–23. (About 43 marks)</p>
+
+      <!-- Q1 -->
+      <div class="question-block" id="q1" data-q="1">
+        <div class="question-label">1. Based on the information in paragraph 1, complete the sentence by selecting the best option from the choices below. (2 marks)<br>
+        (i) ____ banyan trees were removed while several others (ii) ____ as a result of heavy rainfall.</div>
+        <div class="options">
+          <p>(i)</p>
+          <label><input type="radio" name="q1i" value="A">A. Right</label>
+          <label><input type="radio" name="q1i" value="B">B. One hundred</label>
+          <label><input type="radio" name="q1i" value="C">C. Four-year-old</label>
+          <label><input type="radio" name="q1i" value="D">D. Four hundred-year-old</label>
+        </div>
+        <div class="options" style="margin-top: 8px;">
+          <p>(ii)</p>
+          <label><input type="radio" name="q1ii" value="A">A. loosened</label>
+          <label><input type="radio" name="q1ii" value="B">B. fell down</label>
+          <label><input type="radio" name="q1ii" value="C">C. were crushed</label>
+          <label><input type="radio" name="q1ii" value="D">D. were cut down</label>
+        </div>
+
+<div class="inline-solution" id="solution-q1" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">1</span> Two-part Multiple Choice <span class="marks-badge">2 marks</span></h3>
+      <div class="answer-text">(i) D &nbsp; (ii) B</div>
+      <p class="explanation">The first paragraph says "the government’s controversial decision to cut down <strong>four century-old</strong> Chinese banyans after several similar trees <strong>fell</strong> from stone walls". Century-old means 100 years, which matches four hundred-year-old (D). Several similar trees already fell (collapsed) after the storm, which matches "fell down" (B).</p>
+      <p class="explanation-zh">第一段說政府砍掉「四棵百年老榕」，百年即一百多年，與「four hundred-year-old」(D) 相符。已經有幾棵樹在風暴後「從石牆倒塌」，所以(ii) 是 fell down (B)。</p>
+      <div class="passage-ref">[1] ...the government’s controversial decision to cut down four century-old Chinese banyans after several similar trees fell from stone walls during recent storms.</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q2 -->
+      <div class="question-block" id="q2" data-q="2">
+        <div class="question-label">2. According to paragraphs 1 and 2, why was the ‘decision’ (line 2) considered ‘controversial’?</div>
+        <input type="text" class="text-input wide" name="q2" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q2" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">2</span> Short Answer <span class="marks-badge">2 marks</span></h3>
+      <div class="answer-text">Suggested answer: Because the government cut down four century-old banyan trees without consulting the expert panel that advises it on tree management, and many experts and local people were angry/opposed to the decision.</div>
+      <p class="explanation">Paragraph 2 says: "experts expressed anger over the Highways Department’s controversial felling... <strong>without consulting a panel advising the government on tree management</strong>." The lack of consultation and expert opposition made it controversial.</p>
+      <p class="explanation-zh">因為政府砍掉四棵百年榕樹，但沒有諮詢負責樹木管理的專家小組，引來專家不滿和憤怒，因此決定具爭議性。</p>
+      <div class="passage-ref">[2] ...experts expressed anger over the Highways Department’s controversial felling of four century-old banyan trees in Sai Ying Pun, without consulting a panel advising the government on tree management.</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q3 -->
+      <div class="question-block" id="q3" data-q="3">
+        <div class="question-label">3. According to paragraph 5, how did the wall become a problem?</div>
+        <input type="text" class="text-input wide" name="q3" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q3" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">3</span> Short Answer <span class="marks-badge">2 marks</span></h3>
+      <div class="answer-text">Suggested answer: After the collapse, inspections found <strong>cracks in the wall behind the remaining trees</strong>, and these cracks were seen to have <strong>worsened</strong> over time. This made the wall and trees dangerous.</div>
+      <p class="explanation">Paragraph 5 says after the 22 July collapse, cracks were found in the wall behind the remaining trees, and the cracks got worse. Since the trees are rooted in the wall, worsening cracks made the wall unstable and dangerous, so it became a problem for public safety.</p>
+      <p class="explanation-zh">第一段說在七月二十二日倒塌後，檢查發現剩餘樹木後方的石牆出現裂痕，而且裂痕不斷惡化。牆壁不穩定會連帶樹木倒塌，因此對公眾安全構成問題。</p>
+      <div class="passage-ref">[5] But by midweek last week, cracks were found in the wall behind the trees and were seen to have worsened.</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q4 -->
+      <div class="question-block" id="q4" data-q="4">
+        <div class="question-label">4. Who or what does ‘them’ (line 17) refer to?</div>
+        <input type="text" class="text-input wide" name="q4" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q4" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">4</span> Reference <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Suggested answer: (The four recently cut down) banyan trees / (the severed) banyan roots (on Bonham Road)</div>
+      <p class="explanation">Line 27 (which is line 17 in the combined numbering) says: "local residents, who tied balloons and messages of support to the trees’ roots, which still clung to the wall that had supported them for 100 years." "Them" refers to the (four chopped down) banyan trees / their roots that were still attached to the wall.</p>
+      <p class="explanation-zh">此句是：當地居民把氣球和支持信息綁在樹根上，這些樹根仍然依附在支撐了它們一百年的牆壁上。「them」指被砍的榕樹（或是它們的樹根）。</p>
+      <div class="passage-ref">Text 2 paragraph 7: ...local residents, who tied balloons and messages of support to the trees’ roots, which still clung to the wall that had supported them for 100 years.</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q5 -->
+      <div class="question-block" id="q5" data-q="5">
+        <div class="question-label">5. According to Text 1, are the following statements True (T), False (F) or Not Given (NG)? (3 marks)</div>
+        <table class="tf-table">
+          <thead>
+            <tr><th>Statement</th><th>T</th><th>F</th><th>NG</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>(i) Two government departments had the same view towards the tree felling decision.</td>
+              <td><input type="radio" name="q5i" value="T"></td>
+              <td><input type="radio" name="q5i" value="F"></td>
+              <td><input type="radio" name="q5i" value="NG"></td>
+            </tr>
+            <tr>
+              <td>(ii) The trees in Sai Ying Pun were taken down after experts were upset.</td>
+              <td><input type="radio" name="q5ii" value="T"></td>
+              <td><input type="radio" name="q5ii" value="F"></td>
+              <td><input type="radio" name="q5ii" value="NG"></td>
+            </tr>
+            <tr>
+              <td>(iii) No one was hurt by the fallen trees.</td>
+              <td><input type="radio" name="q5iii" value="T"></td>
+              <td><input type="radio" name="q5iii" value="F"></td>
+              <td><input type="radio" name="q5iii" value="NG"></td>
+            </tr>
+          </tbody>
+        </table>
+
+<div class="inline-solution" id="solution-q5" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">5</span> T/F/NG <span class="marks-badge">3 marks</span></h3>
+      <div class="answer-text">(i) T &nbsp; (ii) F &nbsp; (iii) NG</div>
+      <p class="explanation">(i) <strong>True</strong> — Paragraph 6 says: "We agree with the department that the trees had to be removed immediately." Tree Management Office (Development Bureau) agreed with Highways Department, so they had the same view.<br>
+      (ii) <strong>False</strong> — The experts were upset <em>after</em> the trees were cut down, not that the trees were cut down <em>after</em> experts became upset. The order of events is reversed.<br>
+      (iii) <strong>Not Given</strong> — Text 1 never mentions whether anyone was injured or killed by the fallen trees. We can't confirm this from the text.</p>
+      <p class="explanation-zh">(i) 對——發展局樹木管理處同意路政署說必須立即移除樹木，所以兩個部門意見一致。<br>(ii) 錯——專家是在砍樹之後才表達憤怒，並不是砍樹發生在專家不滿之後，次序相反。<br>(iii) 未提及——文中從來沒有說倒塌的樹木是否有人受傷，所以是NG。</p>
+      <div class="passage-ref">[6] "We agree with the department that the trees had to be removed immediately."</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q6 -->
+      <div class="question-block" id="q6" data-q="6">
+        <div class="question-label">6. What is the text type of Text 1?</div>
+        <div class="options">
+          <label><input type="radio" name="q6" value="A">A. A news report</label>
+          <label><input type="radio" name="q6" value="B">B. Health and safety advice</label>
+          <label><input type="radio" name="q6" value="C">C. A profile of banyan trees in Hong Kong</label>
+          <label><input type="radio" name="q6" value="D">D. A leaflet promoting Hong Kong’s heritage</label>
+        </div>
+
+<div class="inline-solution" id="solution-q6" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">6</span> Text Type <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Answer: A — A news report</div>
+      <p class="explanation">Text 1 reports on a recent event (the felling of old banyan trees by the government after storm damage) and quotes the government's explanation. This matches the format of a news report reporting a current controversial event.</p>
+      <p class="explanation-zh">Text 1 報道最近發生的事件（政府風災後砍掉老榕樹），並引用政府解釋，完全符合新聞報道的體裁。</p>
+      <div class="passage-ref">Text 1 opening: "Four trees collapsed in Hong Kong on Monday morning following a night of heavy rain. This comes after the government’s controversial decision..."</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q7 -->
+      <div class="question-block" id="q7" data-q="7">
+        <div class="question-label">7. With reference to paragraph 1, complete the sentence below.<br>
+        Over 70 years ago, Lam installed a shrine, which has been ____________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q7" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q7" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">7</span> Sentence Completion <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">transformed (by permission from the government) into a temple (after World War II).</div>
+      <p class="explanation">Paragraph 1 says: "After World War II, he received permission from the government to transform the shrine into a temple." So the shrine was transformed into a temple.</p>
+      <p class="explanation-zh">根據第一段：二戰後，他得到政府允許把神龕改建為廟宇。</p>
+      <div class="passage-ref">[1] After World War II, he received permission from the government to transform the shrine into a temple.</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q8 -->
+      <div class="question-block" id="q8" data-q="8">
+        <div class="question-label">8. What does the phrase ‘these behemoths’ (line 4) refer to?</div>
+        <input type="text" class="text-input wide" name="q8" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q8" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">8</span> Reference <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">(Banyan) trees in Hong Kong / The banyan trees (that grow everywhere in Hong Kong).</div>
+      <p class="explanation">The previous sentence says: "It is no coincidence that Lam’s temple started with a banyan tree. These behemoths..." So "these" refers back to the banyan trees mentioned in the previous sentence. "Behemoth" means a large/huge thing, which matches the size of mature banyans.</p>
+      <p class="explanation-zh">前一句說林的廟宇從榕樹開始，所以 "these behemoths" 指香港的榕樹。behemoth 意思是龐然大物，符合榕樹體型。</p>
+      <div class="passage-ref">[2] It is no coincidence that Lam’s temple started with a banyan tree. These behemoths are ubiquitous in Hong Kong...</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q9 -->
+      <div class="question-block" id="q9" data-q="9">
+        <div class="question-label">9. What does Jim imply when he says ‘If Hong Kong was abandoned it would be taken over by banyans in a few hundred years’ (line 6)?</div>
+        <input type="text" class="text-input wide" name="q9" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q9" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">9</span> Inference <span class="marks-badge">2 marks</span></h3>
+      <div class="answer-text">Suggested answer: Jim implies that banyan trees are extremely adaptable and good at surviving and spreading in Hong Kong's environment/climate, even without human help. They will naturally colonize the whole area if people leave.</div>
+      <p class="explanation">Jim is highlighting how well banyans adapt to Hong Kong conditions. They are so good at growing and spreading here that if humans left, banyans would quickly take over the entire city. This shows their strong survival ability and ubiquity.</p>
+      <p class="explanation-zh">Jim暗示榕樹在香港環境適應力極強，即使沒有人類干預，也能很好地生存和擴散，如果人類放棄香港，幾百年內榕樹就會完全佔領整個地方，說明榕樹生命力頑強，適應力強。</p>
+      <div class="passage-ref">[2] "If Hong Kong was abandoned it would be taken over by banyans in a few hundred years," says Jim Chi-yung...</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q10 -->
+      <div class="question-block" id="q10" data-q="10">
+        <div class="question-label">10. Find a word in paragraph 2 which can be replaced by each word or phrase given below. (2 marks)<br>
+        (i) ‘seen everywhere’ ________________________<br>
+        (ii) ‘significant’ ________________________</div>
+        <p placeholder="Your answer">(i) <input type="text" class="text-input short" name="q10i" placeholder="Your answer"></p placeholder="Your answer">
+        <p placeholder="Your answer">(ii) <input type="text" class="text-input short" name="q10ii" placeholder="Your answer"></p placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q10" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">10</span> Vocabulary <span class="marks-badge">2 marks</span></h3>
+      <div class="answer-text">(i) ubiquitous &nbsp; (ii) imposing / prominent</div>
+      <p class="explanation">(i) "These behemoths are <strong>ubiquitous</strong> in Hong Kong" — ubiquitous means found everywhere / seen everywhere, exactly matching the definition.<br>
+      (ii) "Their <strong>imposing</strong> presence defines the cityscape" — imposing means impressive/significant because of large size, so it can be replaced by significant.</p>
+      <p class="explanation-zh">(i) 文中說榕樹在香港 "ubiquitous"，這個詞意思就是到處可見，符合 "seen everywhere"。<br>(ii) "Their imposing presence defines the cityscape"，imposing 表示因體型巨大而給人深刻印象，可以被 significant 替換。</p>
+      <div class="passage-ref">[2] These behemoths are ubiquitous in Hong Kong... Their imposing presence defines the cityscape.</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q11 -->
+      <div class="question-block" id="q11" data-q="11">
+        <div class="question-label">11. Below is a summary of paragraph 3. In five of the lines there is ONE mistake. If you find a mistake, underline it and replace the word with one that expresses the correct idea. Write the word in the Correction column. Both grammar and spelling must be correct. In one of the lines, there is no mistake; put a tick (✓) in the Correction column. One has been done for you as an example. (5 marks)</div>
+        <table class="tf-table">
+          <thead>
+            <tr><th>Summary</th><th>Correction</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Thin airborne branches seek food; making banyan trees easily identifiable.</td>
+              <td placeholder="Your answer">(i) <input type="text" class="text-input short" name="q11i" placeholder="Your answer"></td placeholder="Your answer">
+            </tr>
+            <tr>
+              <td>Over 1,100 banyans growing out of stone walls on Hong Kong Island were recorded by Jim Chi-yung.</td>
+              <td placeholder="Your answer">(ii) <input type="text" class="text-input short" name="q11ii" placeholder="Your answer"></td placeholder="Your answer">
+            </tr>
+            <tr>
+              <td>Finding protection from another tree or the soil enables it to produce a thin trunk.</td>
+              <td placeholder="Your answer">(iii) <input type="text" class="text-input short" name="q11iii" placeholder="Your answer"></td placeholder="Your answer">
+            </tr>
+            <tr>
+              <td>Since banyans grow in few situations they are the most dominant form of greenery</td>
+              <td placeholder="Your answer">(iv) <input type="text" class="text-input short" name="q11iv" placeholder="Your answer"></td placeholder="Your answer">
+            </tr>
+            <tr>
+              <td>even in areas that have very little space or are very flat.</td>
+              <td>hilly (example)</td>
+            </tr>
+          </tbody>
+        </table>
+
+<div class="inline-solution" id="solution-q11" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">11</span> Error Correction <span class="marks-badge">5 marks</span></h3>
+      <div class="answer-text">(i) aerial roots<br>
+      (ii) ✓<br>
+      (iii) thick (woody) trunk<br>
+      (iv) varied / different</div>
+      <p class="explanation">(i) Original text says: "Banyan trees are immediately recognisable for their <strong>spindly aerial roots</strong>, which cast outwards in search of water and nutrition." The summary incorrectly wrote "Thin airborne branches" — correct mistake is "aerial roots".<br>
+      (ii) The statement matches Jim actually counted over 1,100 banyans on Hong Kong Island stone walls — this is correct, so tick.<br>
+      (iii) Original: "When a root finds a suitable source... it becomes a <strong>thick, woody trunk</strong>." Summary says "produce a thin trunk" — mistake is "thin", correct is "thick".<br>
+      (iv) Original: "This is what allows the banyan to grow in <strong>varied</strong> conditions." Summary says "grow in few situations" — "few" should be replaced by "varied".</p>
+      <p class="explanation-zh">(i) 原文是 "spindly aerial roots" (細氣生根)，摘要錯寫成 "Thin airborne branches"，糾正為 aerial roots。<br>(ii) 原文說Jim數過島上石牆有超過1100棵榕樹，這句正確，所以打勾。<br>(iii) 原文說根找到水源會變成 "thick, woody trunk"，摘要說 "thin trunk"，糾正為 thick。<br>(iv) 原文說榕樹可以在 "varied conditions" 生長，摘要說 "few situations"，糾正為 varied / different。</p>
+      <div class="passage-ref">[3] Banyan trees are immediately recognisable for their spindly aerial roots, which cast outwards in search of water and nutrition... When a root finds a suitable source... it becomes a thick, woody trunk. This is what allows the banyan to grow in varied conditions...</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q12 -->
+      <div class="question-block" id="q12" data-q="12">
+        <div class="question-label">12. Complete the notes about paragraph 4 by writing ONE word taken from the paragraph in each blank below. (4 marks)<br>
+        Jim shows the writer trees growing out of a stone wall built according to a (i) ____________ method.<br>
+        This type of wall needs no (ii) ____________ in the gaps between each stone. He explains that birds let go of banyan (iii) ____________ or they are carried by the wind and fall into these gaps. It is here that very long roots (iv) ____________.</div>
+        <p placeholder="Your answer">(i) <input type="text" class="text-input short" name="q12i" placeholder="Your answer"></p placeholder="Your answer">
+        <p placeholder="Your answer">(ii) <input type="text" class="text-input short" name="q12ii" placeholder="Your answer"></p placeholder="Your answer">
+        <p placeholder="Your answer">(iii) <input type="text" class="text-input short" name="q12iii" placeholder="Your answer"></p placeholder="Your answer">
+        <p placeholder="Your answer">(iv) <input type="text" class="text-input short" name="q12iv" placeholder="Your answer"></p placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q12" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">12</span> One-word Blank <span class="marks-badge">4 marks</span></h3>
+      <div class="answer-text">(i) traditional Hakka &nbsp; (ii) mortar &nbsp; (iii) seeds &nbsp; (iv) plunge</div>
+      <p class="explanation">All answers are taken directly from paragraph 4:<br>
+      (i) "...built using a <strong>traditional Hakka</strong> technique..."<br>
+      (ii) "...does not require <strong>mortar</strong> between stone joints."<br>
+      (iii) "Seeds carried by the wind or dropped by <strong>birds</strong> find their way into the cracks." → birds drop the banyan <strong>seeds</strong>.<br>
+      (iv) "As the tree grows, its roots <strong>plunge</strong> dozens of metres into the soil behind the wall."</p>
+      <p class="explanation-zh">所有答案直接從第四段提取，每格一個字（原文單詞）。</p>
+      <div class="passage-ref">[4] ...which was built using a traditional Hakka technique that does not require mortar between stone joints. Seeds carried by the wind or dropped by birds find their way into the cracks. As the tree grows, its roots plunge dozens of metres into the soil behind the wall.</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q13 -->
+      <div class="question-block" id="q13" data-q="13">
+        <div class="question-label">13. Complete the summary of paragraph 5 by selecting the best option from the choices below. (3 marks)<br>
+        Jim is impressed by the way that the trees create a green (i) ____ that covers the road. He says that he once suggested creating a (ii) ____ street with restaurants for people to eat outside under the banyans. The government reacted in (iii) ____ way to the idea.</div>
+        <div class="options">
+          <p>(i)</p>
+          <label><input type="radio" name="q13i" value="A">A. banyan</label>
+          <label><input type="radio" name="q13i" value="B">B. umbrella</label>
+          <label><input type="radio" name="q13i" value="C">C. backdrop</label>
+          <label><input type="radio" name="q13i" value="D">D. destination</label>
+        </div>
+        <div class="options" style="margin-top: 8px;">
+          <p>(ii)</p>
+          <label><input type="radio" name="q13ii" value="A">A. traffic-free</label>
+          <label><input type="radio" name="q13ii" value="B">B. driver-friendly</label>
+          <label><input type="radio" name="q13ii" value="C">C. pedestrian-free</label>
+          <label><input type="radio" name="q13ii" value="D">D. environmentally-friendly</label>
+        </div>
+        <div class="options" style="margin-top: 8px;">
+          <p>(iii)</p>
+          <label><input type="radio" name="q13iii" value="A">A. a warm</label>
+          <label><input type="radio" name="q13iii" value="B">B. a negative</label>
+          <label><input type="radio" name="q13iii" value="C">C. a sarcastic</label>
+          <label><input type="radio" name="q13iii" value="D">D. an optimistic</label>
+        </div>
+
+<div class="inline-solution" id="solution-q13" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">13</span> Three-part MC <span class="marks-badge">3 marks</span></h3>
+      <div class="answer-text">(i) C &nbsp; (ii) A &nbsp; (iii) B</div>
+      <p class="explanation">(i) "Jim loves the way the banyans form a lush green <strong>canopy</strong> across Forbes Street." Canopy means a covering/backdrop, so C "backdrop" matches best.<br>
+      (ii) "...he once proposed <strong>pedestrianising</strong> the street..." Pedestrianising means making it traffic-free (no cars) so people can walk and dine outside → matches A "traffic-free".<br>
+      (iii) "The government’s reception was <strong>frosty</strong>." Frosty means cold/unfriendly/negative → matches B "a negative".</p>
+      <p class="explanation-zh">(i) 原文說榕樹形成綠色 canopy (樹冠) 覆蓋街道，canopy 即背景/遮蓋，所以 backdrop (C) 最接近。<br>(ii) Jim 提議 pedestrianising the street，即禁止車輛，所以 traffic-free (A)。<br>(iii) 政府反應是 frosty，即是冷淡負面，所以 negative (B)。</p>
+      <div class="passage-ref">[5] Jim loves the way the banyans form a lush green canopy across Forbes Street. He ... proposed pedestrianising the street ... The government’s reception was frosty.</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q14 -->
+      <div class="question-block" id="q14" data-q="14">
+        <div class="question-label">14. What does ‘it’ (line 22) refer to?</div>
+        <input type="text" class="text-input wide" name="q14" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q14" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">14</span> Reference <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">Concretng over / covering the root (to stop it from growing).</div>
+      <p class="explanation">Paragraph 6: "...touching a root that had been concreted over to stop it from growing. 'See what’s happening here?' he asks... 'The people who do this, they don’t understand trees. They’re defacing heritage.' " "it" refers to the action of concreting over the root to stop its growth.</p>
+      <p class="explanation-zh">第六段：Jim摸著被水泥覆蓋阻止生長的樹根說「看看這裡發生什麼事」，所以 it 指用水泥覆蓋樹根阻止生長這件事。</p>
+      <div class="passage-ref">[6] "See what's happening here?" he asks, touching a root that had been concreted over to stop it from growing.</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q15 -->
+      <div class="question-block" id="q15" data-q="15">
+        <div class="question-label">15. In paragraph 6, what is Jim’s attitude towards people who concrete over roots: Positive, negative or neutral? Give one reason from Text 2 to support your answer.</div>
+        <p placeholder="Your answer">Attitude: <input type="text" class="text-input short" name="q15attitude" placeholder="Your answer"></p placeholder="Your answer">
+        <p placeholder="Your answer">Reason: <input type="text" class="text-input wide" name="q15reason" placeholder="Your answer"></p placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q15" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">15</span> Attitude + Reason <span class="marks-badge">2 marks</span></h3>
+      <div class="answer-text">Attitude: <strong>Negative</strong><br>
+      Reason: He says "They're defacing heritage" / He criticises people who do this because they don't understand trees and they are ruining a natural/historic feature.</div>
+      <p class="explanation">Jim clearly has a negative attitude: he says "The people who do this, they don't understand trees. <strong>They're defacing heritage</strong>. Imagine doing this to an ancient monument." The word "defacing" means ruining the appearance of something valuable/historic, so his attitude is negative.</p>
+      <p class="explanation-zh">態度：負面 (Negative)。原因：Jim批評這樣做的人說「他們在破壞古蹟（defacing heritage）」，他認為這些人不懂樹木，破壞了自然歷史景觀。</p>
+      <div class="passage-ref">[6] "The people who do this, they don't understand trees. They're defacing heritage. Imagine doing this to an ancient monument."</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- continuing more questions... -->
+
+      <!-- Q16 -->
+      <div class="question-block" id="q16" data-q="16">
+        <div class="question-label">16. What does ‘an unnecessary overreaction’ (line 27) refer to?</div>
+        <input type="text" class="text-input wide" name="q16" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q16" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">16</span> Reference <span class="marks-badge">1 mark</span></h3>
+      <div class="answer-text">It refers to the Highways Department secretly chopping down four healthy banyan trees on Bonham Road after a wall tree collapsed (as a precautionary measure).</div>
+      <p class="explanation">Paragraph 7: "...a wall tree collapsed onto Bonham Road, which led the Highways Department to surreptitiously chop down four healthy banyans nearby. Their sudden removal was defended by the government as a precautionary measure, but experts like Jim said it was an unnecessary overreaction." So the phrase refers to the felling of four healthy trees.</p>
+      <p class="explanation-zh">這句指在Bonham Road一棵牆樹倒塌後，路政署秘密砍掉四棵健康的榕樹，專家認為這是不必要的過度反應。</p>
+      <div class="passage-ref">[7] ...after days of heavy rain, a wall tree collapsed onto Bonham Road, which led the Highways Department to surreptitiously chop down four healthy banyans nearby... experts like Jim said it was an unnecessary overreaction.</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q17 -->
+      <div class="question-block" id="q17" data-q="17">
+        <div class="question-label">17. According to paragraph 7, why did local residents in Bonham Road attach balloons to the tree roots?</div>
+        <input type="text" class="text-input wide" name="q17" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q17" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">17</span> Short Answer <span class="marks-badge">2 marks</span></h3>
+      <div class="answer-text">Suggested answer: Because they opposed the felling of the trees / They showed support for the trees and protested against the unnecessary cutting down of healthy old banyans by the government.</div>
+      <p class="explanation">The text says the felling sparked outrage from local residents, so they tied balloons and messages of support to the roots to show they opposed the decision and supported saving the trees.</p>
+      <p class="explanation-zh">因為當地居民對砍掉健康老榕樹感到憤怒，他們綁氣球和支持信息在樹根上，表示他們反對政府這個決定，支持保護樹木。</p>
+      <div class="passage-ref">[7] It sparked outrage from local residents, who tied balloons and messages of support to the trees' roots...</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q18 -->
+      <div class="question-block" id="q18" data-q="18">
+        <div class="question-label">18. According to paragraph 8, are the following statements True (T), False (F) or Not Given (NG)? (3 marks)</div>
+        <table class="tf-table">
+          <thead>
+            <tr><th>Statement</th><th>T</th><th>F</th><th>NG</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>(i) Visitors to Lam Tsuen buy prepared wishes to put on the tree.</td>
+              <td><input type="radio" name="q18i" value="T"></td>
+              <td><input type="radio" name="q18i" value="F"></td>
+              <td><input type="radio" name="q18i" value="NG"></td>
+            </tr>
+            <tr>
+              <td>(ii) Since 2005 there has been a decline in the number of worshippers at Lam Tsuen.</td>
+              <td><input type="radio" name="q18ii" value="T"></td>
+              <td><input type="radio" name="q18ii" value="F"></td>
+              <td><input type="radio" name="q18ii" value="NG"></td>
+            </tr>
+            <tr>
+              <td>(iii) Shrines are frequently built in the branches of trees.</td>
+              <td><input type="radio" name="q18iii" value="T"></td>
+              <td><input type="radio" name="q18iii" value="F"></td>
+              <td><input type="radio" name="q18iii" value="NG"></td>
+            </tr>
+          </tbody>
+        </table>
+
+<div class="inline-solution" id="solution-q18" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">18</span> T/F/NG <span class="marks-badge">3 marks</span></h3>
+      <div class="answer-text">(i) F &nbsp; (ii) NG &nbsp; (iii) F</div>
+      <p class="explanation">(i) <strong>False</strong> — Visitors write their own wish on yellow paper, they don't buy prepared wishes. "Visitors <strong>write their wish</strong> on a piece of yellow paper..."<br>
+      (ii) <strong>Not Given</strong> — The text only says after a branch collapsed in 2005, worshippers were told to tie wishes to a plastic tree instead. It never mentions whether the number of worshippers has declined.<br>
+      (iii) <strong>False</strong> — "shrines are often built <strong>at their base</strong>, not in their branches." So the statement is wrong.</p>
+      <p class="explanation-zh">(i) 錯——遊客自己在黃紙寫願望，不是買預製的願望。<br>(ii) 未提及——文中只說2005年樹枝斷後改為綁到塑料樹，從來沒說參拜人數減少。<br>(iii) 錯——神龕是建在樹根底部 (at their base)，不是建在樹枝上。</p>
+      <div class="passage-ref">[8] Visitors write their wish on a piece of yellow paper, tie it to an orange and toss it onto one of the trees' branches. After the weight of all the wishes caused a branch to collapse in 2005, worshippers were instructed to tie their wishes to a plastic tree instead. ...shrines are often built at their base.</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q19 -->
+      <div class="question-block" id="q19" data-q="19">
+        <div class="question-label">19. Why did the ‘lack of useful properties’ (line 39) ensure the survival of banyans?</div>
+        <input type="text" class="text-input wide" name="q19" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q19" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">19</span> Short Answer <span class="marks-badge">2 marks</span></h3>
+      <div class="answer-text">Suggested answer: Because their wood cannot be used for timber (to make furniture/building) and cannot be used for firewood, so people have no economic reason to cut them down, which allows them to survive undisturbed for hundreds of years.</div>
+      <p class="explanation">Anthropologist Ng notes: "Its wood is gnarled and so cannot be used as timber. It will not flame and so cannot be used for firewood. Its very lack of useful properties ensures its invincibility and survival." Since there's no economic incentive to cut them, they are not logged and survive.</p>
+      <p class="explanation-zh">因為榕樹木材彎曲不能做木材（做家具/建築），也不能燒柴，所以人們沒有經濟動機砍伐它們，這就保證了它們可以不受干擾存活數百年。</p>
+      <div class="passage-ref">[9] "Its wood is gnarled and so cannot be used as timber. It will not flame and so cannot be used for firewood. Its very lack of useful properties ensures its invincibility and survival,"</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q20 -->
+      <div class="question-block" id="q20" data-q="20">
+        <div class="question-label">20. Provide ONE example of how the behaviour of banyans can be seen as ‘a symbol of love’ (line 41).</div>
+        <input type="text" class="text-input wide" name="q20" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q20" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">20</span> Example <span class="marks-badge">2 marks</span></h3>
+      <div class="answer-text">Suggested answer: When a smaller tree grows near a banyan, the banyan gradually leans towards it, wraps its branches around the smaller tree, and they eventually grow together as one tree, so even an axe cannot separate them. This embracing behaviour symbolizes love.</div>
+      <p class="explanation">Li Yu the 17th century playwright observed this and described it as a symbol of love because the banyan naturally wraps around and merges with another tree, becoming inseparable, which is like the closeness of love.</p>
+      <p class="explanation-zh">根據劇作家李漁觀察：當小樹長在榕樹旁邊，榕樹會漸漸靠向小樹，用枝葉環抱小樹，最後兩樹長在一起變成一體，就算斧頭也無法分開。這種互相緊抱不可分離的行為就像愛情，所以象徵愛。</p>
+      <div class="passage-ref">[10] "Anytime a smaller tree grows before a banyan tree, this banyan will sooner or later lean its body towards the smaller tree. After a time, it wraps its branches around the smaller tree's body, and the smaller tree gradually falls into the banyan's embrace. The two trees become one, so that even if you cut them with an axe you would not be able to separate them."</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q21 -->
+      <div class="question-block" id="q21" data-q="21">
+        <div class="question-label">21. According to paragraph 11, give ONE example of how the government is protecting banyan trees.</div>
+        <input type="text" class="text-input wide" name="q21" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q21" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">21</span> Short Answer <span class="marks-badge">2 marks</span></h3>
+      <div class="answer-text">Any one example:<br>
+      - Nearly two-thirds of the 481 trees on the <strong>Register of Old and Valuable Trees</strong> are banyans (government registers and protects valuable old banyans).<br>
+      - The government <strong>maintains 29,000 banyans</strong> in city parks and streets.<br>
+      - The government has <strong>planted 3,491 new banyans</strong> in the city since 2011.<br>
+      - Cities have been redesigned to <strong>go around existing large banyans</strong> (e.g. To Yuen Street near City University, Dragon Road near Victoria Park).</div>
+      <p class="explanation">Any one of these examples from paragraph 11 is acceptable. All are examples of government protection/accommodation of banyans.</p>
+      <p class="explanation-zh">從第11段選一個例子即可：政府把近三分之二珍貴老榕樹登記在《古樹名木冊》保護 / 政府在公園街道維護29,000棵榕樹 / 2011年以來種植了3,491棵新榕樹 / 城市規劃繞過現有大榕樹（比如城中大學附近道恩街）。</p>
+      <div class="passage-ref">[11] Modern Hong Kong has found ways to accommodate banyan trees. To Yuen Street near City University forks around a particularly large banyan... Nearly two-thirds of the 481 trees on the government's Register of Old and Valuable Trees are banyans. According to the government, there are 29,000 banyans under maintenance... A total of 3,491 new banyans have been planted in the city since 2011.</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q22 -->
+      <div class="question-block" id="q22" data-q="22">
+        <div class="question-label">22. According to Text 2, what quality of banyan trees does the writer have in mind when he says ‘There is a reason they are worshipped, after all’ (line 52)?</div>
+        <input type="text" class="text-input wide" name="q22" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q22" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">22</span> Inference <span class="marks-badge">2 marks</span></h3>
+      <div class="answer-text">Suggested answer: The writer is referring to banyan trees' extraordinary ability to survive and grow even in very difficult conditions / They can survive even after being cut down (new sprouts grow from the stumps).</div>
+      <p class="explanation">The last sentence says: "And while the future of many old and prominent banyans is contentious you can count on banyans to find a way to survive even in the most difficult conditions. New sprouts are already growing from the stumps of the severed banyan trees... There is a reason they are worshipped, after all." So the "reason" is their strong perseverance/survival ability even against human cutting.</p>
+      <p class="explanation-zh">最後一段說：縱使很多老榕樹未來充滿爭議，但榕樹就算在最惡劣條件下也能找到生存方法，就算被砍斷也能從樹樁長出新芽。因此作者說「它們被崇拜是有原因的」，指的就是榕樹頑強的生存能力。</p>
+      <div class="passage-ref">[12] And while the future of many old and prominent banyans is contentious you can count on banyans to find a way to survive even in the most difficult conditions. New sprouts are already growing from the stumps of the severed banyan trees on Bonham Road. There is a reason they are worshipped, after all.</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <!-- Q23 -->
+      <div class="question-block" id="q23" data-q="23">
+        <div class="question-label">23. Use the information in Text 2 to match each of the following comments with a person/organisation mentioned in the text. Write the letter of the comment in the Answer column. One comment is NOT used. One has been done for you as an example. Use each letter ONCE only. (5 marks)</div>
+        <table class="tf-table">
+          <thead>
+            <tr><th>Person/organisation</th><th>Answer</th><th>Comments</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Li Yu</td><td>A (example)</td><td>A. Banyan trees represent love.</td></tr>
+            <tr placeholder="Your answer"><td placeholder="Your answer">Mr Lam</td placeholder="Your answer"><td placeholder="Your answer"><input type="text" class="text-input short" name="q23i" placeholder="Your answer"></td placeholder="Your answer"><td placeholder="Your answer">B. There are too many trees growing out of walls.</td placeholder="Your answer"></tr placeholder="Your answer">
+            <tr placeholder="Your answer"><td placeholder="Your answer">P. Y. L. Ng</td placeholder="Your answer"><td placeholder="Your answer"><input type="text" class="text-input short" name="q23ii" placeholder="Your answer"></td placeholder="Your answer"><td placeholder="Your answer">C. We needed to play it safe. We just had to be cautious.</td placeholder="Your answer"></tr placeholder="Your answer">
+            <tr placeholder="Your answer"><td placeholder="Your answer">Jim Chi-yung</td placeholder="Your answer"><td placeholder="Your answer"><input type="text" class="text-input short" name="q23iii" placeholder="Your answer"></td placeholder="Your answer"><td placeholder="Your answer">D. This tree has been part of my life for so long now.</td placeholder="Your answer"></tr placeholder="Your answer">
+            <tr placeholder="Your answer"><td placeholder="Your answer">Visitor to Lam Tsuen</td placeholder="Your answer"><td placeholder="Your answer"><input type="text" class="text-input short" name="q23iv" placeholder="Your answer"></td placeholder="Your answer"><td placeholder="Your answer">E. I don't mind if it's artificial as long as my wishes are heard.</td placeholder="Your answer"></tr placeholder="Your answer">
+            <tr placeholder="Your answer"><td placeholder="Your answer">The Highways Department</td placeholder="Your answer"><td placeholder="Your answer"><input type="text" class="text-input short" name="q23v" placeholder="Your answer"></td placeholder="Your answer"><td placeholder="Your answer">F. It's useless. The wood is not smooth enough to make anything out of.</td placeholder="Your answer"></tr placeholder="Your answer">
+            <tr><td></td><td></td><td>G. My nickname is accurate. I can tell you everything there is to know about banyans.</td></tr>
+          </tbody>
+        </table>
+
+<div class="inline-solution" id="solution-q23" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+  <div class="answer-card" style="padding: 0; border: none; box-shadow: none; margin: 0;">
+<article class="answer-card">
+      <h3><span class="q-num">23</span> Matching <span class="marks-badge">5 marks</span></h3>
+      <div class="answer-text">(i) D &nbsp; (ii) F &nbsp; (iii) G &nbsp; (iv) E &nbsp; (v) C</div>
+      <p class="explanation">- Mr Lam installed the shrine 70+ years ago → it's been part of his life a long time → D<br>
+      - P.Y.L. Ng wrote that banyan's lack of useful properties ensures survival because it can't be used for timber/firewood → "It's useless..." matches F<br>
+      - Jim Chi-yung is known as "the Tree Professor" for his arboreal enthusiasm → he knows everything about banyans → G matches "My nickname is accurate..."<br>
+      - Visitor to Lam Tsuen: they just want their wishes heard, don't mind if it's a plastic tree → E matches "I don't mind if it's artificial..."<br>
+      - Highways Department cut down the trees as a precaution for public safety → "We needed to play it safe..." matches C<br>
+      B is unused.</p>
+      <p class="explanation-zh">- Mr Lam：70多年前就在榕樹下建神龕，所以這樹已經融入他生活很久 → D<br>
+      - P.Y.L. Ng：指出榕樹沒有可用特性，木材不能用，所以"它無用..." → F<br>
+      - Jim Chi-yung：被稱為樹木教授，懂所有關於榕樹知識 → G<br>
+      - 林村遊客：只要願望能被聽到，不介意塑料樹 → E<br>
+      - 路政署：以安全理由砍掉樹木，說需要預防措施 → "我們需要謹慎" → C</p>
+      <div class="passage-ref">Text 2 paragraphs 1, 9, 2, 8, 7</div>
+  </div>
+</article>
+</div>
+      </div>
+
+      <h4 class="end-marker">— End of the Test —</h4>
+      <p class="submit-hint">Please Submit to view your score, solution and explanations.</p>
+    </section>
+  </div> <!-- close main-container -->
+
+  <footer class="bottom-bar">
+    <div class="palette-section">
+      <span class="palette-label">Question Palette</span>
+      <div class="question-palette" id="questionPalette"></div>
+      <div class="palette-legend">
+        <span class="legend-dot"></span> answered
+      </div>
+    </div>
+    <div class="timer-section" id="timer">00:00</div>
+    <div class="action-buttons">
+      <button class="btn btn-submit" id="btnSubmit">✓ Submit</button>
+      <button class="btn btn-review" id="btnReview">⊞ Review</button>
+      <a class="btn btn-solution" href="solution.html">🔑 Solution</a>
+      <button class="btn btn-reset" id="btnReset">↺ Reset</button>
+    </div>
+  </footer>
+
+  <!-- Submit modal -->
+  <div class="modal-overlay" id="submitModal">
+    <div class="modal">
+      <h3>Are you sure you want to submit?</h3>
+      <p id="submitModalText">You have answered <strong id="answeredCount">0</strong> of 23 questions.</p>
+      <div class="modal-actions">
+        <button class="btn btn-reset" id="btnCancelSubmit">Cancel</button>
+        <button class="btn btn-submit" id="btnConfirmSubmit">Submit and view Answers</button>
+      </div>
+    </div>
+  </div>
+  <!-- Score modal -->
+  <div class="modal-overlay" id="scoreModal">
+    <div class="modal">
+      <h3>Your Results</h3>
+      <div class="score-display">
+        <div class="score-number" id="scoreNumber">0/23</div>
+        <div class="score-label" id="scorePercent">0% correct</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-review" id="btnCloseScore">Review Answers</button>
+        <a class="btn btn-solution" href="solution.html">View Full Solution</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

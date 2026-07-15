@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head> 
+
+<script>
+let isSpeaking = false;
+let speechEnabled = true; // 默認開啟
+
+function loadSpeechSetting() {
+  const saved = localStorage.getItem('dse-speech-enabled');
+  if (saved !== null) {
+    speechEnabled = saved === 'true';
+  }
+  updateSpeechButton();
+}
+
+function updateSpeechButton() {
+  const btn = document.getElementById('btnToggleSpeech');
+  if (btn) {
+    btn.textContent = speechEnabled ? 'Speech: ON' : 'Speech: OFF';
+    btn.style.background = speechEnabled ? 'rgba(40, 167, 69, 0.3)' : 'rgba(220, 53, 69, 0.3)';
+  }
+}
+
+function toggleSpeech() {
+  speechEnabled = !speechEnabled;
+  localStorage.setItem('dse-speech-enabled', speechEnabled);
+  updateSpeechButton();
+  if (isSpeaking) {
+    speechSynthesis.cancel();
+    isSpeaking = false;
+  }
+}
+
+function readWord(text){
+  if(!speechEnabled) return; // 關閉狀態不發音
+  if(isSpeaking) speechSynthesis.cancel();
+  let utter = new SpeechSynthesisUtterance(text);
+  utter.lang = "en-US";
+  utter.rate = 0.9;
+  isSpeaking = true;
+  utter.onend = ()=> isSpeaking = false;
+  speechSynthesis.speak(utter);
+}
+
+// ── Click-to-read: 撳邊個英文字就讀邊個 ──
+document.addEventListener('DOMContentLoaded', function(){
+  loadSpeechSetting();
+  const btn = document.getElementById('btnToggleSpeech');
+  if (btn) btn.addEventListener('click', toggleSpeech);
+
+  const passage = document.getElementById('passagePanel');
+  if (!passage) return;
+
+  // 用 caretRangeFromPoint 拎 click 位置嘅英文字
+  passage.addEventListener('click', function(e){
+    if(!speechEnabled) return; // 關閉狀態完全不處理，方便選文字
+    // 唔干擾撳落 link / button / input
+    if (e.target.closest('a, button, input, label, select, textarea')) return;
+
+    const range = document.caretRangeFromPoint(e.clientX, e.clientY);
+    if (!range) return;
+    const node = range.startContainer;
+    if (node.nodeType !== Node.TEXT_NODE) return;
+    const offset = range.startOffset;
+    const text = node.textContent;
+
+    // 搵字嘅起始同結束（連 apostrophe 同 hyphen）
+    let start = offset;
+    let end = offset;
+    while (start > 0 && /[a-zA-Z\u00C0-\u024F'ʼ-]/.test(text[start - 1])) start--;
+    while (end < text.length && /[a-zA-Z\u00C0-\u024F'ʼ-]/.test(text[end])) end++;
+    if (start === end) return;
+
+    const word = text.slice(start, end);
+    // 過濾純數字
+    if (/^\d+$/.test(word)) return;
+
+    readWord(word);
+
+    // ── 視覺回饋：短暫 highlight ──
+    // 用 range select 個字
+    const wordRange = document.createRange();
+    wordRange.setStart(node, start);
+    wordRange.setEnd(node, end);
+    const highlight = document.createElement('mark');
+    highlight.style.cssText = 'background:#ffd54f;border-radius:3px;transition:background .3s';
+    try {
+      wordRange.surroundContents(highlight);
+      setTimeout(() => {
+        const parent = highlight.parentNode;
+        if (parent) {
+          while (highlight.firstChild) parent.insertBefore(highlight.firstChild, highlight);
+          parent.removeChild(highlight);
+          parent.normalize();
+        }
+      }, 500);
+    } catch(_) {
+      // 跨 element boundary 就跳過 highlight
+    }
+  });
+});
+</script>
+ 
+<style>
+/* 游標提示：passage 入面嘅文字係㩒得嘅 */
+#passagePanel .paragraph {
+  cursor: default;
+}
+#passagePanel .paragraph * {
+  cursor: pointer;
+}
+</style>
+
+<meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How a female assistant geologist is breaking ground in a male-dominated field - DSE Reading Practice</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-brand"><span>DSE</span> Female Assistant Geologist</div>
+    <nav class="header-nav">
+      <a href="index.html" class="active">Reading</a>
+      <a href="solution.html">Solution</a>
+    </nav>
+    <div class="header-tools">
+      <button type="button" id="btnToggleSpeech">Speech: ON</button>
+      <button type="button" id="btnLargerText">Larger Text</button>
+      <button type="button" onclick="window.print()">Print</button>
+    </div>
+  </header>
+
+  <div class="main-container" id="mainContainer">
+    <section class="panel passage-panel" id="passagePanel">
+      <h2 class="passage-title">HOW A FEMALE ASSISTANT GEOLOGIST IS BREAKING GROUND IN A MALE-DOMINATED FIELD</h2>
+      <p class="passage-subtitle">DSE Reading Comprehension Practice</p>
+      <div class="passage-illustration">⛰️</div>
+
+      <div style="text-align: center; margin: 15px 0; display: flex;">
+        <button id="btnToggleKelly" style="flex: 1; padding: 8px 12px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; margin: 0 5px;">
+          Kelly: OFF
+        </button>
+        <button id="btnToggleJenny" style="flex: 1; padding: 8px 12px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; margin: 0 5px;">
+          Jenny: OFF
+        </button>
+        <button id="btnToggleNash" style="flex: 1; padding: 8px 12px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; margin: 0 5px;">
+          Nash: OFF
+        </button>
+      </div>
+
+<script>
+// Article Vocabulary Highlight Toggle - Multiple vocabulary banks
+// Three independent banks with mutually exclusive toggle, different colors
+
+const VOCAB_CONFIG = {
+  kelly: {
+    btnId: 'btnToggleKelly',
+    file: '../../kellywordbank-single.md',
+    color: 'rgba(52, 152, 219, 0.3)', // blue
+    on: false
+  },
+  jenny: {
+    btnId: 'btnToggleJenny',
+    file: '../../jennywordbank-single.md',
+    color: 'rgba(155, 89, 182, 0.3)', // purple
+    on: false
+  },
+  nash: {
+    btnId: 'btnToggleNash',
+    file: '../../nashwordbank-single.md',
+    color: 'rgba(230, 126, 34, 0.3)', // red
+    on: false
+  }
+};
+
+let vocabLoaded = {
+  kelly: false,
+  jenny: false,
+  nash: false
+};
+let vocabWords = {
+  kelly: [],
+  jenny: [],
+  nash: []
+};
+
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Load vocabulary for a specific bank
+async function loadVocab(bank) {
+  try {
+    const config = VOCAB_CONFIG[bank];
+    const response = await fetch(`${config.file}?cache-bust=${new Date().getTime()}`);
+    const text = await response.text();
+    const lines = text.split('\n');
+    const words = [];
+
+    lines.forEach(line => {
+      const match = line.match(/^###\s+([^(]+)/);
+      if (match) {
+        const word = match[1].trim();
+        if (word) words.push(word);
+      }
+    });
+
+    // Sort by length descending - longer phrases match first
+    words.sort((a, b) => b.length - a.length);
+    vocabWords[bank] = words;
+    vocabLoaded[bank] = true;
+    console.log(`Loaded ${vocabWords[bank].length} vocabulary words for ${bank}`);
+  } catch (err) {
+    console.error(`Failed to load vocabulary bank ${bank}:`, err);
+    vocabWords[bank] = [];
+    vocabLoaded[bank] = true;
+  }
+}
+
+// Turn off all other banks when one is turned on
+function turnOffAllExcept(exceptBank) {
+  Object.keys(VOCAB_CONFIG).forEach(bank => {
+    if (bank !== exceptBank && VOCAB_CONFIG[bank].on) {
+      VOCAB_CONFIG[bank].on = false;
+      const btn = document.getElementById(VOCAB_CONFIG[bank].btnId);
+      btn.style.background = '#f39c12';
+      btn.textContent = `${bank.charAt(0).toUpperCase() + bank.slice(1)}: OFF`;
+      removeVocabHighlight(bank);
+    }
+  });
+}
+
+function toggleVocabHighlight(bank) {
+  const config = VOCAB_CONFIG[bank];
+  config.on = !config.on;
+  const btn = document.getElementById(config.btnId);
+
+  if (config.on) {
+    // Turn off all others
+    turnOffAllExcept(bank);
+    btn.textContent = `${bank.charAt(0).toUpperCase() + bank.slice(1)}: ON`;
+    btn.style.background = '#27ae60';
+    applyVocabHighlight(bank);
+  } else {
+    btn.textContent = `${bank.charAt(0).toUpperCase() + bank.slice(1)}: OFF`;
+    btn.style.background = '#f39c12';
+    removeVocabHighlight(bank);
+  }
+}
+
+function applyVocabHighlight(bank) {
+  if (!vocabLoaded[bank]) {
+    setTimeout(() => {
+      if (VOCAB_CONFIG[bank].on) applyVocabHighlight(bank);
+    }, 200);
+    return;
+  }
+
+  if (vocabWords[bank].length === 0) {
+    console.log(`No vocabulary words loaded for ${bank}`);
+    return;
+  }
+
+  const config = VOCAB_CONFIG[bank];
+  const paragraphs = document.querySelectorAll('#passagePanel p.paragraph');
+  
+  console.log(`${bank}: found ${paragraphs.length} paragraphs, ${vocabWords[bank].length} words`);
+
+  paragraphs.forEach(para => {
+    let html = para.innerHTML;
+
+    // First remove any existing highlights
+    html = html.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g, '$1');
+
+    // Apply highlights for this vocab bank
+    vocabWords[bank].forEach(word => {
+      const escaped = escapeRegExp(word);
+      const regex = new RegExp(`\\b${escaped}\\b`, 'gi');
+      html = html.replace(regex, `<mark style="background: ${config.color};">$&</mark>`);
+    });
+
+    para.innerHTML = html;
+  });
+}
+
+function removeVocabHighlight(bank) {
+  const paragraphs = document.querySelectorAll('#passagePanel p.paragraph');
+  paragraphs.forEach(para => {
+    let html = para.innerHTML;
+    html = html.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g, '$1');
+    para.innerHTML = html;
+  });
+}
+
+// Initialize - load all vocabularies
+Object.keys(VOCAB_CONFIG).forEach(bank => {
+  loadVocab(bank);
+  const btn = document.getElementById(VOCAB_CONFIG[bank].btnId);
+  if (btn) {
+    btn.addEventListener('click', () => toggleVocabHighlight(bank));
+  }
+});
+</script>      <p class="paragraph" data-para="1">
+        <span class="paragraph-num">[1]</span>
+        How a female assistant geologist is breaking ground in a male-dominated field
+      </p>
+
+      <p class="paragraph" data-para="2">
+        <span class="paragraph-num">[2]</span>
+        Carol Ho spends six days a week at construction sites across Hong Kong, working from 8am to 6pm in conditions that are often punishing. During a typhoon, the 24-year-old assistant geologist once found herself wading for hours through knee-deep muddy water, documenting rocks as wind and rain battered the site.
+      </p>
+
+      <p class="paragraph" data-para="3">
+        <span class="paragraph-num">[3]</span>
+        Some days, Ho works at sea, where basic facilities can be hard to come by. "Having your period is really inconvenient when going out to sea ... Not every boat has a toilet, and even when they do, you can imagine what the conditions are like," she explained.
+      </p>
+
+      <p class="paragraph" data-para="4">
+        <span class="paragraph-num">[4]</span>
+        The lack of female restrooms also reflects how few women work in this industry. "Since I started working, I've only just met another woman for the first time," she said.
+      </p>
+
+      <p class="paragraph" data-para="5">
+        <span class="paragraph-num">[5]</span>
+        For the past year and a half, Ho has been visiting sites to analyse rock samples and build geological profiles that help construction projects maintain safe conditions. That process begins with understanding the history of a site, including whether the land has been reclaimed or filled in. Drill rigs extract samples from below the surface, allowing Ho's team to assess the weathering profile and create a geological cross-section of the ground.
+      </p>
+
+      <p class="paragraph" data-para="6">
+        <span class="paragraph-num">[6]</span>
+        If a site was previously reclaimed or if material had been dumped there, Ho said geologists would find a layer of landfill or other deposited material. These observations are critical for engineering design because Hong Kong's geology can vary sharply. "For instance, Yuen Long has a lot of marble. If there are significant [amounts of] marble, the design approach differs from traditional methods," Ho said.
+      </p>
+
+      <p class="paragraph" data-para="7">
+        <span class="paragraph-num">[7]</span>
+        Working outdoors and travelling to different parts of Hong Kong fits Ho's personality as an extrovert who prefers to be on the move. She said a conventional office job was never going to be the right fit for her.
+      </p>
+
+      <p class="paragraph" data-para="8">
+        <span class="paragraph-num">[8]</span>
+        "I love exploring," she said. "Because geology involves so many field projects, we have been to all sorts of places – Lamma Island, Cape D'Aguilar and Sharp Island – to do field mapping. It really suited my 'wanderer' personality."
+      </p>
+
+      <p class="paragraph" data-para="9">
+        <span class="paragraph-num">[9]</span>
+        Each site Ho visits offers a different glimpse into the ground beneath Hong Kong. "In my daily routine, I see many types of rock that you'd never encounter on the surface, such as metasandstone and metasiltstone," she said.
+      </p>
+
+      <p class="paragraph" data-para="10">
+        <span class="paragraph-num">[10]</span>
+        "Hong Kong actually has a huge variety of rock types, and they're not easy to differentiate. When I identify them correctly, or when the geological profiles I produce are recognised and validated by my superiors, I feel like my knowledge is truly expanding."
+      </p>
+
+      <p class="paragraph" data-para="11">
+        <span class="paragraph-num">[11]</span>
+        Ho is currently working offshore near Lung Kwu Tan at the far western part of Tuen Mun, where the days are long and physically draining. "You have to commute by boat, and it can take half an hour just to get from the boarding point to the work vessel. It all adds up," she said.
+      </p>
+
+      <p class="paragraph" data-para="12">
+        <span class="paragraph-num">[12]</span>
+        "You spend the whole day on a boat or travelling along a circuitous route. By the end of it, you don't have the energy to do anything else. That's why being able to see friends after work feels like a luxury."
+      </p>
+
+      <p class="paragraph" data-para="13">
+        <span class="paragraph-num">[13]</span>
+        When she first started this job, some of her friends questioned her decision. "They would ask, 'You could choose a more glamorous consultant job – why didn't you?'" she recalled. "The usual career paths are private consultancy or government work. I am technically in consultancy, but I personally don't like sitting in an office from 9am to 5pm."
+      </p>
+
+      <p class="paragraph" data-para="14">
+        <span class="paragraph-num">[14]</span>
+        Ho is part of a group called Dream Girls, a social media platform created by a construction company to give a peek into the careers of young women in Hong Kong's engineering and construction sectors.
+      </p>
+
+      <p class="paragraph" data-para="15">
+        <span class="paragraph-num">[15]</span>
+        Working in a traditionally male-dominated field comes with challenges, Ho said, though she also acknowledged the solidarity she found with other workers. "Actually, the people on site can be quite full of love," she said. "They might be loud and gruff, but in the middle of summer, I've met wonderful workers who would point their own fans towards me. When I'm logging rocks, they'll help me move the samples into a shadier spot."
+      </p>
+
+      <p class="paragraph" data-para="16">
+        <span class="paragraph-num">[16]</span>
+        But not every experience has been positive. "Of course, there are definitely some who aren't as nice," she said. "I've heard people say things like, 'You're a woman – just stand aside and don't get in the way,' or they'll flat-out refuse to help you carry things."
+      </p>
+
+      <p class="paragraph" data-para="17">
+        <span class="paragraph-num">[17]</span>
+        Ho also noted that some companies refused to hire women because the role required them to scramble over hills and climb into shafts. But the ability to do these tasks has nothing to do with a person's gender.
+      </p>
+
+      <p class="paragraph" data-para="18">
+        <span class="paragraph-num">[18]</span>
+        Some men also twisted certain work duties into chances to harass Ho. For example, one task involves climbing down mud pits – deep, narrow excavations that can expose female workers to degrading comments.
+      </p>
+
+      <p class="paragraph" data-para="19">
+        <span class="paragraph-num">[19]</span>
+        "While [climbing down] ... I've heard some really insulting comments from men," she said. "Because of that, I feel women workers really need to be given respect."
+      </p>
+
+      <p class="paragraph" data-para="20">
+        <span class="paragraph-num">[20]</span>
+        She added: "I'm not saying women need to be treated like fragile flowers, but we shouldn't underestimate them either. Being a man doesn't automatically mean you'll be better at this."
+      </p>
+
+      <p class="paragraph" data-para="21">
+        <span class="paragraph-num">[21]</span>
+        Looking beyond the difficulties she has faced, Ho also argued that society should have more respect for all construction workers, who are often dismissed despite the skill and endurance their jobs demand.
+      </p>
+
+      <p class="paragraph" data-para="22">
+        <span class="paragraph-num">[22]</span>
+        "Some people can be quite harsh. They just look down on us as 'construction workers'," she said. "I've fallen into the mud myself – honestly, there's no difference between me and the site foremen in that sense. We're all 'dirty'."
+      </p>
+
+      <p class="paragraph" data-para="23">
+        <span class="paragraph-num">[23]</span>
+        Ho added that people should appreciate all workers regardless of whether they went to university. "When I see the foremen in the middle of summer, literally drenched in sweat, it's clear how much they give," she said. "I believe they have their own professional expertise ... [and] every single job deserves to be respected and to be seen."
+      </p>
+
+      <p class="paragraph" data-para="24">
+        <span class="paragraph-num">[24]</span>
+        ================================================================================
+      </p>
+
+</section>
+
+    <div class="divider" id="divider" title="Drag to resize"></div>
+
+    <section class="panel questions-panel" id="questionsPanel">
+      <p class="instruction">Read Text 1 and answer questions 1–13. (47 marks)</p>
+
+      <!-- Q1 -->
+      <div class="question-block" id="q1" data-q="1">
+        <div class="question-label">1. Short answer<br>According to paragraph 1, what was Carol Ho doing during a typhoon?<br><br>_______________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q{qn}" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q1" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q2 -->
+      <div class="question-block" id="q2" data-q="2">
+        <div class="question-label">2. Vocabulary (Multiple Choice)<br>The word "punishing" in paragraph 1 is closest in meaning to:<br>A. rewarding and enjoyable<br>B. extremely harsh and demanding<br>C. safe and comfortable<br>D. ordinary and routine</div>
+        <div class="options">
+          <label><input type="radio" name="q2" value="A">A. rewarding and enjoyable</label>
+          <label><input type="radio" name="q2" value="B">B. extremely harsh and demanding</label>
+          <label><input type="radio" name="q2" value="C">C. safe and comfortable</label>
+          <label><input type="radio" name="q2" value="D">D. ordinary and routine</label>
+        </div>
+
+<div class="inline-solution" id="solution-q2" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q3 -->
+      <div class="question-block" id="q3" data-q="3">
+        <div class="question-label">3. Pronoun reference<br>In paragraph 4, what does "that" refer to in the sentence "That process begins<br>with understanding the history of a site"?<br><br>_______________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q{qn}" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q3" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q4 -->
+      <div class="question-block" id="q4" data-q="4">
+        <div class="question-label">4. True / False / Not Given<br>Read the following statements. Decide if each statement is True (T), False (F),<br>or Not Given (NG) according to the passage.<br><br>(a) Carol Ho works in an office from 9am to 5pm like most consultants.<br>(b) Some companies refuse to hire women because the job involves climbing hills<br>    and shafts.<br>(c) Carol Ho believes women should be treated like fragile flowers at work.</div>
+        <input type="text" class="text-input wide" name="q{qn}" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q4" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q5 -->
+      <div class="question-block" id="q5" data-q="5">
+        <div class="question-label">5. Short answer (list points)<br>According to paragraph 4, what are TWO steps involved in Ho's work of analysing<br>rock samples?<br><br>(1) ___________________________________________________________________________<br>(2) ___________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q{qn}" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q5" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q6 -->
+      <div class="question-block" id="q6" data-q="6">
+        <div class="question-label">6. Explain word in own words<br>In paragraph 11, Ho says she has a "wanderer" personality. What does this mean<br>in the context of her job?<br><br>_______________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q{qn}" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q6" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q7 -->
+      <div class="question-block" id="q7" data-q="7">
+        <div class="question-label">7. Summary (fill in blanks with ONE word from the passage)<br>Complete the summary below using ONE word from the passage for each blank.<br><br>Carol Ho is a 24-year-old assistant (a) _____________ who works at construction<br>sites across Hong Kong. She analyses rock samples and builds geological profiles<br>to help construction projects maintain (b) _____________ conditions. Ho says she<br>loves exploring and that the field projects suit her "wanderer" personality. She<br>is part of a group called Dream Girls, which was created by a construction<br>company to showcase the careers of young women in engineering and construction.<br>Ho says that while some workers are kind, she has also faced (c) _____________<br>comments from men. She believes every job deserves to be (d) _____________ and<br>to be seen.</div>
+        <input type="text" class="text-input wide" name="q{qn}" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q7" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q8 -->
+      <div class="question-block" id="q8" data-q="8">
+        <div class="question-label">8. Reason / Purpose<br>According to paragraph 6, why is understanding whether land has been reclaimed<br>or filled in important for Ho's work?<br><br>_______________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q{qn}" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q8" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q9 -->
+      <div class="question-block" id="q9" data-q="9">
+        <div class="question-label">9. Define concept<br>According to paragraph 14, what is the purpose of the Dream Girls social media<br>platform?<br><br>_______________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q{qn}" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q9" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q10 -->
+      <div class="question-block" id="q10" data-q="10">
+        <div class="question-label">10. Difference and Similarity<br>According to the passage, what is ONE similarity and ONE difference between<br>Ho's experience with male workers on site?<br><br>Similarity: ___________________________________________________________________<br><br>Difference: __________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q{qn}" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q10" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q11 -->
+      <div class="question-block" id="q11" data-q="11">
+        <div class="question-label">11. View / Concern<br>According to paragraphs 20-21, what concern does Ho raise about how some<br>companies view women for certain roles?<br><br>_______________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q{qn}" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q11" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q12 -->
+      <div class="question-block" id="q12" data-q="12">
+        <div class="question-label">12. List suggestions / actions<br>According to paragraphs 22-23, what are TWO negative experiences Ho has faced as<br>a woman in a male-dominated field?<br><br>(1) ___________________________________________________________________________<br>(2) ___________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q{qn}" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q12" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q13 -->
+      <div class="question-block" id="q13" data-q="13">
+        <div class="question-label">13. Define activity<br>According to paragraph 4, what is the purpose of building geological profiles?<br><br>_______________________________________________________________________________</div>
+        <input type="text" class="text-input wide" name="q{qn}" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q13" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q14 -->
+      <div class="question-block" id="q14" data-q="14">
+        <div class="question-label">14. Multiple Choice (Author's Attitude)<br>What is the author's overall attitude towards Carol Ho's career choice?<br>A. Fully critical<br>B. Generally supportive<br>C. Completely neutral<br>D. Deeply doubtful</div>
+        <div class="options">
+          <label><input type="radio" name="q14" value="A">A. Fully critical</label>
+          <label><input type="radio" name="q14" value="B">B. Generally supportive</label>
+          <label><input type="radio" name="q14" value="C">C. Completely neutral</label>
+          <label><input type="radio" name="q14" value="D">D. Deeply doubtful</label>
+        </div>
+
+<div class="inline-solution" id="solution-q14" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+      <!-- Q15 -->
+      <div class="question-block" id="q15" data-q="15">
+        <div class="question-label">15. Title meaning<br>What does the title "How a female assistant geologist is breaking ground in a<br>male-dominated field" suggest about the article's main message?<br><br>_______________________________________________________________________________<br><br>================================================================================</div>
+        <input type="text" class="text-input wide" name="q{qn}" placeholder="Your answer">
+
+<div class="inline-solution" id="solution-q15" style="display:none; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--accent-green);">
+<article class="answer-card">
+</article>
+</div>
+      </div>
+
+</section>
+  </div>
+
+  <footer class="bottom-bar">
+    <div class="palette-section">
+      <span class="palette-label">Question Palette</span>
+      <div class="question-palette" id="questionPalette"></div>
+      <div class="palette-legend">
+        <span class="legend-dot"></span> answered
+      </div>
+    </div>
+    <div class="timer-section" id="timer">00:00</div>
+    <div class="action-buttons">
+      <button class="btn btn-submit" id="btnSubmit">✓ Submit</button>
+      <button class="btn btn-review" id="btnReview">⊞ Review</button>
+      <a class="btn btn-solution" href="solution.html">🔑 Solution</a>
+      <button class="btn btn-reset" id="btnReset">↺ Reset</button>
+    </div>
+  </footer>
+
+  <!-- Submit modal -->
+  <div class="modal-overlay" id="submitModal">
+    <div class="modal">
+      <h3>Are you sure you want to submit?</h3>
+      <p id="submitModalText">You have answered <strong id="answeredCount">0</strong> of 15 questions.</p>
+      <div class="modal-actions">
+        <button class="btn btn-reset" id="btnCancelSubmit">Cancel</button>
+        <button class="btn btn-submit" id="btnConfirmSubmit">Submit and view Answers</button>
+      </div>
+    </div>
+  </div>
+  <!-- Score modal -->
+  <div class="modal-overlay" id="scoreModal">
+    <div class="modal">
+      <h3>Your Results</h3>
+      <div class="score-display">
+        <div class="score-number" id="scoreNumber">0/15</div>
+        <div class="score-label" id="scorePercent">0% correct</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-review" id="btnCloseScore">Review Answers</button>
+        <a class="btn btn-solution" href="solution.html">View Full Solution</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+
+  <script>
+  // Article Vocabulary Highlight Toggle
+  let vocabHighlightOn = false;
+  let vocabWords = [];
+  let vocabLoaded = false;
+
+  function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  // Load vocabulary from external markdown
+  async function loadVocab() {
+    try {
+      const response = await fetch(`../kellywordbank-single.md?cache-bust=${new Date().getTime()}`);
+      const text = await response.text();
+      const lines = text.split('\n');
+      const words = [];
+      
+      // Extract words from lines starting with ###
+      lines.forEach(line => {
+        const match = line.match(/^###\s+([^(]+)/);
+        if (match) {
+          const word = match[1].trim();
+          if (word) words.push(word);
+        }
+      });
+      
+      // Sort by length descending - longer phrases match first
+      words.sort((a, b) => b.length - a.length);
+      vocabWords = words;
+      vocabLoaded = true;
+      console.log(`Loaded ${vocabWords.length} vocabulary words for highlighting`);
+    } catch (err) {
+      console.error('Failed to load vocabulary bank:', err);
+      vocabWords = [];
+      vocabLoaded = true;
+    }
+  }
+
+  function toggleVocabHighlight() {
+    vocabHighlightOn = !vocabHighlightOn;
+    const btn = document.getElementById('btnToggleVocabHighlight');
+    
+    if (vocabHighlightOn) {
+      btn.textContent = '詞彙高亮: ON';
+      btn.style.background = '#27ae60';
+      applyVocabHighlight();
+    } else {
+      btn.textContent = '詞彙高亮: OFF';
+      btn.style.background = '#f39c12';
+      removeVocabHighlight();
+    }
+  }
+
+  function applyVocabHighlight() {
+    if (!vocabLoaded) {
+      // Wait for vocab to load before applying
+      setTimeout(() => {
+        if (vocabHighlightOn) applyVocabHighlight();
+      }, 200);
+      return;
+    }
+    
+    if (vocabWords.length === 0) {
+      console.log('No vocabulary words loaded');
+      return;
+    }
+
+    // Get all paragraphs in passage
+    const paragraphs = document.querySelectorAll('#passagePanel p.paragraph');
+    
+    paragraphs.forEach(para => {
+      let html = para.innerHTML;
+      
+      // First remove any existing highlights
+      html = html.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g, '$1');
+      
+      // Apply highlights to all vocab words
+      vocabWords.forEach(word => {
+        const escaped = escapeRegExp(word);
+        // Match whole word, case-insensitive
+        const regex = new RegExp(`\\b${escaped}\\b`, 'gi');
+        html = html.replace(regex, `<mark style="background: rgba(52, 152, 219, 0.3);">$&</mark>`);
+      });
+      
+      para.innerHTML = html;
+    });
+  }
+
+  function removeVocabHighlight() {
+    const paragraphs = document.querySelectorAll('#passagePanel p.paragraph');
+    paragraphs.forEach(para => {
+      let html = para.innerHTML;
+      html = html.replace(/<mark[^>]*>([\s\S]*?)<\/mark>/g, '$1');
+      para.innerHTML = html;
+    });
+  }
+
+  // Initialize immediately - script is at bottom, DOM already loaded
+  loadVocab();
+  const btn = document.getElementById('btnToggleVocabHighlight');
+  if (btn) {
+    btn.addEventListener('click', toggleVocabHighlight);
+  }
+  </script>
+
+</body>
+</html>
