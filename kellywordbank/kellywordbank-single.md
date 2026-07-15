@@ -39,3 +39,51 @@
 ---
 ### exploit  (v/n) <-- Added on 2026-07-09
 ---
+### irreplaceable  (adj) <-- Added on 2026-07-15
+---
+### estimate  (v/n) <-- Added on 2026-07-15
+---
+### pollination  (n) <-- Added on 2026-07-15
+---
+### colonies  (n) <-- Added on 2026-07-15
+---
+### generations  (n) <-- Added on 2026-07-15
+---
+### behaviour  (n) <-- Added on 2026-07-15
+---
+### nectar  (n) <-- Added on 2026-07-15
+---
+### guard  (v/n) <-- Added on 2026-07-15
+---
+### drones  (n) <-- Added on 2026-07-15
+---
+### gather  (v) <-- Added on 2026-07-15
+---
+### storage  (n) <-- Added on 2026-07-15
+---
+### decades  (n) <-- Added on 2026-07-15
+---
+### sharply  (adv) <-- Added on 2026-07-15
+---
+### pesticides  (n) <-- Added on 2026-07-15
+---
+### poison  (v/n) <-- Added on 2026-07-15
+---
+### parasitic  (adj) <-- Added on 2026-07-15
+---
+### unusual  (adj) <-- Added on 2026-07-15
+---
+### extreme  (adj) <-- Added on 2026-07-15
+---
+### beekeepers  (n) <-- Added on 2026-07-15
+---
+### collapse  (v/n) <-- Added on 2026-07-15
+---
+### struggle  (v/n) <-- Added on 2026-07-15
+---
+### almonds  (n) <-- Added on 2026-07-15
+---
+### ordinary  (adj) <-- Added on 2026-07-15
+---
+### decorative  (adj) <-- Added on 2026-07-15
+---
